@@ -4,6 +4,8 @@ OrbitGraph is a TypeScript library for exploring complex relationship graphs in 
 
 It renders nodes and directed relationships as an interactive WebGL universe. It is intended for user networks, services, documents, events, organizations, dependencies, and knowledge graphs.
 
+![OrbitGraph preview](./assets/example.png)
+
 ## Features
 
 - 3D force-directed graph layout
