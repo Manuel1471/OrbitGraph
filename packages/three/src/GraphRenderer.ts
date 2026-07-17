@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import type { GraphLink, GraphNode } from "@orbitgraph/core"
+import type { GraphLink } from "@orbitgraph/core";
 import type { PhysicsNode } from "./PhysicsEngine";
 import type {
     GraphLinkArrowMap,
@@ -10,7 +10,39 @@ import type {
     LinkArrow,
 } from "./graph-types";
 
+const MAX_NODES_WITH_DETAILED_LINKS = 1_000;
+
+type StoredLink = GraphLink & {
+    id: string;
+};
+
 export class GraphRenderer {
+    private readonly nodeGeometry = new THREE.SphereGeometry(1, 8, 8);
+    private readonly arrowGeometry = new THREE.ConeGeometry(0.45, 1.25, 6);
+
+    private readonly nodeMaterials = new Map<string, THREE.MeshBasicMaterial>();
+    private readonly arrowMaterials = new Map<string, THREE.MeshBasicMaterial>();
+
+    private readonly storedLinks = new Map<string, StoredLink>();
+
+    private readonly sourcePosition = new THREE.Vector3();
+    private readonly targetPosition = new THREE.Vector3();
+    private readonly direction = new THREE.Vector3();
+    private readonly arrowUp = new THREE.Vector3(0, 1, 0);
+    private readonly linkColor = new THREE.Color();
+
+    private readonly batchedLinkGeometry: THREE.BufferGeometry;
+    private readonly batchedLinkMaterial: THREE.LineBasicMaterial;
+    private readonly batchedLinks: THREE.LineSegments;
+
+    private visibleNodeIds = new Set<string>();
+    private minimumLinkWeight = 0;
+    private batchedVisibleLinks: StoredLink[] = [];
+    private batchNeedsRebuild = true;
+
+    private useBatchedLinks = false;
+    private showLinkArrows = true;
+
     constructor(
         private readonly group: THREE.Group,
         private readonly nodeMeshes: GraphNodeMeshMap,
@@ -23,17 +55,39 @@ export class GraphRenderer {
             linkOpacity: number;
             nodeSize: number;
         },
-    ) {}
+    ) {
+        this.batchedLinkGeometry = new THREE.BufferGeometry();
+
+        this.batchedLinkMaterial = new THREE.LineBasicMaterial({
+            transparent: true,
+            opacity: options.linkOpacity,
+            vertexColors: true,
+        });
+
+        this.batchedLinks = new THREE.LineSegments(
+            this.batchedLinkGeometry,
+            this.batchedLinkMaterial,
+        );
+
+        /*
+         * No hacemos raycast en este objeto agrupado.
+         * Los links grandes no son seleccionables, pero los nodos sí.
+         */
+        this.batchedLinks.raycast = () => {};
+
+        this.batchedLinks.frustumCulled = false;
+        this.batchedLinks.visible = false;
+
+        this.group.add(this.batchedLinks);
+    }
 
     addNode(node: PhysicsNode): void {
         this.nodes.set(node.id, node);
 
-        const geometry = new THREE.SphereGeometry(1, 16, 16);
-        const material = new THREE.MeshBasicMaterial({
-            color: node.color ?? this.options.nodeColor,
-        });
-
-        const mesh = new THREE.Mesh(geometry, material);
+        const mesh = new THREE.Mesh(
+            this.nodeGeometry,
+            this.getNodeMaterial(node.color ?? this.options.nodeColor),
+        );
 
         mesh.position.set(node.x, node.y, node.z);
         mesh.scale.setScalar(node.size ?? this.options.nodeSize);
@@ -41,6 +95,13 @@ export class GraphRenderer {
 
         this.nodeMeshes.set(node.id, mesh);
         this.group.add(mesh);
+
+        if (
+            !this.useBatchedLinks &&
+            this.nodes.size > MAX_NODES_WITH_DETAILED_LINKS
+        ) {
+            this.enableBatchedLinks();
+        }
     }
 
     updateNode(node: PhysicsNode): void {
@@ -53,20 +114,25 @@ export class GraphRenderer {
 
         mesh.position.set(node.x, node.y, node.z);
         mesh.scale.setScalar(node.size ?? this.options.nodeSize);
-        mesh.material.color.set(node.color ?? this.options.nodeColor);
+
+        mesh.material = this.getNodeMaterial(
+            node.color ?? this.options.nodeColor,
+        );
     }
 
     removeNode(nodeId: string): void {
         const mesh = this.nodeMeshes.get(nodeId);
 
         if (mesh) {
-            mesh.geometry.dispose();
-            mesh.material.dispose();
             this.group.remove(mesh);
         }
 
         this.nodeMeshes.delete(nodeId);
         this.nodes.delete(nodeId);
+
+        if (this.useBatchedLinks) {
+            this.batchNeedsRebuild = true;
+        }
     }
 
     addLink(link: GraphLink): void {
@@ -81,58 +147,27 @@ export class GraphRenderer {
             link.id ??
             `${link.source}__${link.type ?? "related"}__${link.target}`;
 
-        const graphLink = { ...link, id };
+        const graphLink: StoredLink = { ...link, id };
 
-        const line = new THREE.Line(
-            new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(source.x, source.y, source.z),
-                new THREE.Vector3(target.x, target.y, target.z),
-            ]),
-            new THREE.LineBasicMaterial({
-                color: this.getLinkColor(graphLink),
-                transparent: true,
-                opacity: this.getLinkOpacity(graphLink),
-            }),
-        );
+        this.storedLinks.set(id, graphLink);
 
-        line.userData.graphLink = graphLink;
+        if (this.useBatchedLinks) {
+            this.batchNeedsRebuild = true;
+            return;
+        }
 
-        const arrow = new THREE.Mesh(
-            new THREE.ConeGeometry(0.55, 1.5, 8),
-            new THREE.MeshBasicMaterial({
-                color: this.getLinkColor(graphLink),
-            }),
-        );
-
-        arrow.userData.graphLink = graphLink;
-
-        this.positionArrow(arrow, source, target);
-
-        this.linkLines.set(id, line);
-        this.linkArrows.set(id, arrow);
-
-        this.group.add(line);
-        this.group.add(arrow);
+        this.addDetailedLink(graphLink);
     }
 
     removeLink(linkId: string): void {
-        const line = this.linkLines.get(linkId);
-        const arrow = this.linkArrows.get(linkId);
+        this.storedLinks.delete(linkId);
 
-        if (line) {
-            line.geometry.dispose();
-            line.material.dispose();
-            this.group.remove(line);
+        if (this.useBatchedLinks) {
+            this.batchNeedsRebuild = true;
+            return;
         }
 
-        if (arrow) {
-            arrow.geometry.dispose();
-            arrow.material.dispose();
-            this.group.remove(arrow);
-        }
-
-        this.linkLines.delete(linkId);
-        this.linkArrows.delete(linkId);
+        this.removeDetailedLinkVisual(linkId);
     }
 
     syncPositions(): void {
@@ -140,8 +175,18 @@ export class GraphRenderer {
             this.updateNode(node);
         }
 
+        if (this.useBatchedLinks) {
+            if (this.batchNeedsRebuild) {
+                this.rebuildBatchedLinks();
+            } else {
+                this.syncBatchedLinkPositions();
+            }
+
+            return;
+        }
+
         for (const [id, line] of this.linkLines) {
-            const link = line.userData.graphLink as GraphLink;
+            const link = line.userData.graphLink as StoredLink;
             const source = this.nodes.get(link.source);
             const target = this.nodes.get(link.target);
 
@@ -157,35 +202,41 @@ export class GraphRenderer {
             positions.setXYZ(1, target.x, target.y, target.z);
             positions.needsUpdate = true;
 
-            line.geometry.computeBoundingSphere();
-
             const arrow = this.linkArrows.get(id);
 
-            if (arrow) {
+            if (arrow?.visible && this.showLinkArrows) {
                 this.positionArrow(arrow, source, target);
             }
         }
     }
 
     setVisibleNodeIds(nodeIds: Set<string>, minimumWeight: number): void {
+        this.visibleNodeIds = new Set(nodeIds);
+        this.minimumLinkWeight = minimumWeight;
+
         for (const [nodeId, mesh] of this.nodeMeshes) {
             mesh.visible = nodeIds.has(nodeId);
         }
 
-        for (const [id, line] of this.linkLines) {
-            const link = line.userData.graphLink as GraphLink;
+        if (this.useBatchedLinks) {
+            this.batchNeedsRebuild = true;
+            this.rebuildBatchedLinks();
+            return;
+        }
 
-            const visible =
-                nodeIds.has(link.source) &&
-                nodeIds.has(link.target) &&
-                (link.weight ?? 1) >= minimumWeight;
+        this.showLinkArrows =
+            nodeIds.size <= MAX_NODES_WITH_DETAILED_LINKS;
+
+        for (const [id, line] of this.linkLines) {
+            const link = line.userData.graphLink as StoredLink;
+            const visible = this.isLinkVisible(link);
 
             line.visible = visible;
 
             const arrow = this.linkArrows.get(id);
 
             if (arrow) {
-                arrow.visible = visible;
+                arrow.visible = visible && this.showLinkArrows;
             }
         }
     }
@@ -195,9 +246,203 @@ export class GraphRenderer {
             this.removeNode(nodeId);
         }
 
-        for (const linkId of [...this.linkLines.keys()]) {
-            this.removeLink(linkId);
+        this.removeAllDetailedLinkVisuals();
+
+        this.storedLinks.clear();
+        this.batchedVisibleLinks = [];
+        this.batchedLinkGeometry.setDrawRange(0, 0);
+        this.batchedLinks.visible = false;
+
+        this.useBatchedLinks = false;
+        this.showLinkArrows = true;
+        this.batchNeedsRebuild = true;
+    }
+
+    private enableBatchedLinks(): void {
+        this.useBatchedLinks = true;
+        this.showLinkArrows = false;
+
+        this.removeAllDetailedLinkVisuals();
+
+        this.batchNeedsRebuild = true;
+    }
+
+    private addDetailedLink(link: StoredLink): void {
+        const source = this.nodes.get(link.source);
+        const target = this.nodes.get(link.target);
+
+        if (!source || !target) {
+            return;
         }
+
+        const color = this.getLinkColor(link);
+
+        const line = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(source.x, source.y, source.z),
+                new THREE.Vector3(target.x, target.y, target.z),
+            ]),
+            new THREE.LineBasicMaterial({
+                color,
+                transparent: true,
+                opacity: this.getLinkOpacity(link),
+            }),
+        );
+
+        line.frustumCulled = false;
+        line.userData.graphLink = link;
+
+        const arrow = new THREE.Mesh(
+            this.arrowGeometry,
+            this.getArrowMaterial(color),
+        );
+
+        arrow.userData.graphLink = link;
+
+        if (this.showLinkArrows) {
+            this.positionArrow(arrow, source, target);
+        }
+
+        this.linkLines.set(link.id, line);
+        this.linkArrows.set(link.id, arrow);
+
+        this.group.add(line);
+        this.group.add(arrow);
+    }
+
+    private removeDetailedLinkVisual(linkId: string): void {
+        const line = this.linkLines.get(linkId);
+        const arrow = this.linkArrows.get(linkId);
+
+        if (line) {
+            line.geometry.dispose();
+            (line.material as THREE.Material).dispose();
+            this.group.remove(line);
+        }
+
+        if (arrow) {
+            this.group.remove(arrow);
+        }
+
+        this.linkLines.delete(linkId);
+        this.linkArrows.delete(linkId);
+    }
+
+    private removeAllDetailedLinkVisuals(): void {
+        for (const linkId of [...this.linkLines.keys()]) {
+            this.removeDetailedLinkVisual(linkId);
+        }
+    }
+
+    private rebuildBatchedLinks(): void {
+        if (!this.useBatchedLinks) {
+            return;
+        }
+
+        this.batchedVisibleLinks = [...this.storedLinks.values()].filter(
+            (link) => this.isLinkVisible(link),
+        );
+
+        const vertexCount = this.batchedVisibleLinks.length * 2;
+        const floatCount = Math.max(vertexCount * 3, 3);
+
+        const currentPositions =
+            this.batchedLinkGeometry.getAttribute("position");
+
+        const currentColors =
+            this.batchedLinkGeometry.getAttribute("color");
+
+        if (
+            !currentPositions ||
+            currentPositions.array.length !== floatCount
+        ) {
+            this.batchedLinkGeometry.setAttribute(
+                "position",
+                new THREE.Float32BufferAttribute(floatCount, 3),
+            );
+        }
+
+        if (!currentColors || currentColors.array.length !== floatCount) {
+            this.batchedLinkGeometry.setAttribute(
+                "color",
+                new THREE.Float32BufferAttribute(floatCount, 3),
+            );
+        }
+
+        this.syncBatchedLinkPositions();
+        this.syncBatchedLinkColors();
+
+        this.batchedLinkGeometry.setDrawRange(0, vertexCount);
+        this.batchedLinks.visible = vertexCount > 0;
+        this.batchNeedsRebuild = false;
+    }
+
+    private syncBatchedLinkPositions(): void {
+        const positions = this.batchedLinkGeometry.getAttribute(
+            "position",
+        ) as THREE.BufferAttribute;
+
+        for (let index = 0; index < this.batchedVisibleLinks.length; index += 1) {
+            const link = this.batchedVisibleLinks[index];
+            const source = this.nodes.get(link.source);
+            const target = this.nodes.get(link.target);
+
+            if (!source || !target) {
+                continue;
+            }
+
+            const vertexIndex = index * 2;
+
+            positions.setXYZ(vertexIndex, source.x, source.y, source.z);
+            positions.setXYZ(
+                vertexIndex + 1,
+                target.x,
+                target.y,
+                target.z,
+            );
+        }
+
+        positions.needsUpdate = true;
+    }
+
+    private syncBatchedLinkColors(): void {
+        const colors = this.batchedLinkGeometry.getAttribute(
+            "color",
+        ) as THREE.BufferAttribute;
+
+        for (let index = 0; index < this.batchedVisibleLinks.length; index += 1) {
+            const link = this.batchedVisibleLinks[index];
+            const vertexIndex = index * 2;
+            const intensity = 0.35 + (link.weight ?? 0.6) * 0.65;
+
+            this.linkColor
+                .set(this.getLinkColor(link))
+                .multiplyScalar(intensity);
+
+            colors.setXYZ(
+                vertexIndex,
+                this.linkColor.r,
+                this.linkColor.g,
+                this.linkColor.b,
+            );
+
+            colors.setXYZ(
+                vertexIndex + 1,
+                this.linkColor.r,
+                this.linkColor.g,
+                this.linkColor.b,
+            );
+        }
+
+        colors.needsUpdate = true;
+    }
+
+    private isLinkVisible(link: StoredLink): boolean {
+        return (
+            this.visibleNodeIds.has(link.source) &&
+            this.visibleNodeIds.has(link.target) &&
+            (link.weight ?? 1) >= this.minimumLinkWeight
+        );
     }
 
     private positionArrow(
@@ -205,17 +450,48 @@ export class GraphRenderer {
         source: PhysicsNode,
         target: PhysicsNode,
     ): void {
-        const start = new THREE.Vector3(source.x, source.y, source.z);
-        const end = new THREE.Vector3(target.x, target.y, target.z);
+        this.sourcePosition.set(source.x, source.y, source.z);
+        this.targetPosition.set(target.x, target.y, target.z);
 
-        const direction = end.clone().sub(start).normalize();
+        this.direction
+            .subVectors(this.targetPosition, this.sourcePosition)
+            .normalize();
 
-        arrow.position.copy(start.lerp(end, 0.84));
-
-        arrow.quaternion.setFromUnitVectors(
-            new THREE.Vector3(0, 1, 0),
-            direction,
+        arrow.position.lerpVectors(
+            this.sourcePosition,
+            this.targetPosition,
+            0.84,
         );
+
+        arrow.quaternion.setFromUnitVectors(this.arrowUp, this.direction);
+    }
+
+    private getNodeMaterial(color: string): THREE.MeshBasicMaterial {
+        const existingMaterial = this.nodeMaterials.get(color);
+
+        if (existingMaterial) {
+            return existingMaterial;
+        }
+
+        const material = new THREE.MeshBasicMaterial({ color });
+
+        this.nodeMaterials.set(color, material);
+
+        return material;
+    }
+
+    private getArrowMaterial(color: string): THREE.MeshBasicMaterial {
+        const existingMaterial = this.arrowMaterials.get(color);
+
+        if (existingMaterial) {
+            return existingMaterial;
+        }
+
+        const material = new THREE.MeshBasicMaterial({ color });
+
+        this.arrowMaterials.set(color, material);
+
+        return material;
     }
 
     private getLinkOpacity(link: GraphLink): number {

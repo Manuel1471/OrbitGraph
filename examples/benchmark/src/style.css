@@ -1,0 +1,131 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#graph {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    overflow: hidden;
+    background: #050816;
+    color: #f8fafc;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+main {
+    width: 100vw;
+    height: 100vh;
+}
+
+#graph {
+    position: absolute;
+    inset: 0;
+}
+
+.panel {
+    position: absolute;
+    z-index: 1;
+    top: 28px;
+    left: 28px;
+    width: 280px;
+    padding: 20px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 16px;
+    background: rgba(10, 15, 35, 0.78);
+    backdrop-filter: blur(14px);
+}
+
+.eyebrow {
+    color: #22d3ee;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+}
+
+h1 {
+    margin: 8px 0;
+    font-size: 24px;
+}
+
+p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+button {
+    padding: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    background: rgba(2, 6, 23, 0.75);
+    color: #e2e8f0;
+    cursor: pointer;
+    font: inherit;
+}
+
+button:hover,
+button.is-active {
+    border-color: rgba(34, 211, 238, 0.55);
+    background: rgba(34, 211, 238, 0.1);
+    color: #67e8f9;
+}
+
+.secondary {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.stats div {
+    padding: 10px 8px;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.65);
+    text-align: center;
+}
+
+.stats span {
+    display: block;
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+.stats strong {
+    display: block;
+    margin-top: 3px;
+    color: #f8fafc;
+    font-size: 18px;
+}
+
+.flow-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    color: #cbd5e1;
+    font-size: 13px;
+}
+
+.flow-control input {
+    width: 16px;
+    height: 16px;
+    accent-color: #22d3ee;
+}

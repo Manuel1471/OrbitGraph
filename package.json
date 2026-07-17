@@ -15,7 +15,8 @@
     "build:core": "npm run build --workspace=@orbitgraph/core",
     "build:three": "npm run build --workspace=@orbitgraph/three",
     "build:react": "npm run build --workspace=@orbitgraph/react",
-    "build": "npm run build:core && npm run build:three && npm run build:react"
+    "build": "npm run build:core && npm run build:three && npm run build:react",
+    "dev:benchmark": "vite examples/benchmark --host"
   },
   "repository": {
     "type": "git",

@@ -13,6 +13,7 @@ import type {
 import { GraphCamera } from "./GraphCamera";
 import { GraphFilter } from "./GraphFilter";
 import { GraphInteraction } from "./GraphInteraction";
+import { LinkParticleRenderer } from "./LinkParticleRenderer";
 import { GraphRenderer } from "./GraphRenderer";
 import { NodeLabelRenderer } from "./NodeLabelRenderer";
 import {
@@ -47,6 +48,7 @@ export class OrbitGraph {
     private readonly graphRenderer: GraphRenderer;
     private readonly graphCamera: GraphCamera;
     private readonly labels: NodeLabelRenderer;
+    private readonly particles: LinkParticleRenderer;
     private readonly interaction: GraphInteraction;
 
     private data: GraphData = { nodes: [], links: [] };
@@ -106,10 +108,15 @@ export class OrbitGraph {
 
         this.graphCamera = new GraphCamera(this.camera, this.controls);
 
+        this.particles = new LinkParticleRenderer(
+            this.scene,
+            this.nodes,
+            this.options.linkFlow,
+        );
+
         this.labels = new NodeLabelRenderer(
             this.scene,
             this.nodes,
-            this.nodeMeshes,
         );
 
         this.interaction = new GraphInteraction(
@@ -226,6 +233,8 @@ export class OrbitGraph {
             graphLink: link,
         }));
 
+        this.particles.setLinks(this.data.links);
+
         this.physics.start(
             this.physicsNodes,
             this.physicsLinks,
@@ -291,6 +300,7 @@ export class OrbitGraph {
 
         this.physicsLinks.push(physicsLink);
         this.physics.addLink(physicsLink);
+        this.particles.setLinks(this.data.links);
 
         this.applyFilters();
     }
@@ -301,6 +311,7 @@ export class OrbitGraph {
 
         this.graphRenderer.removeLink(linkId);
         this.physics.removeLink(linkId);
+        this.particles.setLinks(this.data.links);
 
         this.applyFilters();
     }
@@ -358,6 +369,7 @@ export class OrbitGraph {
         this.physics.stop();
         this.labels.hide();
         this.clearGraph();
+        this.particles.dispose();
         this.controls.dispose();
         this.renderer.dispose();
 
@@ -382,6 +394,7 @@ export class OrbitGraph {
     private clearGraph(): void {
         this.physics.stop();
         this.labels.hide();
+        this.particles.clear();
         this.graphRenderer.clear();
 
         this.physicsNodes = [];
@@ -420,6 +433,7 @@ export class OrbitGraph {
         requestAnimationFrame(this.animate);
 
         this.controls.update();
+        this.particles.update(performance.now() / 1000);
         this.renderer.render(this.scene, this.camera);
     };
 }

@@ -1,6 +1,6 @@
 {
   "name": "@orbitgraph/three",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Three.js renderer for OrbitGraph.",
   "type": "module",
   "main": "./dist/index.cjs",

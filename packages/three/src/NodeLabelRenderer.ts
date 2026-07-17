@@ -1,10 +1,7 @@
 import * as THREE from "three";
 
-import type { GraphNode } from "@orbitgraph/core"
-import type {
-    GraphNodeMap,
-    GraphNodeMeshMap,
-} from "./graph-types";
+import type { GraphNode } from "@orbitgraph/core";
+import type { GraphNodeMap } from "./graph-types";
 
 export class NodeLabelRenderer {
     private sprite: THREE.Sprite | null = null;
@@ -13,13 +10,10 @@ export class NodeLabelRenderer {
     constructor(
         private readonly scene: THREE.Scene,
         private readonly nodes: GraphNodeMap,
-        private readonly nodeMeshes: GraphNodeMeshMap,
     ) {}
 
     show(node: GraphNode): void {
-        const mesh = this.nodeMeshes.get(node.id);
-
-        if (!mesh || this.nodeId === node.id) {
+        if (this.nodeId === node.id) {
             return;
         }
 
@@ -87,14 +81,13 @@ export class NodeLabelRenderer {
         }
 
         const node = this.nodes.get(this.nodeId);
-        const mesh = this.nodeMeshes.get(this.nodeId);
 
-        if (!node || !mesh) {
+        if (!node) {
             this.hide();
             return;
         }
-
-        this.sprite.position.copy(mesh.position);
+        
+        this.sprite.position.set(node.x, node.y, node.z);
         this.sprite.position.y += (node.size ?? 0.65) + 2.2;
     }
 }
