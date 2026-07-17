@@ -1,6 +1,6 @@
 {
   "name": "@orbitgraph/core",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Core data structures and graph utilities for OrbitGraph.",
   "type": "module",
   "main": "./dist/index.cjs",

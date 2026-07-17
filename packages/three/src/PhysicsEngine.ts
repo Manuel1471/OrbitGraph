@@ -1,6 +1,8 @@
 import * as d3 from "d3-force-3d";
 
-import type { GraphLink, GraphNode } from "@orbitgraph/core"
+import type { GraphLink, GraphNode } from "@orbitgraph/core";
+
+const MAX_NODES_WITH_COLLISION = 1_000;
 
 export type PhysicsNode = GraphNode & {
     x: number;
@@ -36,7 +38,7 @@ export class PhysicsEngine {
         this.nodes = nodes;
         this.links = links;
 
-        this.simulation = d3
+        const simulation = d3
             .forceSimulation(nodes, 3)
             .force(
                 "link",
@@ -51,16 +53,22 @@ export class PhysicsEngine {
                     }),
             )
             .force("charge", d3.forceManyBody().strength(-80))
-            .force(
+            .force("center", d3.forceCenter(0, 0, 0))
+            .alpha(1)
+            .alphaDecay(0.025)
+            .alphaMin(0.02)
+            .on("tick", onTick);
+
+        if (nodes.length <= MAX_NODES_WITH_COLLISION) {
+            simulation.force(
                 "collision",
                 d3.forceCollide().radius((node: PhysicsNode) => {
                     return (node.size ?? 0.65) * 2.2;
                 }),
-            )
-            .force("center", d3.forceCenter(0, 0, 0))
-            .alpha(1)
-            .alphaDecay(0.025)
-            .on("tick", onTick);
+            );
+        }
+
+        this.simulation = simulation;
     }
 
     addNode(node: PhysicsNode): void {
@@ -70,6 +78,7 @@ export class PhysicsEngine {
 
     removeNode(nodeId: string): void {
         this.nodes = this.nodes.filter((node) => node.id !== nodeId);
+
         this.links = this.links.filter((link) => {
             const sourceId =
                 typeof link.source === "string" ? link.source : link.source.id;
@@ -150,6 +159,24 @@ export class PhysicsEngine {
 
         const linkForce = this.simulation.force("link");
         linkForce?.links(this.links);
+
+        const collisionForce = this.simulation.force("collision");
+
+        if (
+            this.nodes.length <= MAX_NODES_WITH_COLLISION &&
+            !collisionForce
+        ) {
+            this.simulation.force(
+                "collision",
+                d3.forceCollide().radius((node: PhysicsNode) => {
+                    return (node.size ?? 0.65) * 2.2;
+                }),
+            );
+        }
+
+        if (this.nodes.length > MAX_NODES_WITH_COLLISION && collisionForce) {
+            this.simulation.force("collision", null);
+        }
 
         this.reheat(0.75);
     }

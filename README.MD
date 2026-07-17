@@ -11,6 +11,7 @@ It renders nodes and directed relationships as an interactive WebGL universe. It
 - 3D force-directed graph layout
 - Orbit, zoom, pan, drag, and pin nodes
 - Directed links with arrows, colors, and weight-based opacity
+- Optional animated energy flow along relationships
 - Node and relationship selection
 - Hover labels and JSON metadata
 - Search, multi-type filters, and minimum relationship weight
@@ -61,9 +62,34 @@ if (!container) {
   throw new Error("Graph container was not found.");
 }
 
-const graph = createOrbitGraph(container);
+const graph = createOrbitGraph(container, {
+  linkFlow: {
+    enabled: true,
+    maxParticles: 140,
+    particleSize: 0.09,
+    particleSpeed: 0.12
+  }
+});
+
 graph.setData(data);
 ```
+
+## Benchmark
+
+OrbitGraph includes an interactive benchmark to evaluate rendering and layout performance with generated graphs of 100, 500, 1,000, and 5,000 nodes.
+
+![OrbitGraph benchmark](./assets/example_benchmark.png)
+
+The benchmark includes an FPS counter, node and relationship totals, and an optional energy-flow toggle so you can compare visual quality against performance.
+
+Run it locally from the repository root:
+
+```bash
+npm run build
+npm run dev:benchmark
+```
+
+Open the local URL displayed by Vite, usually `http://localhost:5173`.
 
 ## Development
 
@@ -75,7 +101,7 @@ npm run build
 npm run dev
 ```
 
-See `examples/vanilla` and `examples/react` for working consumer examples.
+See `examples/vanilla`, `examples/react`, and `examples/benchmark` for working examples.
 
 ## Status
 

@@ -37,11 +37,75 @@ export function App() {
       style={{ width: "100%", height: "100vh" }}
       options={{
         backgroundColor: "#050816",
-        onSelectionChange: (selection) => console.log(selection)
+        linkFlow: {
+          enabled: true,
+          maxParticles: 140,
+          particleSize: 0.09,
+          particleSpeed: 0.12
+        }
+      }}
+      onSelectionChange={(selection) => {
+        console.log(selection);
       }}
     />
   );
 }
+```
+
+## Visual customization
+
+Use the `options` prop to customize the renderer.
+
+```tsx
+<OrbitGraph
+  data={data}
+  options={{
+    backgroundColor: "#050816",
+    nodeColor: "#22d3ee",
+    nodeSize: 0.8,
+    linkColor: "#6366f1",
+    linkOpacity: 0.5,
+    linkFlow: {
+      enabled: true,
+      maxParticles: 140,
+      particleSize: 0.09,
+      particleSpeed: 0.12
+    }
+  }}
+/>
+```
+
+### Link flow
+
+`linkFlow` enables subtle animated energy segments that travel from the source node to the target node.
+
+```ts
+linkFlow: {
+  enabled: true,
+  maxParticles: 140,
+  particleSize: 0.09,
+  particleSpeed: 0.12
+}
+```
+
+| Option | Description |
+| --- | --- |
+| `enabled` | Enables or disables the animated link flow. Disabled by default. |
+| `maxParticles` | Maximum number of animated link segments. Lower values improve performance. |
+| `particleSize` | Width and length scale of each energy segment. |
+| `particleSpeed` | Speed of the energy flow. |
+
+Disable it when you need a minimal or static graph:
+
+```tsx
+<OrbitGraph
+  data={data}
+  options={{
+    linkFlow: {
+      enabled: false
+    }
+  }}
+/>
 ```
 
 ## Props
@@ -51,6 +115,11 @@ type OrbitGraphProps = {
   data: GraphData;
   options?: OrbitGraphOptions;
   onSelectionChange?: (selection: GraphSelection) => void;
+  onVisibleDataChange?: (data: VisibleGraphData) => void;
+  onNodeClick?: OrbitGraphOptions["onNodeClick"];
+  onLinkClick?: OrbitGraphOptions["onLinkClick"];
+  onNodeHover?: OrbitGraphOptions["onNodeHover"];
+  onLinkHover?: OrbitGraphOptions["onLinkHover"];
   className?: string;
   style?: React.CSSProperties;
 };
@@ -64,15 +133,15 @@ Nodes and relationships accept JSON-compatible metadata in their `data` property
 
 ```ts
 const data: GraphData = {
-  nodes: [
-    {
-      id: "service",
-      label: "Notification Service",
-      type: "service",
-      data: { status: "active", region: "us-east" }
-    }
-  ],
-  links: []
+    nodes: [
+        {
+            id: "service",
+            label: "Notification Service",
+            type: "service",
+            data: { status: "active", region: "us-east" }
+        }
+    ],
+    links: []
 };
 ```
 

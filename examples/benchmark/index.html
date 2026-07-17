@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OrbitGraph Benchmark</title>
+</head>
+<body>
+<main>
+    <aside class="panel">
+        <span class="eyebrow">PERFORMANCE</span>
+        <h1>OrbitGraph Benchmark</h1>
+        <p>Prueba el rendimiento con grafos generados automáticamente.</p>
+
+        <div class="controls">
+            <button type="button" data-size="100">100 nodos</button>
+            <button type="button" data-size="500">500 nodos</button>
+            <button type="button" data-size="1000">1,000 nodos</button>
+            <button type="button" data-size="5000">5,000 nodos</button>
+        </div>
+
+        <button id="regenerate" class="secondary" type="button">
+            Regenerar datos
+        </button>
+
+        <label class="flow-control">
+            <input id="link-flow" type="checkbox" />
+            Flujo eléctrico
+        </label>
+
+        <div class="stats">
+            <div><span>FPS</span><strong id="fps">0</strong></div>
+            <div><span>Nodos</span><strong id="node-count">0</strong></div>
+            <div><span>Relaciones</span><strong id="link-count">0</strong></div>
+        </div>
+    </aside>
+
+    <div id="graph"></div>
+</main>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
