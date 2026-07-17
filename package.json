@@ -14,7 +14,8 @@
     "test:run": "vitest run",
     "build:core": "npm run build --workspace=@orbitgraph/core",
     "build:three": "npm run build --workspace=@orbitgraph/three",
-    "build": "npm run build:core && npm run build:three"
+    "build:react": "npm run build --workspace=@orbitgraph/react",
+    "build": "npm run build:core && npm run build:three && npm run build:react"
   },
   "repository": {
     "type": "git",
@@ -26,7 +27,8 @@
     "visualization",
     "threejs",
     "webgl",
-    "typescript"
+    "typescript",
+    "react"
   ],
   "author": "Manuel Garcia",
   "license": "MIT",
@@ -36,8 +38,13 @@
   "homepage": "https://github.com/Manuel1471/OrbitGraph#readme",
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "@types/three": "^0.185.1",
+    "@vitejs/plugin-react": "^6.0.3",
     "jsdom": "^29.1.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "tsup": "^8.5.1",
     "typescript": "^5.7.3",
     "vite": "^8.1.5",

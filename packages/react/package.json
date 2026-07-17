@@ -1,0 +1,59 @@
+{
+  "name": "@orbitgraph/react",
+  "version": "0.1.0",
+  "description": "React bindings for OrbitGraph.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean"
+  },
+  "dependencies": {
+    "@orbitgraph/core": "^0.1.0",
+    "@orbitgraph/three": "^0.1.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "three": "^0.185.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "keywords": [
+    "react",
+    "graph",
+    "network",
+    "visualization",
+    "threejs",
+    "webgl",
+    "3d"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Manuel1471/OrbitGraph.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Manuel1471/OrbitGraph/issues"
+  },
+  "homepage": "https://github.com/Manuel1471/OrbitGraph#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}
