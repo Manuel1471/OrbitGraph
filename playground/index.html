@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OrbitGraph Playground</title>
+</head>
+<body>
+<main>
+    <aside class="intro">
+        <span class="eyebrow">PLAYGROUND</span>
+        <h1>OrbitGraph</h1>
+        <p>Arrastra para orbitar. Usa la rueda para hacer zoom.</p>
+
+        <div class="graph-stats">
+            <span><strong id="node-count">0</strong> nodos</span>
+            <span><strong id="link-count">0</strong> relaciones</span>
+        </div>
+
+        <div class="search-controls">
+            <input
+                    id="graph-search"
+                    type="search"
+                    placeholder="Buscar nodos..."
+            />
+
+            <button id="clear-filters" type="button">
+                Limpiar filtros
+            </button>
+
+            <button id="reset-camera" type="button">
+                Reiniciar cámara
+            </button>
+        </div>
+
+        <div class="filter-section">
+            <span class="filter-title">Filtrar por tipo</span>
+
+            <div class="filter-buttons">
+                <button type="button" data-type="person">Person</button>
+                <button type="button" data-type="project">Project</button>
+                <button type="button" data-type="service">Service</button>
+                <button type="button" data-type="database">Database</button>
+                <button type="button" data-type="app">App</button>
+            </div>
+        </div>
+
+        <label class="weight-filter">
+  <span>
+    Peso mínimo:
+    <strong id="weight-value">0%</strong>
+  </span>
+
+            <input
+                    id="weight-slider"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="0"
+            />
+        </label>
+    </aside>
+
+    <aside id="details-panel" class="details-panel is-empty">
+        <span class="eyebrow">SELECCIÓN</span>
+        <h2 id="detail-title">Selecciona algo</h2>
+        <p id="detail-subtitle">
+            Haz clic en un nodo o una relación para ver su información.
+        </p>
+
+        <pre id="detail-data"></pre>
+    </aside>
+
+    <div id="tooltip" class="tooltip"></div>
+    <div id="graph"></div>
+</main>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

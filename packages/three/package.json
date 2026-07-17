@@ -1,0 +1,42 @@
+{
+  "name": "@orbitgraph/three",
+  "version": "0.1.0",
+  "description": "Three.js renderer for OrbitGraph.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean"
+  },
+  "dependencies": {
+    "@orbitgraph/core": "file:../core",
+    "d3-force-3d": "^3.0.6"
+  },
+  "peerDependencies": {
+    "three": "^0.185.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Manuel1471/OrbitGraph.git"
+  },
+  "keywords": [
+    "graph",
+    "network",
+    "visualization",
+    "threejs",
+    "webgl",
+    "3d"
+  ]
+}

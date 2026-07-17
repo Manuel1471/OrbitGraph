@@ -1,0 +1,50 @@
+{
+  "name": "orbitgraph",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OrbitGraph monorepo.",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "vite playground --host",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "build:core": "npm run build --workspace=@orbitgraph/core",
+    "build:three": "npm run build --workspace=@orbitgraph/three",
+    "build": "npm run build:core && npm run build:three"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Manuel1471/OrbitGraph.git"
+  },
+  "keywords": [
+    "graph",
+    "network",
+    "visualization",
+    "threejs",
+    "webgl",
+    "typescript"
+  ],
+  "author": "Manuel Garcia",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Manuel1471/OrbitGraph/issues"
+  },
+  "homepage": "https://github.com/Manuel1471/OrbitGraph#readme",
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/three": "^0.185.1",
+    "jsdom": "^29.1.1",
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.3",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
+  },
+  "allowScripts": {
+    "esbuild@0.27.7": true,
+    "fsevents@2.3.3": true
+  }
+}

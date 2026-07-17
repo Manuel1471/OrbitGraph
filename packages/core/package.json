@@ -1,0 +1,34 @@
+{
+  "name": "@orbitgraph/core",
+  "version": "0.1.0",
+  "description": "Core data structures and graph utilities for OrbitGraph.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Manuel1471/OrbitGraph.git"
+  },
+  "keywords": [
+    "graph",
+    "network",
+    "visualization",
+    "typescript",
+    "3d"
+  ]
+}
