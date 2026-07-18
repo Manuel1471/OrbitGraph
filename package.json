@@ -1,6 +1,6 @@
 {
   "name": "orbitgraph",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "private": true,
   "description": "OrbitGraph monorepo.",
   "type": "module",
@@ -16,7 +16,8 @@
     "build:three": "npm run build --workspace=@orbitgraph/three",
     "build:react": "npm run build --workspace=@orbitgraph/react",
     "build": "npm run build:core && npm run build:three && npm run build:react",
-    "dev:benchmark": "vite examples/benchmark --host"
+    "dev:benchmark": "vite examples/benchmark --host",
+    "docs": "typedoc"
   },
   "repository": {
     "type": "git",
@@ -47,6 +48,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tsup": "^8.5.1",
+    "typedoc": "^0.28.20",
     "typescript": "^5.7.3",
     "vite": "^8.1.5",
     "vitest": "^4.1.10"

@@ -1,0 +1,15 @@
+{
+  "name": "OrbitGraph API",
+  "entryPoints": [
+    "packages/core/src/index.ts",
+    "packages/three/src/index.ts",
+    "packages/react/src/index.ts"
+  ],
+  "out": "docs/api",
+  "tsconfig": "tsconfig.json",
+  "includeVersion": true,
+  "excludeInternal": true,
+  "projectDocuments": [
+    "docs/guides/**/*.md"
+  ]
+}
