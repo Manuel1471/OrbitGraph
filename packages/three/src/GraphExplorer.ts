@@ -3,6 +3,7 @@ import type {
     GraphDirection,
     GraphExpansionOptions,
     GraphExplorationHistoryState,
+    GraphExplorerState,
     GraphInitialView,
     GraphLink,
     GraphNode,
@@ -15,11 +16,7 @@ type PathFocus = {
     linkIds: Set<string>;
 };
 
-type ExplorationSnapshot = {
-    activeView: GraphInitialView;
-    expansions: Array<[string, GraphExpansionOptions[]]>;
-    path: { nodeIds: string[]; linkIds: string[] } | null;
-};
+type ExplorationSnapshot = GraphExplorerState;
 
 /**
  * Holds the complete source graph and computes the smaller subset that is
@@ -38,29 +35,30 @@ export class GraphExplorer {
     private historyIndex = -1;
 
     constructor(initialView: GraphInitialView = { mode: "all" }) {
-        this.initialView = initialView;
-        this.activeView = initialView;
+        this.initialView = this.cloneView(initialView);
+        this.activeView = this.cloneView(initialView);
         this.resetHistory();
     }
 
     setData(data: GraphData): void {
         this.data = data;
-        this.activeView = this.initialView;
+        this.activeView = this.cloneView(this.initialView);
         this.expansions.clear();
         this.pathFocus = null;
         this.resetHistory();
     }
 
     setInitialView(view: GraphInitialView): void {
-        this.initialView = view;
-        this.activeView = view;
+        this.initialView = this.cloneView(view);
+        this.activeView = this.cloneView(view);
         this.expansions.clear();
         this.pathFocus = null;
         this.resetHistory();
     }
 
+    /** Restores the configured initial view and removes transient exploration. */
     reset(): void {
-        this.activeView = this.initialView;
+        this.activeView = this.cloneView(this.initialView);
         this.expansions.clear();
         this.pathFocus = null;
         this.commit();
@@ -88,10 +86,13 @@ export class GraphExplorer {
             depth: 1,
             direction: "both",
             ...options,
+            relationshipTypes: options.relationshipTypes?.slice(),
         };
 
         const pages = this.expansions.get(nodeId) ?? [];
-        const pageIndex = pages.findIndex((page) => this.isSamePage(page, expansion));
+        const pageIndex = pages.findIndex((page) =>
+            this.isSamePage(page, expansion),
+        );
 
         if (pageIndex === -1) {
             pages.push(expansion);
@@ -161,6 +162,22 @@ export class GraphExplorer {
         };
     }
 
+    /** Returns a JSON-serializable snapshot of the current exploration. */
+    getState(): GraphExplorerState {
+        return this.snapshot();
+    }
+
+    /**
+     * Restores a snapshot produced by `getState()`.
+     *
+     * Undo and redo history are intentionally reset because the snapshot
+     * represents a new exploration session.
+     */
+    setState(state: GraphExplorerState): void {
+        this.restore(state);
+        this.resetHistory();
+    }
+
     getNodeExplorationState(nodeId: string): GraphNodeExplorationState {
         const node = this.getNode(nodeId);
 
@@ -174,7 +191,9 @@ export class GraphExplorer {
             };
         }
 
-        const visibleIds = new Set(this.getVisibleData().nodes.map((item) => item.id));
+        const visibleIds = new Set(
+            this.getVisibleData().nodes.map((item) => item.id),
+        );
         const neighborIds = new Set(
             this.getNodeLinks(nodeId)
                 .map((link) => this.getOtherNodeId(nodeId, link))
@@ -201,8 +220,12 @@ export class GraphExplorer {
     getVisibleData(): GraphData {
         if (this.pathFocus) {
             return {
-                nodes: this.data.nodes.filter((node) => this.pathFocus!.nodeIds.has(node.id)),
-                links: this.data.links.filter((link) => this.pathFocus!.linkIds.has(this.getLinkId(link))),
+                nodes: this.data.nodes.filter((node) =>
+                    this.pathFocus!.nodeIds.has(node.id),
+                ),
+                links: this.data.links.filter((link) =>
+                    this.pathFocus!.linkIds.has(this.getLinkId(link)),
+                ),
             };
         }
 
@@ -229,7 +252,9 @@ export class GraphExplorer {
 
         switch (this.activeView.mode) {
             case "all":
-                for (const node of this.data.nodes) visibleNodeIds.add(node.id);
+                for (const node of this.data.nodes) {
+                    visibleNodeIds.add(node.id);
+                }
                 break;
             case "node":
                 if (this.getNode(this.activeView.nodeId)) {
@@ -244,11 +269,16 @@ export class GraphExplorer {
                 });
                 break;
             case "type": {
-                const maxNodes = this.activeView.maxNodes ?? Number.POSITIVE_INFINITY;
+                const maxNodes =
+                    this.activeView.maxNodes ?? Number.POSITIVE_INFINITY;
+
                 for (const node of this.data.nodes) {
                     if (node.type === this.activeView.nodeType) {
                         visibleNodeIds.add(node.id);
-                        if (visibleNodeIds.size >= maxNodes) break;
+
+                        if (visibleNodeIds.size >= maxNodes) {
+                            break;
+                        }
                     }
                 }
                 break;
@@ -263,7 +293,9 @@ export class GraphExplorer {
         nodeId: string,
         options: GraphExpansionOptions,
     ): void {
-        if (!this.getNode(nodeId)) return;
+        if (!this.getNode(nodeId)) {
+            return;
+        }
 
         const depth = Math.max(0, options.depth ?? 1);
         const direction = options.direction ?? "both";
@@ -273,14 +305,21 @@ export class GraphExplorer {
 
         visibleNodeIds.add(nodeId);
 
-        const directNeighbors = this.getNeighborEdges(nodeId, direction, visibleTypes);
+        const directNeighbors = this.getNeighborEdges(
+            nodeId,
+            direction,
+            visibleTypes,
+        );
         const offset = Math.max(0, options.offset ?? 0);
         const page = directNeighbors.slice(
             offset,
-            options.limit === undefined ? undefined : offset + Math.max(0, options.limit),
+            options.limit === undefined
+                ? undefined
+                : offset + Math.max(0, options.limit),
         );
 
         let frontier = new Set<string>();
+
         for (const { neighborId } of page) {
             visibleNodeIds.add(neighborId);
             frontier.add(neighborId);
@@ -295,7 +334,10 @@ export class GraphExplorer {
                     direction,
                     visibleTypes,
                 )) {
-                    if (visibleNodeIds.has(neighborId)) continue;
+                    if (visibleNodeIds.has(neighborId)) {
+                        continue;
+                    }
+
                     visibleNodeIds.add(neighborId);
                     nextFrontier.add(neighborId);
                 }
@@ -310,7 +352,10 @@ export class GraphExplorer {
         targetId: string,
         direction: GraphDirection,
     ): PathFocus | null {
-        if (!this.getNode(sourceId) || !this.getNode(targetId)) return null;
+        if (!this.getNode(sourceId) || !this.getNode(targetId)) {
+            return null;
+        }
+
         if (sourceId === targetId) {
             return { nodeIds: new Set([sourceId]), linkIds: new Set() };
         }
@@ -321,22 +366,36 @@ export class GraphExplorer {
 
         while (queue.length > 0) {
             const current = queue.shift()!;
-            for (const { neighborId, link } of this.getNeighborEdges(current, direction)) {
-                if (visited.has(neighborId)) continue;
+
+            for (const { neighborId, link } of this.getNeighborEdges(
+                current,
+                direction,
+            )) {
+                if (visited.has(neighborId)) {
+                    continue;
+                }
+
                 visited.add(neighborId);
-                previous.set(neighborId, { nodeId: current, linkId: this.getLinkId(link) });
+                previous.set(neighborId, {
+                    nodeId: current,
+                    linkId: this.getLinkId(link),
+                });
+
                 if (neighborId === targetId) {
                     const nodeIds = new Set<string>([targetId]);
                     const linkIds = new Set<string>();
                     let cursor = targetId;
+
                     while (cursor !== sourceId) {
                         const step = previous.get(cursor)!;
                         nodeIds.add(step.nodeId);
                         linkIds.add(step.linkId);
                         cursor = step.nodeId;
                     }
+
                     return { nodeIds, linkIds };
                 }
+
                 queue.push(neighborId);
             }
         }
@@ -350,26 +409,57 @@ export class GraphExplorer {
         relationshipTypes: Set<string> | null = null,
     ): Array<{ neighborId: string; link: GraphLink }> {
         return this.getNodeLinks(nodeId)
-            .filter((link) => !relationshipTypes || Boolean(link.type && relationshipTypes.has(link.type)))
-            .map((link) => ({ neighborId: this.getNeighborId(nodeId, link, direction), link }))
-            .filter((item): item is { neighborId: string; link: GraphLink } => item.neighborId !== null)
-            .sort((a, b) => this.getLinkId(a.link).localeCompare(this.getLinkId(b.link)));
+            .filter(
+                (link) =>
+                    !relationshipTypes ||
+                    Boolean(link.type && relationshipTypes.has(link.type)),
+            )
+            .map((link) => ({
+                neighborId: this.getNeighborId(nodeId, link, direction),
+                link,
+            }))
+            .filter(
+                (item): item is { neighborId: string; link: GraphLink } =>
+                    item.neighborId !== null,
+            )
+            .sort((a, b) =>
+                this.getLinkId(a.link).localeCompare(this.getLinkId(b.link)),
+            );
     }
 
-    private getNeighborId(nodeId: string, link: GraphLink, direction: GraphDirection): string | null {
-        if (direction === "outgoing") return link.source === nodeId ? link.target : null;
-        if (direction === "incoming") return link.target === nodeId ? link.source : null;
+    private getNeighborId(
+        nodeId: string,
+        link: GraphLink,
+        direction: GraphDirection,
+    ): string | null {
+        if (direction === "outgoing") {
+            return link.source === nodeId ? link.target : null;
+        }
+
+        if (direction === "incoming") {
+            return link.target === nodeId ? link.source : null;
+        }
+
         return this.getOtherNodeId(nodeId, link);
     }
 
     private getOtherNodeId(nodeId: string, link: GraphLink): string | null {
-        if (link.source === nodeId) return link.target;
-        if (link.target === nodeId) return link.source;
+        if (link.source === nodeId) {
+            return link.target;
+        }
+
+        if (link.target === nodeId) {
+            return link.source;
+        }
+
         return null;
     }
 
     private getLinkId(link: GraphLink): string {
-        return link.id ?? `${link.source}__${link.type ?? "related"}__${link.target}`;
+        return (
+            link.id ??
+            `${link.source}__${link.type ?? "related"}__${link.target}`
+        );
     }
 
     private getNode(nodeId: string): GraphNode | undefined {
@@ -377,15 +467,21 @@ export class GraphExplorer {
     }
 
     private getNodeLinks(nodeId: string): GraphLink[] {
-        return this.data.links.filter((link) => link.source === nodeId || link.target === nodeId);
+        return this.data.links.filter(
+            (link) => link.source === nodeId || link.target === nodeId,
+        );
     }
 
-    private isSamePage(a: GraphExpansionOptions, b: GraphExpansionOptions): boolean {
+    private isSamePage(
+        a: GraphExpansionOptions,
+        b: GraphExpansionOptions,
+    ): boolean {
         return (
             (a.offset ?? 0) === (b.offset ?? 0) &&
             (a.direction ?? "both") === (b.direction ?? "both") &&
             (a.depth ?? 1) === (b.depth ?? 1) &&
-            (a.relationshipTypes ?? []).join("\u0000") === (b.relationshipTypes ?? []).join("\u0000")
+            (a.relationshipTypes ?? []).join("\u0000") ===
+            (b.relationshipTypes ?? []).join("\u0000")
         );
     }
 
@@ -397,7 +493,11 @@ export class GraphExplorer {
     private commit(): void {
         const next = this.snapshot();
         const current = this.history[this.historyIndex];
-        if (current && JSON.stringify(current) === JSON.stringify(next)) return;
+
+        if (current && JSON.stringify(current) === JSON.stringify(next)) {
+            return;
+        }
+
         this.history.splice(this.historyIndex + 1);
         this.history.push(next);
         this.historyIndex = this.history.length - 1;
@@ -405,25 +505,58 @@ export class GraphExplorer {
 
     private snapshot(): ExplorationSnapshot {
         return {
-            activeView: { ...this.activeView },
-            expansions: [...this.expansions].map(([id, pages]) => [
-                id,
-                pages.map((page) => ({ ...page, relationshipTypes: page.relationshipTypes?.slice() })),
-            ]),
+            initialView: this.cloneView(this.initialView),
+            activeView: this.cloneView(this.activeView),
+            expansions: [...this.expansions].map(([nodeId, pages]) => ({
+                nodeId,
+                pages: pages.map((page) => this.cloneExpansion(page)),
+            })),
             path: this.pathFocus
-                ? { nodeIds: [...this.pathFocus.nodeIds], linkIds: [...this.pathFocus.linkIds] }
+                ? {
+                    nodeIds: [...this.pathFocus.nodeIds],
+                    linkIds: [...this.pathFocus.linkIds],
+                }
                 : null,
         };
     }
 
-    private restore(snapshot: ExplorationSnapshot): void {
-        this.activeView = { ...snapshot.activeView };
+    private restore(state: GraphExplorerState): void {
+        this.initialView = this.cloneView(state.initialView);
+        this.activeView = this.cloneView(state.activeView);
         this.expansions.clear();
-        for (const [id, pages] of snapshot.expansions) {
-            this.expansions.set(id, pages.map((page) => ({ ...page, relationshipTypes: page.relationshipTypes?.slice() })));
+
+        for (const expansion of state.expansions) {
+            this.expansions.set(
+                expansion.nodeId,
+                expansion.pages.map((page) => this.cloneExpansion(page)),
+            );
         }
-        this.pathFocus = snapshot.path
-            ? { nodeIds: new Set(snapshot.path.nodeIds), linkIds: new Set(snapshot.path.linkIds) }
+
+        this.pathFocus = state.path
+            ? {
+                nodeIds: new Set(state.path.nodeIds),
+                linkIds: new Set(state.path.linkIds),
+            }
             : null;
+    }
+
+    private cloneView(view: GraphInitialView): GraphInitialView {
+        if (view.mode !== "neighborhood") {
+            return { ...view };
+        }
+
+        return {
+            ...view,
+            relationshipTypes: view.relationshipTypes?.slice(),
+        };
+    }
+
+    private cloneExpansion(
+        options: GraphExpansionOptions,
+    ): GraphExpansionOptions {
+        return {
+            ...options,
+            relationshipTypes: options.relationshipTypes?.slice(),
+        };
     }
 }

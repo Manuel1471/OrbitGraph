@@ -256,7 +256,7 @@ export type OrbitGraphOptions = {
 
     /** Initial visual arrangement of the active graph. @defaultValue "force" */
      layout?: GraphLayout;
-    
+
      /** Configuration used by the initial layout. */
      layoutOptions?: GraphLayoutOptions;
 
@@ -333,4 +333,67 @@ export type GraphLayoutOptions = {
 
     /** Distance between layout positions. @defaultValue 12 or 14 depending on layout. */
     spacing?: number;
+};
+
+export type GraphFilterState = {
+    /** Current text query, normalized to lowercase. */
+    searchQuery: string;
+    /** Node types currently included by the type filter. */
+    selectedTypes: string[];
+    /** Lowest visible relationship weight. */
+    minimumLinkWeight: number;
+};
+
+/**
+ * Serializable expanded-neighborhood pages for one graph node.
+ */
+export type GraphExplorerExpansionState = {
+    /** Node from which the expansion was made. */
+    nodeId: string;
+    /** Loaded neighborhood pages and their options. */
+    pages: GraphExpansionOptions[];
+};
+
+/**
+ * Serializable path currently focused by graph exploration.
+ */
+export type GraphPathFocusState = {
+    /** Node identifiers belonging to the visible path. */
+    nodeIds: string[];
+    /** Relationship identifiers belonging to the visible path. */
+    linkIds: string[];
+};
+
+/**
+ * Serializable state of the current graph exploration session.
+ *
+ * It intentionally excludes undo and redo history. Restoring this state starts
+ * a new session from the saved visual exploration point.
+ */
+export type GraphExplorerState = {
+    /** Configured entry point used by reset exploration. */
+    initialView: GraphInitialView;
+    /** Currently active view, which can temporarily differ from initialView. */
+    activeView: GraphInitialView;
+    /** Current paginated node expansions. */
+    expansions: GraphExplorerExpansionState[];
+    /** Current focused path, or null when normal exploration is active. */
+    path: GraphPathFocusState | null;
+};
+
+export type OrbitGraphViewState = {
+    /** Schema version used to safely evolve saved view states. */
+    version: 1;
+
+    /** Current exploration entry point, expansions, and focused path. */
+    exploration: GraphExplorerState;
+
+    /** Current search, type, and relationship-weight filters. */
+    filters: GraphFilterState;
+
+    /** Visual arrangement of the active graph nodes. */
+    layout: GraphLayout;
+
+    /** Configuration associated with the active layout. */
+    layoutOptions: GraphLayoutOptions;
 };
