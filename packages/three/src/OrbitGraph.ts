@@ -3,25 +3,30 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 import type {
     GraphData,
+    GraphExpansionOptions,
+    GraphInitialView,
     GraphLink,
     GraphNode,
     GraphSelection,
     OrbitGraphOptions,
     VisibleGraphData,
-} from "@orbitgraph/core"
+    GraphExplorationHistoryState,
+    GraphNodeExplorationState,
+    GraphPathOptions
+} from "@orbitgraph/core";
 
 import { GraphCamera } from "./GraphCamera";
+import { GraphExplorer } from "./GraphExplorer";
 import { GraphFilter } from "./GraphFilter";
 import { GraphInteraction } from "./GraphInteraction";
-import { LinkParticleRenderer } from "./LinkParticleRenderer";
 import { GraphRenderer } from "./GraphRenderer";
+import { LinkParticleRenderer } from "./LinkParticleRenderer";
 import { NodeLabelRenderer } from "./NodeLabelRenderer";
 import {
     PhysicsEngine,
     type PhysicsLink,
     type PhysicsNode,
 } from "./PhysicsEngine";
-
 import type {
     GraphLinkArrowMap,
     GraphLinkLineMap,
@@ -29,6 +34,12 @@ import type {
     GraphNodeMeshMap,
 } from "./graph-types";
 
+/**
+ * Interactive Three.js renderer for OrbitGraph data.
+ *
+ * The complete graph stays in `data`, while `GraphExplorer` sends only the
+ * active subset to the renderer and physics engine.
+ */
 export class OrbitGraph {
     private readonly scene = new THREE.Scene();
     private readonly group = new THREE.Group();
@@ -39,11 +50,16 @@ export class OrbitGraph {
 
     private readonly physics = new PhysicsEngine();
     private readonly filter = new GraphFilter();
+    private readonly explorer: GraphExplorer;
 
+    /** Active nodes only. GraphRenderer clears this map between views. */
     private readonly nodes: GraphNodeMap = new Map();
     private readonly nodeMeshes: GraphNodeMeshMap = new Map();
     private readonly linkLines: GraphLinkLineMap = new Map();
     private readonly linkArrows: GraphLinkArrowMap = new Map();
+
+    /** Position cache for all known nodes, including currently hidden nodes. */
+    private readonly nodeStates = new Map<string, PhysicsNode>();
 
     private readonly graphRenderer: GraphRenderer;
     private readonly graphCamera: GraphCamera;
@@ -62,6 +78,8 @@ export class OrbitGraph {
         const width = container.clientWidth || window.innerWidth;
         const height = container.clientHeight || window.innerHeight;
 
+        this.explorer = new GraphExplorer(options.initialView);
+
         this.scene.background = new THREE.Color(
             options.backgroundColor ?? "#050816",
         );
@@ -76,14 +94,12 @@ export class OrbitGraph {
 
         this.renderer.setSize(width, height);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
         container.appendChild(this.renderer.domElement);
 
         this.controls = new OrbitControls(
             this.camera,
             this.renderer.domElement,
         );
-
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.08;
         this.controls.minDistance = 10;
@@ -107,16 +123,11 @@ export class OrbitGraph {
         );
 
         this.graphCamera = new GraphCamera(this.camera, this.controls);
-
+        this.labels = new NodeLabelRenderer(this.scene, this.nodes);
         this.particles = new LinkParticleRenderer(
             this.scene,
             this.nodes,
-            this.options.linkFlow,
-        );
-
-        this.labels = new NodeLabelRenderer(
-            this.scene,
-            this.nodes,
+            options.linkFlow,
         );
 
         this.interaction = new GraphInteraction(
@@ -126,52 +137,32 @@ export class OrbitGraph {
             {
                 onNodeClick: (node, event) => {
                     this.labels.show(node);
-
-                    this.options.onNodeClick?.({
-                        node,
-                        nativeEvent: event,
-                    });
-
+                    this.options.onNodeClick?.({ node, nativeEvent: event });
                     this.emitSelection({ kind: "node", node });
                 },
-
                 onLinkClick: (link, event) => {
                     this.labels.hide();
-
-                    this.options.onLinkClick?.({
-                        link,
-                        nativeEvent: event,
-                    });
-
+                    this.options.onLinkClick?.({ link, nativeEvent: event });
                     this.emitSelection({ kind: "link", link });
                 },
-
                 onNodeHover: (node, event) => {
-                    if (node) this.labels.show(node);
+                    if (node) {
+                        this.labels.show(node);
+                    }
 
-                    this.options.onNodeHover?.({
-                        node,
-                        nativeEvent: event,
-                    });
+                    this.options.onNodeHover?.({ node, nativeEvent: event });
                 },
-
                 onLinkHover: (link, event) => {
-                    this.options.onLinkHover?.({
-                        link,
-                        nativeEvent: event,
-                    });
+                    this.options.onLinkHover?.({ link, nativeEvent: event });
                 },
-
                 onDragStart: (node) => {
                     this.controls.enabled = false;
-
                     const physicsNode = this.nodes.get(node.id);
 
                     if (physicsNode) {
                         this.physics.startDrag(physicsNode);
                     }
                 },
-
                 onDragMove: (node, position) => {
                     const physicsNode = this.nodes.get(node.id);
 
@@ -184,7 +175,6 @@ export class OrbitGraph {
                         );
                     }
                 },
-
                 onDragEnd: (node) => {
                     this.controls.enabled = true;
                     this.physics.endDrag();
@@ -204,47 +194,48 @@ export class OrbitGraph {
         this.animate();
     }
 
+    /** Replaces the complete source graph and resets exploration state. */
     setData(data: GraphData): void {
-        this.clearGraph();
+        this.nodeStates.clear();
 
         this.data = {
             nodes: data.nodes.map((node) => ({ ...node })),
-            links: data.links.map((link) => ({ ...link })),
+            links: data.links.map((link) => this.normalizeLink(link)),
         };
 
-        this.physicsNodes = this.data.nodes.map((node, index) =>
-            this.createPhysicsNode(node, index),
-        );
+        this.explorer.setData(this.data);
+        this.explorer.reset();
+        this.refreshVisibleGraph();
+    }
 
-        for (const node of this.physicsNodes) {
-            this.graphRenderer.addNode(node);
-        }
+    /** Changes the initial exploration entry point and resets expansions. */
+    setInitialView(view: GraphInitialView): void {
+        this.explorer.setInitialView(view);
+        this.refreshVisibleGraph();
+    }
 
-        for (const link of this.data.links) {
-            this.graphRenderer.addLink(link);
-        }
+    /** Reveals a node's neighborhood without mounting the entire graph. */
+    expandNode(nodeId: string, options: GraphExpansionOptions = {}): void {
+        this.explorer.expandNode(nodeId, options);
+        this.refreshVisibleGraph();
+    }
 
-        this.physicsLinks = this.data.links.map((link) => ({
-            id:
-                link.id ??
-                `${link.source}__${link.type ?? "related"}__${link.target}`,
-            source: link.source,
-            target: link.target,
-            graphLink: link,
-        }));
+    /** Removes a manual neighborhood expansion. */
+    collapseNode(nodeId: string): void {
+        this.explorer.collapseNode(nodeId);
+        this.refreshVisibleGraph();
+    }
 
-        this.particles.setLinks(this.data.links);
+    /** Returns to the configured initial view. */
+    resetExploration(): void {
+        this.explorer.reset();
+        this.refreshVisibleGraph();
+    }
 
-        this.physics.start(
-            this.physicsNodes,
-            this.physicsLinks,
-            () => {
-                this.graphRenderer.syncPositions();
-                this.labels.updatePosition();
-            },
-        );
-
-        this.applyFilters();
+    /** Makes the complete graph active in the renderer and simulation. */
+    showAll(): void {
+        this.explorer.showAll();
+        this.refreshVisibleGraph();
     }
 
     addNode(node: GraphNode): void {
@@ -252,93 +243,68 @@ export class OrbitGraph {
             throw new Error(`Node "${node.id}" already exists.`);
         }
 
-        const physicsNode = this.createPhysicsNode(node, this.data.nodes.length);
-
-        this.data.nodes.push(node);
-        this.physicsNodes.push(physicsNode);
-
-        this.graphRenderer.addNode(physicsNode);
-        this.physics.addNode(physicsNode);
-
-        this.applyFilters();
+        this.data.nodes.push({ ...node });
+        this.explorer.setData(this.data);
+        this.refreshVisibleGraph();
     }
 
     removeNode(nodeId: string): void {
-        const relatedLinks = this.data.links.filter(
-            (link) => link.source === nodeId || link.target === nodeId,
-        );
-
-        relatedLinks.forEach((link) => {
-            if (link.id) this.removeLink(link.id);
-        });
-
         this.data.nodes = this.data.nodes.filter((node) => node.id !== nodeId);
-        this.physicsNodes = this.physicsNodes.filter((node) => node.id !== nodeId);
-
-        this.graphRenderer.removeNode(nodeId);
-        this.physics.removeNode(nodeId);
-
-        this.applyFilters();
+        this.data.links = this.data.links.filter(
+            (link) => link.source !== nodeId && link.target !== nodeId,
+        );
+        this.nodeStates.delete(nodeId);
+        this.explorer.setData(this.data);
+        this.refreshVisibleGraph();
     }
 
     addLink(link: GraphLink): void {
-        const id =
-            link.id ??
-            `${link.source}__${link.type ?? "related"}__${link.target}`;
+        const nodeIds = new Set(this.data.nodes.map((node) => node.id));
 
-        const normalized = { ...link, id };
+        if (!nodeIds.has(link.source) || !nodeIds.has(link.target)) {
+            throw new Error("Both link nodes must exist before adding a link.");
+        }
 
-        this.data.links.push(normalized);
-        this.graphRenderer.addLink(normalized);
+        const normalizedLink = this.normalizeLink(link);
 
-        const physicsLink: PhysicsLink = {
-            id,
-            source: normalized.source,
-            target: normalized.target,
-            graphLink: normalized,
-        };
+        if (this.data.links.some((item) => item.id === normalizedLink.id)) {
+            throw new Error(`Link "${normalizedLink.id}" already exists.`);
+        }
 
-        this.physicsLinks.push(physicsLink);
-        this.physics.addLink(physicsLink);
-        this.particles.setLinks(this.data.links);
-
-        this.applyFilters();
+        this.data.links.push(normalizedLink);
+        this.explorer.setData(this.data);
+        this.refreshVisibleGraph();
     }
 
     removeLink(linkId: string): void {
         this.data.links = this.data.links.filter((link) => link.id !== linkId);
-        this.physicsLinks = this.physicsLinks.filter((link) => link.id !== linkId);
-
-        this.graphRenderer.removeLink(linkId);
-        this.physics.removeLink(linkId);
-        this.particles.setLinks(this.data.links);
-
-        this.applyFilters();
+        this.explorer.setData(this.data);
+        this.refreshVisibleGraph();
     }
 
     search(query: string): void {
         this.filter.search(query);
-        this.applyFilters();
+        this.refreshVisibleGraph();
     }
 
     toggleTypeFilter(type: string): void {
         this.filter.toggleType(type);
-        this.applyFilters();
+        this.refreshVisibleGraph();
     }
 
     setTypeFilters(types: string[]): void {
         this.filter.setTypes(types);
-        this.applyFilters();
+        this.refreshVisibleGraph();
     }
 
     setMinimumLinkWeight(weight: number): void {
         this.filter.setMinimumLinkWeight(weight);
-        this.applyFilters();
+        this.refreshVisibleGraph();
     }
 
     clearFilters(): void {
         this.filter.clear();
-        this.applyFilters();
+        this.refreshVisibleGraph();
     }
 
     resetCamera(): void {
@@ -350,7 +316,9 @@ export class OrbitGraph {
     focusNode(nodeId: string): void {
         const node = this.nodes.get(nodeId);
 
-        if (!node) return;
+        if (!node) {
+            return;
+        }
 
         this.graphCamera.focusNode(node);
         this.labels.show(node);
@@ -360,51 +328,146 @@ export class OrbitGraph {
     unpinNode(nodeId: string): void {
         const node = this.nodes.get(nodeId);
 
-        if (node) this.physics.unpin(node);
+        if (node) {
+            this.physics.unpin(node);
+        }
     }
 
     destroy(): void {
         this.resizeObserver.disconnect();
         this.interaction.dispose();
-        this.physics.stop();
-        this.labels.hide();
-        this.clearGraph();
+        this.clearActiveGraph();
         this.particles.dispose();
         this.controls.dispose();
         this.renderer.dispose();
-
         this.container.removeChild(this.renderer.domElement);
     }
 
-    private applyFilters(): void {
-        const visible = this.filter.getVisibleData(this.data);
+    /**
+     * Applies exploration first, then normal filters.
+     *
+     * Search and type/weight filters never reveal nodes outside the current
+     * exploration. Expand a node or change the initial view to reveal more.
+     */
+    private refreshVisibleGraph(): void {
+        const explored = this.explorer.getVisibleData();
+        const visible = this.filter.getVisibleData(explored);
 
-        this.graphRenderer.setVisibleNodeIds(
-            new Set(visible.nodes.map((node) => node.id)),
-            this.filter.getMinimumLinkWeight(),
+        this.clearActiveGraph();
+
+        this.physicsNodes = visible.nodes.map((node, index) =>
+            this.getOrCreatePhysicsNode(node, index),
         );
 
+        for (const node of this.physicsNodes) {
+            this.graphRenderer.addNode(node);
+        }
+
+        for (const link of visible.links) {
+            this.graphRenderer.addLink(link);
+        }
+
+        this.physicsLinks = visible.links.map((link) => ({
+            id: link.id!,
+            source: link.source,
+            target: link.target,
+            graphLink: link,
+        }));
+
+        this.particles.setLinks(visible.links);
+
+        if (this.physicsNodes.length > 0) {
+            this.physics.start(
+                this.physicsNodes,
+                this.physicsLinks,
+                () => {
+                    this.graphRenderer.syncPositions();
+                    this.labels.updatePosition();
+                },
+            );
+        }
+
         this.options.onVisibleDataChange?.(visible);
+    }
+
+    private clearActiveGraph(): void {
+        this.physics.stop();
+        this.labels.hide();
+        this.particles.clear();
+        this.graphRenderer.clear();
+        this.physicsNodes = [];
+        this.physicsLinks = [];
+    }
+
+    private getOrCreatePhysicsNode(
+        node: GraphNode,
+        index: number,
+    ): PhysicsNode {
+        const existing = this.nodeStates.get(node.id);
+
+        if (existing) {
+            Object.assign(existing, node);
+            return existing;
+        }
+
+        const physicsNode = this.createPhysicsNode(node, index);
+        this.nodeStates.set(node.id, physicsNode);
+
+        return physicsNode;
+    }
+
+    private normalizeLink(link: GraphLink): GraphLink & { id: string } {
+        return {
+            ...link,
+            id:
+                link.id ??
+                `${link.source}__${link.type ?? "related"}__${link.target}`,
+        };
+    }
+
+    focusPath(sourceId: string, targetId: string, options: GraphPathOptions = {}): boolean {
+        const found = this.explorer.focusPath(sourceId, targetId, options);
+
+        if (found) {
+            this.refreshVisibleGraph();
+        }
+
+        return found;
+    }
+
+    goBack(): boolean {
+        const changed = this.explorer.goBack();
+
+        if (changed) {
+            this.refreshVisibleGraph();
+        }
+
+        return changed;
+    }
+
+    goForward(): boolean {
+        const changed = this.explorer.goForward();
+
+        if (changed) {
+            this.refreshVisibleGraph();
+        }
+
+        return changed;
+    }
+
+    getExplorationHistory(): GraphExplorationHistoryState {
+        return this.explorer.getHistoryState();
+    }
+
+    getNodeExplorationState(nodeId: string): GraphNodeExplorationState {
+        return this.explorer.getNodeExplorationState(nodeId);
     }
 
     private emitSelection(selection: GraphSelection): void {
         this.options.onSelectionChange?.(selection);
     }
 
-    private clearGraph(): void {
-        this.physics.stop();
-        this.labels.hide();
-        this.particles.clear();
-        this.graphRenderer.clear();
-
-        this.physicsNodes = [];
-        this.physicsLinks = [];
-    }
-
-    private createPhysicsNode(
-        node: GraphNode,
-        index: number,
-    ): PhysicsNode {
+    private createPhysicsNode(node: GraphNode, index: number): PhysicsNode {
         const seed = index * 12.9898;
         const theta = seed % (Math.PI * 2);
         const phi = Math.acos(1 - 2 * ((seed * 0.618) % 1));
@@ -422,7 +485,9 @@ export class OrbitGraph {
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
 
-        if (!width || !height) return;
+        if (!width || !height) {
+            return;
+        }
 
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
@@ -431,13 +496,13 @@ export class OrbitGraph {
 
     private animate = (): void => {
         requestAnimationFrame(this.animate);
-
         this.controls.update();
         this.particles.update(performance.now() / 1000);
         this.renderer.render(this.scene, this.camera);
     };
 }
 
+/** Creates an OrbitGraph instance inside a container element. */
 export function createOrbitGraph(
     container: HTMLElement,
     options?: OrbitGraphOptions,
