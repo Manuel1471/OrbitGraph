@@ -48,6 +48,10 @@ export class GraphExplorer {
         this.resetHistory();
     }
 
+    updateData(data: GraphData): void {
+        this.data = data;
+    }
+
     setInitialView(view: GraphInitialView): void {
         this.initialView = this.cloneView(view);
         this.activeView = this.cloneView(view);

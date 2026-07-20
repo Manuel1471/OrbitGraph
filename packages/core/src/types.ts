@@ -255,10 +255,16 @@ export type OrbitGraphOptions = {
     onSelectionChange?: (selection: GraphSelection) => void;
 
     /** Initial visual arrangement of the active graph. @defaultValue "force" */
-     layout?: GraphLayout;
+    layout?: GraphLayout;
 
      /** Configuration used by the initial layout. */
      layoutOptions?: GraphLayoutOptions;
+
+    /** Optional asynchronous source used to load nodes and neighborhoods on demand. */
+    dataSource?: GraphDataSource;
+
+    /** Called when a lazy data-source request starts or finishes. */
+    onLoadingChange?: (state: GraphLoadingState) => void;
 
     /**
      * Called after exploration and filters change the rendered graph subset.
@@ -396,4 +402,55 @@ export type OrbitGraphViewState = {
 
     /** Configuration associated with the active layout. */
     layoutOptions: GraphLayoutOptions;
+};
+
+/** Parameters sent to a lazy graph data source when loading a neighborhood. */
+export type GraphNeighborhoodQuery = GraphExpansionOptions & {
+    /** Node whose direct relationship page should be loaded. */
+    nodeId: string;
+};
+
+/** A graph-data page returned by a lazy data source. */
+export type GraphNeighborhoodResult = {
+    /** Newly available nodes. Existing ids are updated when merged. */
+    nodes: GraphNode[];
+    /** Newly available relationships. Existing ids are updated when merged. */
+    links: GraphLink[];
+    /** Total direct neighbors when the backend can provide it. */
+    totalNeighbors?: number;
+    /** Whether another direct-neighbor page can be requested. */
+    hasMore?: boolean;
+    /** Offset to use for the next page, when available. */
+    nextOffset?: number | null;
+};
+
+/**
+ * Optional asynchronous source for graphs too large to load at once.
+ *
+ * OrbitGraph does not make HTTP requests itself. The consumer supplies these
+ * functions and may use fetch, a database client, GraphQL, or a WebSocket.
+ */
+export type GraphDataSource = {
+    /** Loads one node, commonly used to load the first exploration root. */
+    getNode?: (nodeId: string) => Promise<GraphNode | undefined>;
+    /** Loads one relationship neighborhood or one paginated neighbor page. */
+    getNeighborhood: (
+        query: GraphNeighborhoodQuery,
+    ) => Promise<GraphNeighborhoodResult>;
+};
+
+/** Options used when loading an asynchronous node neighborhood. */
+export type GraphNeighborhoodLoadOptions = GraphExpansionOptions & {
+    /** Ignores OrbitGraph's in-memory page cache. @defaultValue false */
+    force?: boolean;
+};
+
+/** Current lazy-load activity, useful for consumer loading indicators. */
+export type GraphLoadingState = {
+    /** Whether a source request is currently active. */
+    loading: boolean;
+    /** Operation currently running, or null when idle. */
+    operation: "node" | "neighborhood" | null;
+    /** Requested node id, or null when idle. */
+    nodeId: string | null;
 };
