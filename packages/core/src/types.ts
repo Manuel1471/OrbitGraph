@@ -15,34 +15,22 @@ export type JSONValue =
  * An entity displayed in an OrbitGraph visualization.
  */
 export type GraphNode = {
-    /**
-     * Unique node identifier.
-     */
+    /** Unique node identifier. */
     id: string;
 
-    /**
-     * Human-readable node name.
-     */
+    /** Human-readable node name. */
     label?: string;
 
-    /**
-     * Category used for filtering, styling, and grouping.
-     */
+    /** Category used for filtering, styling, and grouping. */
     type?: string;
 
-    /**
-     * Relative visual size of the node.
-     */
+    /** Relative visual size of the node. */
     size?: number;
 
-    /**
-     * Node color in a CSS-compatible color format.
-     */
+    /** Node color in a CSS-compatible color format. */
     color?: string;
 
-    /**
-     * Additional JSON-compatible information associated with the node.
-     */
+    /** Additional JSON-compatible information associated with the node. */
     data?: Record<string, JSONValue>;
 };
 
@@ -50,41 +38,25 @@ export type GraphNode = {
  * A directed relationship between two nodes.
  */
 export type GraphLink = {
-    /**
-     * Unique relationship identifier.
-     *
-     * When omitted, OrbitGraph generates an ID from the source, type, and target.
-     */
+    /** Unique relationship identifier. Generated when omitted. */
     id?: string;
 
-    /**
-     * Identifier of the node where the relationship starts.
-     */
+    /** Identifier of the node where the relationship starts. */
     source: string;
 
-    /**
-     * Identifier of the node where the relationship ends.
-     */
+    /** Identifier of the node where the relationship ends. */
     target: string;
 
-    /**
-     * Relative importance of the relationship, usually between `0` and `1`.
-     */
+    /** Relative relationship importance, usually between 0 and 1. */
     weight?: number;
 
-    /**
-     * Category describing the relationship.
-     */
+    /** Category describing the relationship. */
     type?: string;
 
-    /**
-     * Relationship color in a CSS-compatible color format.
-     */
+    /** Relationship color in a CSS-compatible color format. */
     color?: string;
 
-    /**
-     * Additional JSON-compatible information associated with the relationship.
-     */
+    /** Additional JSON-compatible relationship information. */
     data?: Record<string, JSONValue>;
 };
 
@@ -92,51 +64,150 @@ export type GraphLink = {
  * Complete graph data used by OrbitGraph.
  */
 export type GraphData = {
-    /**
-     * Entities in the graph.
-     */
     nodes: GraphNode[];
-
-    /**
-     * Directed relationships between graph nodes.
-     */
     links: GraphLink[];
 };
 
 /**
- * Configuration for animated directional flow along relationships.
+ * Direction used when exploring relationships from a node.
+ */
+export type GraphDirection = "incoming" | "outgoing" | "both";
+
+/**
+ * Options used when expanding a node into its relationship neighborhood.
+ */
+export type GraphExpansionOptions = {
+    /** Number of relationship levels to reveal. @defaultValue 1 */
+    depth?: number;
+
+    /** Relationship direction to reveal. @defaultValue "both" */
+    direction?: GraphDirection;
+
+    /** Optional relationship types to include while expanding. */
+    relationshipTypes?: string[];
+
+    /**
+     * Maximum number of direct neighbors to reveal for this expansion.
+     *
+     * This is useful for paginating highly connected nodes.
+     */
+    limit?: number;
+
+    /**
+     * Number of direct neighbors to skip before applying `limit`.
+     *
+     * Use it with `limit` to request the next page of neighbors.
+     */
+    offset?: number;
+};
+
+/**
+ * Options used when finding and displaying a shortest path.
+ */
+export type GraphPathOptions = {
+    /**
+     * Direction used while searching for the path.
+     * @defaultValue "both"
+     */
+    direction?: GraphDirection;
+};
+
+/**
+ * Defines the first subset of graph data shown after `setData`.
  *
- * Link flow is disabled by default because it adds rendering work.
+ * The complete data remains in OrbitGraph memory, but only this subset is
+ * mounted in the renderer and force simulation.
+ */
+export type GraphInitialView =
+    | {
+    /** Render every node and relationship. */
+    mode: "all";
+}
+    | {
+    /** Render a single node. */
+    mode: "node";
+
+    /** Node to render. */
+    nodeId: string;
+}
+    | {
+    /** Render a node and its relationship neighborhood. */
+    mode: "neighborhood";
+
+    /** Root node of the neighborhood. */
+    nodeId: string;
+
+    /** Number of relationship levels to reveal. @defaultValue 1 */
+    depth?: number;
+
+    /** Relationship direction to reveal. @defaultValue "both" */
+    direction?: GraphDirection;
+
+    /** Optional relationship types to include. */
+    relationshipTypes?: string[];
+}
+    | {
+    /** Render nodes that share a type. */
+    mode: "type";
+
+    /** Node type to render, for example "team" or "service". */
+    nodeType: string;
+
+    /** Maximum initial nodes to render. */
+    maxNodes?: number;
+};
+
+/**
+ * Exploration status for a node in the currently active graph view.
+ */
+export type GraphNodeExplorationState = {
+    /** Identifier of the node represented by this state. */
+    nodeId: string;
+
+    /** Whether the node currently has one or more manual expansions. */
+    expanded: boolean;
+
+    /** Number of direct neighbors currently visible in the explored graph. */
+    visibleNeighbors: number;
+
+    /** Number of direct neighbors still hidden from the explored graph. */
+    hiddenNeighbors: number;
+
+    /** Whether the node has hidden neighbors that can be expanded. */
+    canExpand: boolean;
+};
+
+/**
+ * State of the exploration history.
+ */
+export type GraphExplorationHistoryState = {
+    /** Whether an earlier exploration state can be restored. */
+    canGoBack: boolean;
+
+    /** Whether a later exploration state can be restored. */
+    canGoForward: boolean;
+
+    /** Current zero-based history entry index. */
+    index: number;
+
+    /** Total number of exploration history entries. */
+    length: number;
+};
+
+/**
+ * Configuration for animated directional flow along relationships.
  */
 export type LinkFlowOptions = {
-    /**
-     * Enables animated relationship flow.
-     *
-     * @defaultValue false
-     */
+    /** Enables animated relationship flow. @defaultValue false */
     enabled?: boolean;
 
-    /**
-     * Maximum number of animated flow particles.
-     *
-     * Higher values create a denser effect but increase rendering cost.
-     *
-     * @defaultValue 140
-     */
+    /** Maximum number of animated flow particles. @defaultValue 140 */
     maxParticles?: number;
 
-    /**
-     * Relative size of each flow particle.
-     *
-     * @defaultValue 0.09
-     */
+    /** Relative size of each flow particle. @defaultValue 0.09 */
     particleSize?: number;
 
-    /**
-     * Movement speed of flow particles.
-     *
-     * @defaultValue 0.12
-     */
+    /** Movement speed of flow particles. @defaultValue 0.12 */
     particleSpeed?: number;
 };
 
@@ -144,67 +215,47 @@ export type LinkFlowOptions = {
  * Configuration options for an OrbitGraph instance.
  */
 export type OrbitGraphOptions = {
-    /**
-     * Background color of the WebGL canvas.
-     *
-     * @defaultValue "#050816"
-     */
+    /** Scene background color. */
     backgroundColor?: string;
 
-    /**
-     * Default node color when a node does not define its own color.
-     */
+    /** Default color used for nodes without an explicit color. */
     nodeColor?: string;
 
-    /**
-     * Default relationship color when a link does not define its own color.
-     */
+    /** Default color used for relationships without an explicit color. */
     linkColor?: string;
 
-    /**
-     * Default relative node size when a node does not define its own size.
-     */
+    /** Default relative size used for nodes without an explicit size. */
     nodeSize?: number;
 
-    /**
-     * Base opacity applied to relationships.
-     *
-     * @defaultValue 0.55
-     */
+    /** Base opacity used for relationship lines. */
     linkOpacity?: number;
 
     /**
-     * Optional animated directional flow configuration.
+     * Initial data subset rendered by OrbitGraph.
+     * @defaultValue { mode: "all" }
      */
+    initialView?: GraphInitialView;
+
+    /** Configuration for optional animated relationship flow. */
     linkFlow?: LinkFlowOptions;
 
-    /**
-     * Called when a node is clicked.
-     */
+    /** Called after clicking a node. */
     onNodeClick?: (event: NodeClickEvent) => void;
 
-    /**
-     * Called when a relationship is clicked.
-     */
+    /** Called after clicking a relationship. */
     onLinkClick?: (event: LinkClickEvent) => void;
 
-    /**
-     * Called when the pointer enters, moves over, or leaves a node.
-     */
+    /** Called when node hover state changes. */
     onNodeHover?: (event: NodeHoverEvent) => void;
 
-    /**
-     * Called when the pointer enters, moves over, or leaves a relationship.
-     */
+    /** Called when relationship hover state changes. */
     onLinkHover?: (event: LinkHoverEvent) => void;
 
-    /**
-     * Called when the selected node or relationship changes.
-     */
+    /** Called when the selected node or relationship changes. */
     onSelectionChange?: (selection: GraphSelection) => void;
 
     /**
-     * Called after search or filters change the currently visible graph data.
+     * Called after exploration and filters change the rendered graph subset.
      */
     onVisibleDataChange?: (data: VisibleGraphData) => void;
 };
@@ -213,14 +264,7 @@ export type OrbitGraphOptions = {
  * Event emitted after clicking a node.
  */
 export type NodeClickEvent = {
-    /**
-     * Clicked node.
-     */
     node: GraphNode;
-
-    /**
-     * Native browser mouse event.
-     */
     nativeEvent: MouseEvent;
 };
 
@@ -228,14 +272,7 @@ export type NodeClickEvent = {
  * Event emitted after clicking a relationship.
  */
 export type LinkClickEvent = {
-    /**
-     * Clicked relationship.
-     */
     link: GraphLink;
-
-    /**
-     * Native browser mouse event.
-     */
     nativeEvent: MouseEvent;
 };
 
@@ -244,25 +281,11 @@ export type LinkClickEvent = {
  */
 export type GraphSelection =
     | {
-    /**
-     * Indicates that a node is selected.
-     */
     kind: "node";
-
-    /**
-     * Selected node.
-     */
     node: GraphNode;
 }
     | {
-    /**
-     * Indicates that a relationship is selected.
-     */
     kind: "link";
-
-    /**
-     * Selected relationship.
-     */
     link: GraphLink;
 }
     | null;
@@ -271,14 +294,7 @@ export type GraphSelection =
  * Event emitted when node hover state changes.
  */
 export type NodeHoverEvent = {
-    /**
-     * Hovered node, or `null` when the pointer leaves all nodes.
-     */
     node: GraphNode | null;
-
-    /**
-     * Native browser pointer event.
-     */
     nativeEvent: PointerEvent;
 };
 
@@ -286,28 +302,14 @@ export type NodeHoverEvent = {
  * Event emitted when relationship hover state changes.
  */
 export type LinkHoverEvent = {
-    /**
-     * Hovered relationship, or `null` when the pointer leaves all relationships.
-     */
     link: GraphLink | null;
-
-    /**
-     * Native browser pointer event.
-     */
     nativeEvent: PointerEvent;
 };
 
 /**
- * Graph data currently visible after search and filters are applied.
+ * Graph data currently rendered after exploration and filters are applied.
  */
 export type VisibleGraphData = {
-    /**
-     * Visible nodes.
-     */
     nodes: GraphNode[];
-
-    /**
-     * Visible relationships.
-     */
     links: GraphLink[];
 };

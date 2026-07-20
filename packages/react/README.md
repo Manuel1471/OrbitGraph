@@ -2,7 +2,7 @@
 
 React bindings for OrbitGraph.
 
-`@orbitgraph/react` provides the `OrbitGraph` component, which mounts the Three.js graph renderer and updates it when your `GraphData` changes.
+`@orbitgraph/react` provides the `OrbitGraph` component, which mounts the Three.js graph renderer and updates it when `GraphData` changes.
 
 ## Installation
 
@@ -22,12 +22,12 @@ const data: GraphData = {
   nodes: [
     { id: "team", label: "Product Team", type: "group", color: "#22d3ee" },
     { id: "workspace", label: "Workspace", type: "resource", color: "#a855f7" },
-    { id: "service", label: "Notification Service", type: "service", color: "#3b82f6" }
+    { id: "service", label: "Notification Service", type: "service", color: "#3b82f6" },
   ],
   links: [
     { source: "team", target: "workspace", type: "manages", weight: 1 },
-    { source: "workspace", target: "service", type: "uses", weight: 0.8 }
-  ]
+    { source: "workspace", target: "service", type: "uses", weight: 0.8 },
+  ],
 };
 
 export function App() {
@@ -41,20 +41,39 @@ export function App() {
           enabled: true,
           maxParticles: 140,
           particleSize: 0.09,
-          particleSpeed: 0.12
-        }
+          particleSpeed: 0.12,
+        },
       }}
-      onSelectionChange={(selection) => {
-        console.log(selection);
-      }}
+      onSelectionChange={(selection) => console.log(selection)}
     />
   );
 }
 ```
 
-## Visual customization
+## Progressive exploration
 
-Use the `options` prop to customize the renderer.
+Pass `initialView` through `options` to mount only the relevant starting subset.
+
+```tsx
+<OrbitGraph
+  data={data}
+  style={{ width: "100%", height: "100vh" }}
+  options={{
+    initialView: {
+      mode: "type",
+      nodeType: "group",
+      maxNodes: 100,
+    },
+  }}
+  onVisibleDataChange={({ nodes, links }) => {
+    console.log(`Showing ${nodes.length} nodes and ${links.length} links`);
+  }}
+/>
+```
+
+The React component forwards `options` to `@orbitgraph/three`. Search, filters, selection callbacks, `linkFlow`, and `initialView` use the same types and behavior as the vanilla renderer.
+
+## Visual customization
 
 ```tsx
 <OrbitGraph
@@ -69,43 +88,27 @@ Use the `options` prop to customize the renderer.
       enabled: true,
       maxParticles: 140,
       particleSize: 0.09,
-      particleSpeed: 0.12
-    }
+      particleSpeed: 0.12,
+    },
   }}
 />
 ```
 
 ### Link flow
 
-`linkFlow` enables subtle animated energy segments that travel from the source node to the target node.
-
-```ts
-linkFlow: {
-  enabled: true,
-  maxParticles: 140,
-  particleSize: 0.09,
-  particleSpeed: 0.12
-}
-```
+`linkFlow` enables subtle animated energy segments that travel from a source node to its target.
 
 | Option | Description |
 | --- | --- |
-| `enabled` | Enables or disables the animated link flow. Disabled by default. |
-| `maxParticles` | Maximum number of animated link segments. Lower values improve performance. |
-| `particleSize` | Width and length scale of each energy segment. |
-| `particleSpeed` | Speed of the energy flow. |
+| `enabled` | Enables or disables animated relationship flow. Disabled by default. |
+| `maxParticles` | Maximum animated segments. Lower values improve performance. |
+| `particleSize` | Relative size of every energy segment. |
+| `particleSpeed` | Flow movement speed. |
 
-Disable it when you need a minimal or static graph:
+For a minimal or static graph:
 
 ```tsx
-<OrbitGraph
-  data={data}
-  options={{
-    linkFlow: {
-      enabled: false
-    }
-  }}
-/>
+<OrbitGraph data={data} options={{ linkFlow: { enabled: false } }} />
 ```
 
 ## Props
@@ -125,11 +128,11 @@ type OrbitGraphProps = {
 };
 ```
 
-`data` can be replaced with new graph data at any time; the component forwards the update to the underlying graph instance.
+`data` can be replaced at any time. The component forwards the new value to the underlying graph instance.
 
 ## Metadata
 
-Nodes and relationships accept JSON-compatible metadata in their `data` property.
+Nodes and relationships accept JSON-compatible metadata in `data`.
 
 ```ts
 const data: GraphData = {
@@ -138,10 +141,10 @@ const data: GraphData = {
             id: "service",
             label: "Notification Service",
             type: "service",
-            data: { status: "active", region: "us-east" }
-        }
+            data: { status: "active", region: "us-east" },
+        },
     ],
-    links: []
+    links: [],
 };
 ```
 

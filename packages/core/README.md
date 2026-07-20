@@ -23,14 +23,14 @@ const data: GraphData = {
       type: "group",
       data: {
         department: "Product",
-        active: true
-      }
+        active: true,
+      },
     },
     {
       id: "service",
       label: "Notification Service",
-      type: "service"
-    }
+      type: "service",
+    },
   ],
   links: [
     {
@@ -40,36 +40,63 @@ const data: GraphData = {
       type: "owns",
       weight: 0.9,
       data: {
-        environment: "production"
-      }
-    }
-  ]
+        environment: "production",
+      },
+    },
+  ],
 };
 ```
 
-## Types
+## Graph utility
 
-- `GraphNode`: a graph entity with an `id`, optional visual properties, and JSON-compatible `data`.
-- `GraphLink`: a directed relationship between `source` and `target` nodes.
-- `GraphData`: a collection of `nodes` and `links`.
-- `JSONValue`: a JSON-compatible primitive, array, or object.
-- `GraphSelection`: the current node selection, link selection, or `null`.
-- `OrbitGraphOptions`: shared renderer options and event callback types.
+`Graph` stores nodes and relationships in memory and exposes basic traversal helpers.
+
+```ts
+import { Graph } from "@orbitgraph/core";
+
+const graph = new Graph(data);
+
+graph.getNode("team");
+graph.getNeighbors("team");
+graph.getNodeLinks("team");
+
+graph.addNode({ id: "dashboard", type: "resource" });
+graph.addLink({
+  source: "team",
+  target: "dashboard",
+  type: "manages",
+});
+```
+
+## Important types
+
+| Type | Purpose |
+| --- | --- |
+| `GraphNode` | Graph entity with an ID, optional visual properties, and JSON-compatible metadata. |
+| `GraphLink` | Directed relationship between a source and target node. |
+| `GraphData` | Collection of graph nodes and relationships. |
+| `JSONValue` | JSON-compatible primitive, array, or object. |
+| `GraphDirection` | `incoming`, `outgoing`, or `both`. |
+| `GraphExpansionOptions` | Depth, direction, relationship type, and pagination options for expansion. |
+| `GraphInitialView` | Initial `all`, `node`, `neighborhood`, or `type` exploration view. |
+| `LinkFlowOptions` | Optional animated relationship-flow configuration. |
+| `GraphSelection` | Current selected node, selected relationship, or `null`. |
+| `OrbitGraphOptions` | Renderer options and event callback types shared with other packages. |
 
 ## Metadata
 
-Both nodes and links accept JSON-compatible metadata through the `data` property:
+Both nodes and links accept JSON-compatible metadata through `data`.
 
 ```ts
 const node = {
-  id: "api",
-  label: "Public API",
-  type: "service",
-  data: {
-    version: "v1",
-    regions: ["us-east", "eu-west"],
-    healthy: true
-  }
+    id: "api",
+    label: "Public API",
+    type: "service",
+    data: {
+        version: "v1",
+        regions: ["us-east", "eu-west"],
+        healthy: true,
+    },
 };
 ```
 
