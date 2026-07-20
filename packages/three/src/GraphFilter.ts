@@ -1,10 +1,11 @@
 import type {
     GraphData,
-    GraphLink,
+    GraphFilterState,
     GraphNode,
     VisibleGraphData,
 } from "@orbitgraph/core";
 
+/** Applies search, node-type, and relationship-weight filters to graph data. */
 export class GraphFilter {
     private searchQuery = "";
     private selectedTypes = new Set<string>();
@@ -38,6 +39,22 @@ export class GraphFilter {
         return this.minimumLinkWeight;
     }
 
+    /** Returns a JSON-serializable snapshot of the active filter settings. */
+    getState(): GraphFilterState {
+        return {
+            searchQuery: this.searchQuery,
+            selectedTypes: this.getSelectedTypes(),
+            minimumLinkWeight: this.minimumLinkWeight,
+        };
+    }
+
+    /** Restores filter settings produced by `getState()`. */
+    setState(state: GraphFilterState): void {
+        this.search(state.searchQuery);
+        this.setTypes(state.selectedTypes);
+        this.setMinimumLinkWeight(state.minimumLinkWeight);
+    }
+
     clear(): void {
         this.searchQuery = "";
         this.selectedTypes.clear();
@@ -46,7 +63,6 @@ export class GraphFilter {
 
     getVisibleData(data: GraphData): VisibleGraphData {
         const nodes = data.nodes.filter((node) => this.matchesNode(node));
-
         const visibleNodeIds = new Set(nodes.map((node) => node.id));
 
         const links = data.links.filter((link) => {

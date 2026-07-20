@@ -3,16 +3,23 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 import type {
     GraphData,
+    GraphDataSource,
     GraphExpansionOptions,
+    GraphExplorationHistoryState,
     GraphInitialView,
+    GraphLayout,
+    GraphLayoutOptions,
     GraphLink,
+    GraphLoadingState,
     GraphNode,
+    GraphNodeExplorationState,
+    GraphNeighborhoodLoadOptions,
+    GraphNeighborhoodResult,
+    GraphPathOptions,
     GraphSelection,
+    OrbitGraphViewState,
     OrbitGraphOptions,
     VisibleGraphData,
-    GraphExplorationHistoryState,
-    GraphNodeExplorationState,
-    GraphPathOptions
 } from "@orbitgraph/core";
 
 import { GraphCamera } from "./GraphCamera";
@@ -35,7 +42,8 @@ import type {
 } from "./graph-types";
 
 /**
- * Interactive Three.js renderer for OrbitGraph data.
+ * Interactive Three.js renderer for OrbitGraph data with layouts, persisted
+ * view state, and optional lazy neighborhood loading.
  *
  * The complete graph stays in `data`, while `GraphExplorer` sends only the
  * active subset to the renderer and physics engine.
@@ -70,6 +78,15 @@ export class OrbitGraph {
     private data: GraphData = { nodes: [], links: [] };
     private physicsNodes: PhysicsNode[] = [];
     private physicsLinks: PhysicsLink[] = [];
+    private layout: GraphLayout;
+    private layoutOptions: GraphLayoutOptions;
+    private dataSource: GraphDataSource | undefined;
+    private readonly loadedNeighborhoodKeys = new Set<string>();
+    private loadingState: GraphLoadingState = {
+        loading: false,
+        operation: null,
+        nodeId: null,
+    };
 
     constructor(
         private readonly container: HTMLElement,
@@ -79,6 +96,9 @@ export class OrbitGraph {
         const height = container.clientHeight || window.innerHeight;
 
         this.explorer = new GraphExplorer(options.initialView);
+        this.layout = options.layout ?? "force";
+        this.layoutOptions = options.layoutOptions ?? {};
+        this.dataSource = options.dataSource;
 
         this.scene.background = new THREE.Color(
             options.backgroundColor ?? "#050816",
@@ -197,6 +217,7 @@ export class OrbitGraph {
     /** Replaces the complete source graph and resets exploration state. */
     setData(data: GraphData): void {
         this.nodeStates.clear();
+        this.loadedNeighborhoodKeys.clear();
 
         this.data = {
             nodes: data.nodes.map((node) => ({ ...node })),
@@ -212,6 +233,164 @@ export class OrbitGraph {
     setInitialView(view: GraphInitialView): void {
         this.explorer.setInitialView(view);
         this.refreshVisibleGraph();
+    }
+
+    /** Changes the visual arrangement of the active graph subset. */
+    setLayout(
+        layout: GraphLayout,
+        options: GraphLayoutOptions = {},
+    ): void {
+        this.layout = layout;
+        this.layoutOptions = options;
+
+        this.physics.setLayout(layout, options);
+        this.graphRenderer.syncPositions();
+        this.labels.updatePosition();
+    }
+
+    /**
+     * Returns a JSON-serializable snapshot of the active graph view.
+     *
+     * Graph data is intentionally excluded. Load data with `setData()` before
+     * importing this state into a new OrbitGraph instance.
+     */
+    exportViewState(): OrbitGraphViewState {
+        return {
+            version: 1,
+            exploration: this.explorer.getState(),
+            filters: this.filter.getState(),
+            layout: this.layout,
+            layoutOptions: { ...this.layoutOptions },
+        };
+    }
+
+    /**
+     * Restores a graph-view snapshot previously returned by `exportViewState`.
+     *
+     * Call `setData()` first so the referenced nodes and relationships exist.
+     */
+    importViewState(state: OrbitGraphViewState): void {
+        if (state.version !== 1) {
+            throw new Error(
+                `Unsupported OrbitGraph view state version: ${state.version}.`,
+            );
+        }
+
+        this.explorer.setState(state.exploration);
+        this.filter.setState(state.filters);
+        this.layout = state.layout;
+        this.layoutOptions = { ...state.layoutOptions };
+        this.refreshVisibleGraph();
+    }
+
+    /** Sets or replaces the asynchronous source used for lazy graph loading. */
+    setDataSource(dataSource?: GraphDataSource): void {
+        this.dataSource = dataSource;
+        this.loadedNeighborhoodKeys.clear();
+    }
+
+    /** Returns the current lazy-load activity for consumer loading indicators. */
+    getLoadingState(): GraphLoadingState {
+        return { ...this.loadingState };
+    }
+
+    /**
+     * Loads one node from the configured data source and adds it to the graph.
+     * Existing local nodes are returned without a request.
+     */
+    async loadNode(nodeId: string): Promise<GraphNode | undefined> {
+        const existingNode = this.data.nodes.find((node) => node.id === nodeId);
+
+        if (existingNode) {
+            return existingNode;
+        }
+
+        const dataSource = this.dataSource;
+
+        if (!dataSource?.getNode) {
+            throw new Error(
+                "A GraphDataSource with getNode() is required to load a node.",
+            );
+        }
+
+        this.setLoadingState({
+            loading: true,
+            operation: "node",
+            nodeId,
+        });
+
+        try {
+            const node = await dataSource.getNode(nodeId);
+
+            if (!node) {
+                return undefined;
+            }
+
+            this.mergeLoadedData({ nodes: [node], links: [] });
+            this.refreshVisibleGraph();
+
+            return node;
+        } finally {
+            this.setLoadingState({
+                loading: false,
+                operation: null,
+                nodeId: null,
+            });
+        }
+    }
+
+    /**
+     * Loads and reveals one node neighborhood without loading the whole graph.
+     *
+     * `limit` and `offset` are forwarded to the source so highly connected
+     * nodes can be explored in pages.
+     */
+    async loadNeighborhood(
+        nodeId: string,
+        options: GraphNeighborhoodLoadOptions = {},
+    ): Promise<GraphNeighborhoodResult | null> {
+        const dataSource = this.dataSource;
+
+        if (!dataSource) {
+            throw new Error(
+                "A GraphDataSource is required to load a neighborhood.",
+            );
+        }
+
+        const { force = false, ...expansionOptions } = options;
+        const cacheKey = this.getNeighborhoodCacheKey(nodeId, expansionOptions);
+
+        if (!force && this.loadedNeighborhoodKeys.has(cacheKey)) {
+            this.explorer.expandNode(nodeId, expansionOptions);
+            this.refreshVisibleGraph();
+            return null;
+        }
+
+        this.setLoadingState({
+            loading: true,
+            operation: "neighborhood",
+            nodeId,
+        });
+
+        try {
+            const result = await dataSource.getNeighborhood({
+                nodeId,
+                ...expansionOptions,
+            });
+
+            this.mergeLoadedData(result);
+            this.loadedNeighborhoodKeys.add(cacheKey);
+            this.explorer.expandNode(nodeId, expansionOptions);
+            this.refreshVisibleGraph();
+
+            return result;
+        } finally {
+            this.setLoadingState({
+                loading: false,
+                operation: null,
+                nodeId: null,
+            });
+        }
     }
 
     /** Reveals a node's neighborhood without mounting the entire graph. */
@@ -325,6 +504,48 @@ export class OrbitGraph {
         this.emitSelection({ kind: "node", node });
     }
 
+    focusPath(
+        sourceId: string,
+        targetId: string,
+        options: GraphPathOptions = {},
+    ): boolean {
+        const found = this.explorer.focusPath(sourceId, targetId, options);
+
+        if (found) {
+            this.refreshVisibleGraph();
+        }
+
+        return found;
+    }
+
+    goBack(): boolean {
+        const changed = this.explorer.goBack();
+
+        if (changed) {
+            this.refreshVisibleGraph();
+        }
+
+        return changed;
+    }
+
+    goForward(): boolean {
+        const changed = this.explorer.goForward();
+
+        if (changed) {
+            this.refreshVisibleGraph();
+        }
+
+        return changed;
+    }
+
+    getExplorationHistory(): GraphExplorationHistoryState {
+        return this.explorer.getHistoryState();
+    }
+
+    getNodeExplorationState(nodeId: string): GraphNodeExplorationState {
+        return this.explorer.getNodeExplorationState(nodeId);
+    }
+
     unpinNode(nodeId: string): void {
         const node = this.nodes.get(nodeId);
 
@@ -384,7 +605,11 @@ export class OrbitGraph {
                     this.graphRenderer.syncPositions();
                     this.labels.updatePosition();
                 },
+                this.layout,
+                this.layoutOptions,
             );
+
+            this.graphRenderer.syncPositions();
         }
 
         this.options.onVisibleDataChange?.(visible);
@@ -425,42 +650,65 @@ export class OrbitGraph {
         };
     }
 
-    focusPath(sourceId: string, targetId: string, options: GraphPathOptions = {}): boolean {
-        const found = this.explorer.focusPath(sourceId, targetId, options);
+    private mergeLoadedData(data: Pick<GraphData, "nodes" | "links">): void {
+        const nodes = [...this.data.nodes];
+        const nodeIndexes = new Map(
+            nodes.map((node, index) => [node.id, index]),
+        );
 
-        if (found) {
-            this.refreshVisibleGraph();
+        for (const node of data.nodes) {
+            const index = nodeIndexes.get(node.id);
+
+            if (index === undefined) {
+                nodeIndexes.set(node.id, nodes.length);
+                nodes.push({ ...node });
+            } else {
+                nodes[index] = { ...nodes[index], ...node };
+            }
         }
 
-        return found;
-    }
+        const links = [...this.data.links];
+        const linkIndexes = new Map(
+            links.map((link, index) => [link.id!, index]),
+        );
 
-    goBack(): boolean {
-        const changed = this.explorer.goBack();
+        for (const link of data.links) {
+            const normalizedLink = this.normalizeLink(link);
+            const index = linkIndexes.get(normalizedLink.id);
 
-        if (changed) {
-            this.refreshVisibleGraph();
+            if (index === undefined) {
+                linkIndexes.set(normalizedLink.id, links.length);
+                links.push(normalizedLink);
+            } else {
+                links[index] = { ...links[index], ...normalizedLink };
+            }
         }
 
-        return changed;
+        this.data = { nodes, links };
+        this.explorer.updateData(this.data);
     }
 
-    goForward(): boolean {
-        const changed = this.explorer.goForward();
+    private getNeighborhoodCacheKey(
+        nodeId: string,
+        options: GraphExpansionOptions,
+    ): string {
+        const relationshipTypes = options.relationshipTypes
+            ? [...options.relationshipTypes].sort().join("\u0000")
+            : "";
 
-        if (changed) {
-            this.refreshVisibleGraph();
-        }
-
-        return changed;
+        return [
+            nodeId,
+            options.depth ?? 1,
+            options.direction ?? "both",
+            relationshipTypes,
+            options.limit ?? "all",
+            options.offset ?? 0,
+        ].join("|");
     }
 
-    getExplorationHistory(): GraphExplorationHistoryState {
-        return this.explorer.getHistoryState();
-    }
-
-    getNodeExplorationState(nodeId: string): GraphNodeExplorationState {
-        return this.explorer.getNodeExplorationState(nodeId);
+    private setLoadingState(state: GraphLoadingState): void {
+        this.loadingState = state;
+        this.options.onLoadingChange?.(this.getLoadingState());
     }
 
     private emitSelection(selection: GraphSelection): void {

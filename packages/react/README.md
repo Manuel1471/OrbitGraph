@@ -1,16 +1,18 @@
 # @orbitgraph/react
 
-React bindings for OrbitGraph.
+> Explore connected data in 3D with a declarative React component and optional imperative controls.
 
-`@orbitgraph/react` provides the `OrbitGraph` component, which mounts the Three.js graph renderer and updates it when `GraphData` changes.
+`@orbitgraph/react` renders an OrbitGraph inside a React application. It updates when `data` changes and exposes the underlying graph instance through a React `ref` when you need exploration, filtering, layouts, or lazy loading.
 
-## Installation
+## Install
 
 ```bash
 npm install @orbitgraph/core @orbitgraph/three @orbitgraph/react three
 ```
 
 React 18 and React 19 are supported.
+
+---
 
 ## Quick start
 
@@ -20,13 +22,11 @@ import type { GraphData } from "@orbitgraph/core";
 
 const data: GraphData = {
   nodes: [
-    { id: "team", label: "Product Team", type: "group", color: "#22d3ee" },
-    { id: "workspace", label: "Workspace", type: "resource", color: "#a855f7" },
-    { id: "service", label: "Notification Service", type: "service", color: "#3b82f6" },
+    { id: "team", label: "Product Team", type: "team", color: "#22d3ee" },
+    { id: "service", label: "Notifications", type: "service", color: "#a855f7" },
   ],
   links: [
-    { source: "team", target: "workspace", type: "manages", weight: 1 },
-    { source: "workspace", target: "service", type: "uses", weight: 0.8 },
+    { source: "team", target: "service", type: "owns", weight: 1 },
   ],
 };
 
@@ -35,45 +35,20 @@ export function App() {
     <OrbitGraph
       data={data}
       style={{ width: "100%", height: "100vh" }}
-      options={{
-        backgroundColor: "#050816",
-        linkFlow: {
-          enabled: true,
-          maxParticles: 140,
-          particleSize: 0.09,
-          particleSpeed: 0.12,
-        },
+      options={{ backgroundColor: "#050816" }}
+      onSelectionChange={(selection) => {
+        console.log(selection);
       }}
-      onSelectionChange={(selection) => console.log(selection)}
     />
   );
 }
 ```
 
-## Progressive exploration
+---
 
-Pass `initialView` through `options` to mount only the relevant starting subset.
+## Customize the graph
 
-```tsx
-<OrbitGraph
-  data={data}
-  style={{ width: "100%", height: "100vh" }}
-  options={{
-    initialView: {
-      mode: "type",
-      nodeType: "group",
-      maxNodes: 100,
-    },
-  }}
-  onVisibleDataChange={({ nodes, links }) => {
-    console.log(`Showing ${nodes.length} nodes and ${links.length} links`);
-  }}
-/>
-```
-
-The React component forwards `options` to `@orbitgraph/three`. Search, filters, selection callbacks, `linkFlow`, and `initialView` use the same types and behavior as the vanilla renderer.
-
-## Visual customization
+Pass renderer options through `options`.
 
 ```tsx
 <OrbitGraph
@@ -84,6 +59,7 @@ The React component forwards `options` to `@orbitgraph/three`. Search, filters, 
     nodeSize: 0.8,
     linkColor: "#6366f1",
     linkOpacity: 0.5,
+    layout: "radial",
     linkFlow: {
       enabled: true,
       maxParticles: 140,
@@ -94,22 +70,177 @@ The React component forwards `options` to `@orbitgraph/three`. Search, filters, 
 />
 ```
 
-### Link flow
+`linkFlow` is optional. Disable it for a minimal static visualization or for the best performance on large graphs.
 
-`linkFlow` enables subtle animated energy segments that travel from a source node to its target.
+---
 
-| Option | Description |
-| --- | --- |
-| `enabled` | Enables or disables animated relationship flow. Disabled by default. |
-| `maxParticles` | Maximum animated segments. Lower values improve performance. |
-| `particleSize` | Relative size of every energy segment. |
-| `particleSpeed` | Flow movement speed. |
+## Start small and explore
 
-For a minimal or static graph:
+Use `initialView` to avoid mounting a complete graph immediately.
 
 ```tsx
-<OrbitGraph data={data} options={{ linkFlow: { enabled: false } }} />
+<OrbitGraph
+  data={data}
+  options={{
+    initialView: {
+      mode: "neighborhood",
+      nodeId: "team",
+      depth: 1,
+      direction: "outgoing",
+    },
+  }}
+/>
 ```
+
+Available initial modes:
+
+| Mode | Displays |
+| --- | --- |
+| `all` | The complete graph |
+| `node` | One known node |
+| `neighborhood` | A node and its relationships |
+| `type` | Nodes matching a type |
+
+Hidden nodes are kept out of the WebGL renderer and force simulation until they are revealed.
+
+---
+
+## Access the graph instance with a ref
+
+Use `OrbitGraphHandle` when your interface needs buttons, menus, pagination, or custom exploration behavior.
+
+```tsx
+import { useRef } from "react";
+import {
+  OrbitGraph,
+  type OrbitGraphHandle,
+} from "@orbitgraph/react";
+
+export function GraphPage() {
+  const graphRef = useRef<OrbitGraphHandle>(null);
+
+  function revealMore(): void {
+    graphRef.current?.getInstance()?.expandNode("team", {
+      direction: "outgoing",
+      depth: 1,
+      limit: 25,
+    });
+  }
+
+  return (
+    <>
+      <button onClick={revealMore}>Reveal relationships</button>
+
+      <OrbitGraph
+        ref={graphRef}
+        data={data}
+        style={{ width: "100%", height: "100vh" }}
+      />
+    </>
+  );
+}
+```
+
+The ref exposes:
+
+```ts
+type OrbitGraphHandle = {
+  getInstance(): OrbitGraphInstance | null;
+};
+```
+
+The returned instance supports methods such as `expandNode`, `collapseNode`, `focusPath`, `setLayout`, `search`, and `destroy`.
+
+---
+
+## Use `onReady`
+
+`onReady` runs once after the Three.js graph has been created.
+
+```tsx
+<OrbitGraph
+  data={{ nodes: [], links: [] }}
+  onReady={(graph) => {
+    graph.setLayout("grid");
+  }}
+/>
+```
+
+---
+
+## Lazy loading
+
+For graphs that are too large to load at once, provide a `dataSource`. OrbitGraph does not prescribe how data is fetched: use `fetch`, GraphQL, a database client, or another source.
+
+```tsx
+import type { GraphDataSource } from "@orbitgraph/core";
+
+const dataSource: GraphDataSource = {
+  async getNode(nodeId) {
+    const response = await fetch(`/api/nodes/${nodeId}`);
+    return response.json();
+  },
+
+  async getNeighborhood({ nodeId, limit = 25, offset = 0 }) {
+    const response = await fetch(
+      `/api/nodes/${nodeId}/relationships?limit=${limit}&offset=${offset}`,
+    );
+
+    return response.json();
+  },
+};
+```
+
+Load the root node when the component is ready:
+
+```tsx
+<OrbitGraph
+  data={{ nodes: [], links: [] }}
+  options={{
+    initialView: { mode: "node", nodeId: "team" },
+    dataSource,
+  }}
+  onReady={async (graph) => {
+    await graph.loadNode("team");
+  }}
+  onLoadingChange={(state) => {
+    console.log(state.loading, state.operation, state.nodeId);
+  }}
+/>
+```
+
+Then load a page of relationships through the ref or in an event handler:
+
+```ts
+await graphRef.current?.getInstance()?.loadNeighborhood("team", {
+  direction: "outgoing",
+  limit: 25,
+  offset: 0,
+});
+```
+
+Repeated neighborhood requests are cached in memory. Pass `force: true` to request a fresh page.
+
+---
+
+## Events
+
+```tsx
+<OrbitGraph
+  data={data}
+  onNodeClick={({ node }) => console.log("Node:", node)}
+  onLinkClick={({ link }) => console.log("Relationship:", link)}
+  onNodeHover={({ node }) => console.log("Hover node:", node)}
+  onLinkHover={({ link }) => console.log("Hover relationship:", link)}
+  onSelectionChange={(selection) => console.log("Selection:", selection)}
+  onVisibleDataChange={({ nodes, links }) => {
+    console.log(`Visible: ${nodes.length} nodes, ${links.length} relationships`);
+  }}
+  onLoadingChange={(state) => console.log("Loading:", state)}
+/>
+```
+
+---
 
 ## Props
 
@@ -117,8 +248,10 @@ For a minimal or static graph:
 type OrbitGraphProps = {
   data: GraphData;
   options?: OrbitGraphOptions;
+  onReady?: (graph: OrbitGraphInstance) => void;
   onSelectionChange?: (selection: GraphSelection) => void;
   onVisibleDataChange?: (data: VisibleGraphData) => void;
+  onLoadingChange?: (state: GraphLoadingState) => void;
   onNodeClick?: OrbitGraphOptions["onNodeClick"];
   onLinkClick?: OrbitGraphOptions["onLinkClick"];
   onNodeHover?: OrbitGraphOptions["onNodeHover"];
@@ -128,30 +261,34 @@ type OrbitGraphProps = {
 };
 ```
 
-`data` can be replaced at any time. The component forwards the new value to the underlying graph instance.
+Updating the `data` prop replaces the underlying graph data. The graph instance itself remains mounted.
+
+---
 
 ## Metadata
 
-Nodes and relationships accept JSON-compatible metadata in `data`.
+Nodes and relationships can contain JSON-compatible metadata in `data`.
 
 ```ts
 const data: GraphData = {
-    nodes: [
-        {
-            id: "service",
-            label: "Notification Service",
-            type: "service",
-            data: { status: "active", region: "us-east" },
-        },
-    ],
-    links: [],
+  nodes: [
+    {
+      id: "service",
+      label: "Notification Service",
+      type: "service",
+      data: { status: "active", region: "us-east" },
+    },
+  ],
+  links: [],
 };
 ```
 
+---
+
 ## Related packages
 
-- [`@orbitgraph/core`](https://www.npmjs.com/package/@orbitgraph/core): shared graph types.
-- [`@orbitgraph/three`](https://www.npmjs.com/package/@orbitgraph/three): Three.js renderer used by this component.
+- [`@orbitgraph/core`](https://www.npmjs.com/package/@orbitgraph/core): types, exploration, and lazy-loading contracts.
+- [`@orbitgraph/three`](https://www.npmjs.com/package/@orbitgraph/three): Three.js/WebGL renderer and imperative API.
 
 ## License
 

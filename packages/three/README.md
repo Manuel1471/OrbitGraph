@@ -1,10 +1,10 @@
 # @orbitgraph/three
 
-Three.js/WebGL renderer for OrbitGraph.
+Interactive Three.js/WebGL renderer for OrbitGraph.
 
-It provides an interactive 3D graph with force-directed layout, camera controls, drag-and-pin interactions, selection, hover events, labels, arrows, filtering, progressive exploration, and optional animated relationship flow.
+Start with a compact subset, reveal relationships in 3D, choose a layout, save a user view, or load relationship pages on demand.
 
-## Installation
+## Install
 
 ```bash
 npm install @orbitgraph/core @orbitgraph/three three
@@ -12,25 +12,9 @@ npm install @orbitgraph/core @orbitgraph/three three
 
 ## Quick start
 
-```html
-<div id="graph" style="width: 100vw; height: 100vh"></div>
-```
-
 ```ts
 import { createOrbitGraph } from "@orbitgraph/three";
 import type { GraphData } from "@orbitgraph/core";
-
-const data: GraphData = {
-  nodes: [
-    { id: "team", label: "Product Team", type: "group", color: "#22d3ee" },
-    { id: "workspace", label: "Workspace", type: "resource", color: "#a855f7" },
-    { id: "service", label: "Notification Service", type: "service", color: "#3b82f6" },
-  ],
-  links: [
-    { source: "team", target: "workspace", type: "manages", weight: 1 },
-    { source: "workspace", target: "service", type: "uses", weight: 0.8 },
-  ],
-};
 
 const container = document.querySelector<HTMLElement>("#graph");
 
@@ -39,137 +23,183 @@ if (!container) {
 }
 
 const graph = createOrbitGraph(container, {
-  onSelectionChange: (selection) => console.log(selection),
+  backgroundColor: "#050816",
+  layout: "force",
 });
 
+const data: GraphData = {
+  nodes: [
+    { id: "team", label: "Product Team", type: "team", color: "#22d3ee" },
+    { id: "service", label: "Notification Service", type: "service", color: "#3b82f6" },
+  ],
+  links: [
+    { source: "team", target: "service", type: "owns", weight: 0.9 },
+  ],
+};
+
 graph.setData(data);
-graph.resetCamera();
 ```
 
-## Start with a smaller graph view
+## Layouts
 
-Use `initialView` when users should explore the graph progressively instead of seeing every node immediately.
+```ts
+graph.setLayout("force");
+graph.setLayout("radial", { spacing: 16 });
+graph.setLayout("grid", { spacing: 12 });
+graph.setLayout("hierarchical", {
+  rootId: "team",
+  direction: "outgoing",
+  spacing: 16,
+});
+```
+
+| Layout | Best for |
+| --- | --- |
+| `force` | Relationship clusters and open exploration. |
+| `radial` | Compact visual overview. |
+| `grid` | Scanning many active nodes. |
+| `hierarchical` | Referrals, reporting, invitations, and dependencies. |
+
+## Explore without rendering everything
 
 ```ts
 const graph = createOrbitGraph(container, {
   initialView: {
-    mode: "type",
-    nodeType: "group",
-    maxNodes: 100,
+    mode: "node",
+    nodeId: "team",
   },
 });
 
-graph.setData(data);
-
 graph.expandNode("team", {
-  depth: 1,
   direction: "outgoing",
-  relationshipTypes: ["manages"],
+  depth: 1,
+  limit: 25,
+  offset: 0,
 });
 ```
 
-Available initial modes:
+```ts
+graph.collapseNode("team");
+graph.resetExploration();
+graph.showAll();
+```
 
-| Mode | Result |
-| --- | --- |
-| `all` | Mount every node and relationship. |
-| `node` | Mount one node by ID. |
-| `neighborhood` | Mount a node and its connections. |
-| `type` | Mount nodes with a matching type. |
+Hidden nodes are excluded from the renderer and force simulation.
 
-Nodes outside the active exploration are not mounted in the WebGL renderer or force simulation.
-
-## Options
+## Load relationships on demand
 
 ```ts
-createOrbitGraph(container, {
-  backgroundColor: "#050816",
-  nodeColor: "#22d3ee",
-  nodeSize: 1,
-  linkColor: "#6366f1",
-  linkOpacity: 0.55,
-
-  initialView: {
-    mode: "neighborhood",
-    nodeId: "team",
-    depth: 1,
-    direction: "both",
+const graph = createOrbitGraph(container, {
+  initialView: { mode: "node", nodeId: "team" },
+  dataSource: {
+    async getNode(nodeId) {
+      const response = await fetch(`/api/nodes/${nodeId}`);
+      return response.ok ? response.json() : undefined;
+    },
+    async getNeighborhood(query) {
+      const response = await fetch(`/api/nodes/${query.nodeId}/relationships`);
+      return response.json();
+    },
   },
+});
 
+await graph.loadNode("team");
+await graph.loadNeighborhood("team", {
+  direction: "outgoing",
+  limit: 50,
+});
+```
+
+Use `onLoadingChange` or `getLoadingState()` to show a loading indicator. Relationship pages are cached in memory; add `force: true` to request a fresh page.
+
+## Save and restore the current view
+
+```ts
+const state = graph.exportViewState();
+localStorage.setItem("orbitgraph-view", JSON.stringify(state));
+
+graph.setData(data);
+
+const savedState = localStorage.getItem("orbitgraph-view");
+
+if (savedState) {
+  graph.importViewState(JSON.parse(savedState));
+}
+```
+
+The saved state includes exploration, filters, and layout. It does not duplicate graph data.
+
+## Filters and interactions
+
+```ts
+graph.search("notification");
+graph.setTypeFilters(["team", "service"]);
+graph.setMinimumLinkWeight(0.7);
+
+graph.focusNode("service");
+graph.focusPath("team", "service");
+```
+
+```ts
+const graph = createOrbitGraph(container, {
+  onNodeClick: ({ node }) => console.log(node),
+  onLinkClick: ({ link }) => console.log(link),
+  onSelectionChange: (selection) => console.log(selection),
+  onVisibleDataChange: ({ nodes, links }) => console.log(nodes.length, links.length),
+});
+```
+
+## Optional relationship flow
+
+```ts
+const graph = createOrbitGraph(container, {
   linkFlow: {
     enabled: true,
     maxParticles: 140,
     particleSize: 0.09,
     particleSpeed: 0.12,
   },
-
-  onNodeClick: ({ node }) => console.log(node),
-  onLinkClick: ({ link }) => console.log(link),
-  onNodeHover: ({ node }) => console.log(node),
-  onLinkHover: ({ link }) => console.log(link),
-  onSelectionChange: (selection) => console.log(selection),
-  onVisibleDataChange: ({ nodes, links }) => {
-    console.log(nodes.length, links.length);
-  },
 });
 ```
+
+Disable flow for a minimal static graph or maximum large-graph performance.
 
 ## Instance API
 
 ```ts
-// Data
 graph.setData(data);
 graph.addNode(node);
 graph.removeNode(nodeId);
 graph.addLink(link);
 graph.removeLink(linkId);
 
-// Search and filters
-graph.search("service");
-graph.toggleTypeFilter("service");
-graph.setTypeFilters(["service", "group"]);
-graph.setMinimumLinkWeight(0.7);
-graph.clearFilters();
+graph.setLayout("radial");
 
-// Progressive exploration
-graph.expandNode("team", {
-  depth: 1,
-  direction: "outgoing",
-  relationshipTypes: ["manages"],
-});
-graph.collapseNode("team");
+graph.expandNode(nodeId, options);
+graph.collapseNode(nodeId);
 graph.resetExploration();
 graph.showAll();
 
-// Camera and lifecycle
-graph.focusNode("service");
+await graph.loadNode(nodeId);
+await graph.loadNeighborhood(nodeId, options);
+
+graph.exportViewState();
+graph.importViewState(state);
+
+graph.search(query);
+graph.setTypeFilters(types);
+graph.clearFilters();
+
+graph.focusNode(nodeId);
+graph.focusPath(sourceId, targetId);
 graph.resetCamera();
-graph.unpinNode("service");
 graph.destroy();
-```
-
-Search and filters only refine the currently explored subset; they never reveal nodes that are still hidden by exploration.
-
-## Metadata
-
-Nodes and links can store JSON-compatible information in `data`. This metadata is preserved in events and selections.
-
-```ts
-{
-    id: "service",
-        label: "Notification Service",
-        type: "service",
-        data: {
-        owner: "Platform Team",
-            status: "active"
-    }
-}
 ```
 
 ## Related packages
 
-- [`@orbitgraph/core`](https://www.npmjs.com/package/@orbitgraph/core): shared graph types.
-- [`@orbitgraph/react`](https://www.npmjs.com/package/@orbitgraph/react): React component bindings.
+- [`@orbitgraph/core`](https://www.npmjs.com/package/@orbitgraph/core): shared graph types and utilities.
+- [`@orbitgraph/react`](https://www.npmjs.com/package/@orbitgraph/react): React bindings.
 
 ## License
 
