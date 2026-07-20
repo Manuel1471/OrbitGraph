@@ -10,9 +10,15 @@
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
 <li><a href="../modules/three_src.html">three/src</a></li>
 <li><a href="" aria-current="page">OrbitGraph</a></li></ul>
-<h1>Class OrbitGraph</h1></div><aside class="tsd-sources">
+<h1>Class OrbitGraph</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>Interactive Three.js renderer for OrbitGraph data with layouts, persisted
+view state, and optional lazy neighborhood loading.</p>
+<p>The complete graph stays in <code>data</code>, while <code>GraphExplorer</code> sends only the
+active subset to the renderer and physics engine.</p>
+</div></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L32">three/src/OrbitGraph.ts:32</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L51">three/src/OrbitGraph.ts:51</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -27,15 +33,32 @@
 <div class="tsd-index-list"><a href="#addlink" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Link</span></a>
 <a href="#addnode" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Node</span></a>
 <a href="#clearfilters" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>clear<wbr/>Filters</span></a>
+<a href="#collapsenode" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>collapse<wbr/>Node</span></a>
 <a href="#destroy" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>destroy</span></a>
+<a href="#expandnode" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>expand<wbr/>Node</span></a>
+<a href="#exportviewstate" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>export<wbr/>View<wbr/>State</span></a>
 <a href="#focusnode" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>focus<wbr/>Node</span></a>
+<a href="#focuspath" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>focus<wbr/>Path</span></a>
+<a href="#getexplorationhistory" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>get<wbr/>Exploration<wbr/>History</span></a>
+<a href="#getloadingstate" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>get<wbr/>Loading<wbr/>State</span></a>
+<a href="#getnodeexplorationstate" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>get<wbr/>Node<wbr/>Exploration<wbr/>State</span></a>
+<a href="#goback" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>go<wbr/>Back</span></a>
+<a href="#goforward" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>go<wbr/>Forward</span></a>
+<a href="#importviewstate" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>import<wbr/>View<wbr/>State</span></a>
+<a href="#loadneighborhood" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>load<wbr/>Neighborhood</span></a>
+<a href="#loadnode" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>load<wbr/>Node</span></a>
 <a href="#removelink" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>remove<wbr/>Link</span></a>
 <a href="#removenode" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>remove<wbr/>Node</span></a>
 <a href="#resetcamera" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>reset<wbr/>Camera</span></a>
+<a href="#resetexploration" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>reset<wbr/>Exploration</span></a>
 <a href="#search" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>search</span></a>
 <a href="#setdata" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Data</span></a>
+<a href="#setdatasource" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Data<wbr/>Source</span></a>
+<a href="#setinitialview" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Initial<wbr/>View</span></a>
+<a href="#setlayout" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Layout</span></a>
 <a href="#setminimumlinkweight" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Minimum<wbr/>Link<wbr/>Weight</span></a>
 <a href="#settypefilters" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Type<wbr/>Filters</span></a>
+<a href="#showall" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>show<wbr/>All</span></a>
 <a href="#toggletypefilter" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>toggle<wbr/>Type<wbr/>Filter</span></a>
 <a href="#unpinnode" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>unpin<wbr/>Node</span></a>
 </div></section></div></details></section></section>
@@ -55,7 +78,7 @@
 <li><span><span class="tsd-kind-parameter">options</span>: <span class="tsd-signature-type">OrbitGraphOptions</span><span class="tsd-signature-symbol"> = {}</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="" class="tsd-signature-type tsd-kind-class">OrbitGraph</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L58">three/src/OrbitGraph.ts:58</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L91">three/src/OrbitGraph.ts:91</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -71,7 +94,7 @@
 <li><span><span class="tsd-kind-parameter">link</span>: <span class="tsd-signature-type">GraphLink</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L284">three/src/OrbitGraph.ts:284</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L440">three/src/OrbitGraph.ts:440</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="addnode"><span>add<wbr/>Node</span><a href="#addnode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -84,7 +107,7 @@
 <li><span><span class="tsd-kind-parameter">node</span>: <span class="tsd-signature-type">GraphNode</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L250">three/src/OrbitGraph.ts:250</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L420">three/src/OrbitGraph.ts:420</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="clearfilters"><span>clear<wbr/>Filters</span><a href="#clearfilters" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -93,7 +116,22 @@
 <div class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L339">three/src/OrbitGraph.ts:339</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L484">three/src/OrbitGraph.ts:484</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="collapsenode"><span>collapse<wbr/>Node</span><a href="#collapsenode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="collapsenode-1"><span class="tsd-kind-call-signature">collapseNode</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">nodeId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#collapsenode-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Removes a manual neighborhood expansion.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">nodeId</span>: <span class="tsd-signature-type">string</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L403">three/src/OrbitGraph.ts:403</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="destroy"><span>destroy</span><a href="#destroy" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -102,7 +140,36 @@
 <div class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L366">three/src/OrbitGraph.ts:366</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L557">three/src/OrbitGraph.ts:557</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="expandnode"><span>expand<wbr/>Node</span><a href="#expandnode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="expandnode-1"><span class="tsd-kind-call-signature">expandNode</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">nodeId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">options</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">GraphExpansionOptions</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#expandnode-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Reveals a node's neighborhood without mounting the entire graph.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">nodeId</span>: <span class="tsd-signature-type">string</span></span></li>
+<li><span><span class="tsd-kind-parameter">options</span>: <span class="tsd-signature-type">GraphExpansionOptions</span><span class="tsd-signature-symbol"> = {}</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L397">three/src/OrbitGraph.ts:397</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="exportviewstate"><span>export<wbr/>View<wbr/>State</span><a href="#exportviewstate" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="exportviewstate-1"><span class="tsd-kind-call-signature">exportViewState</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">OrbitGraphViewState</span><a href="#exportviewstate-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Returns a JSON-serializable snapshot of the active graph view.</p>
+<p>Graph data is intentionally excluded. Load data with <code>setData()</code> before
+importing this state into a new OrbitGraph instance.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">OrbitGraphViewState</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L257">three/src/OrbitGraph.ts:257</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="focusnode"><span>focus<wbr/>Node</span><a href="#focusnode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -115,7 +182,123 @@
 <li><span><span class="tsd-kind-parameter">nodeId</span>: <span class="tsd-signature-type">string</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L350">three/src/OrbitGraph.ts:350</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L495">three/src/OrbitGraph.ts:495</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="focuspath"><span>focus<wbr/>Path</span><a href="#focuspath" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="focuspath-1"><span class="tsd-kind-call-signature">focusPath</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">sourceId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">targetId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">options</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">GraphPathOptions</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><a href="#focuspath-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">sourceId</span>: <span class="tsd-signature-type">string</span></span></li>
+<li><span><span class="tsd-kind-parameter">targetId</span>: <span class="tsd-signature-type">string</span></span></li>
+<li><span><span class="tsd-kind-parameter">options</span>: <span class="tsd-signature-type">GraphPathOptions</span><span class="tsd-signature-symbol"> = {}</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L507">three/src/OrbitGraph.ts:507</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="getexplorationhistory"><span>get<wbr/>Exploration<wbr/>History</span><a href="#getexplorationhistory" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="getexplorationhistory-1"><span class="tsd-kind-call-signature">getExplorationHistory</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GraphExplorationHistoryState</span><a href="#getexplorationhistory-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">GraphExplorationHistoryState</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L541">three/src/OrbitGraph.ts:541</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="getloadingstate"><span>get<wbr/>Loading<wbr/>State</span><a href="#getloadingstate" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="getloadingstate-1"><span class="tsd-kind-call-signature">getLoadingState</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GraphLoadingState</span><a href="#getloadingstate-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Returns the current lazy-load activity for consumer loading indicators.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">GraphLoadingState</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L293">three/src/OrbitGraph.ts:293</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="getnodeexplorationstate"><span>get<wbr/>Node<wbr/>Exploration<wbr/>State</span><a href="#getnodeexplorationstate" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="getnodeexplorationstate-1"><span class="tsd-kind-call-signature">getNodeExplorationState</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">nodeId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GraphNodeExplorationState</span><a href="#getnodeexplorationstate-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">nodeId</span>: <span class="tsd-signature-type">string</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">GraphNodeExplorationState</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L545">three/src/OrbitGraph.ts:545</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="goback"><span>go<wbr/>Back</span><a href="#goback" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="goback-1"><span class="tsd-kind-call-signature">goBack</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><a href="#goback-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L521">three/src/OrbitGraph.ts:521</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="goforward"><span>go<wbr/>Forward</span><a href="#goforward" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="goforward-1"><span class="tsd-kind-call-signature">goForward</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><a href="#goforward-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L531">three/src/OrbitGraph.ts:531</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="importviewstate"><span>import<wbr/>View<wbr/>State</span><a href="#importviewstate" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="importviewstate-1"><span class="tsd-kind-call-signature">importViewState</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">state</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">OrbitGraphViewState</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#importviewstate-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Restores a graph-view snapshot previously returned by <code>exportViewState</code>.</p>
+<p>Call <code>setData()</code> first so the referenced nodes and relationships exist.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">state</span>: <span class="tsd-signature-type">OrbitGraphViewState</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L272">three/src/OrbitGraph.ts:272</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="loadneighborhood"><span>load<wbr/>Neighborhood</span><a href="#loadneighborhood" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="loadneighborhood-1"><span class="tsd-kind-call-signature">loadNeighborhood</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">nodeId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">options</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">GraphNeighborhoodLoadOptions</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">GraphNeighborhoodResult</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span><a href="#loadneighborhood-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Loads and reveals one node neighborhood without loading the whole graph.</p>
+<p><code>limit</code> and <code>offset</code> are forwarded to the source so highly connected
+nodes can be explored in pages.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">nodeId</span>: <span class="tsd-signature-type">string</span></span></li>
+<li><span><span class="tsd-kind-parameter">options</span>: <span class="tsd-signature-type">GraphNeighborhoodLoadOptions</span><span class="tsd-signature-symbol"> = {}</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">GraphNeighborhoodResult</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L348">three/src/OrbitGraph.ts:348</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="loadnode"><span>load<wbr/>Node</span><a href="#loadnode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="loadnode-1"><span class="tsd-kind-call-signature">loadNode</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">nodeId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">GraphNode</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">&gt;</span><a href="#loadnode-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Loads one node from the configured data source and adds it to the graph.
+Existing local nodes are returned without a request.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">nodeId</span>: <span class="tsd-signature-type">string</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">GraphNode</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L301">three/src/OrbitGraph.ts:301</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="removelink"><span>remove<wbr/>Link</span><a href="#removelink" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -128,7 +311,7 @@
 <li><span><span class="tsd-kind-parameter">linkId</span>: <span class="tsd-signature-type">string</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L308">three/src/OrbitGraph.ts:308</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L458">three/src/OrbitGraph.ts:458</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="removenode"><span>remove<wbr/>Node</span><a href="#removenode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -141,7 +324,7 @@
 <li><span><span class="tsd-kind-parameter">nodeId</span>: <span class="tsd-signature-type">string</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L266">three/src/OrbitGraph.ts:266</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L430">three/src/OrbitGraph.ts:430</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="resetcamera"><span>reset<wbr/>Camera</span><a href="#resetcamera" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -150,7 +333,18 @@
 <div class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L344">three/src/OrbitGraph.ts:344</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L489">three/src/OrbitGraph.ts:489</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="resetexploration"><span>reset<wbr/>Exploration</span><a href="#resetexploration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="resetexploration-1"><span class="tsd-kind-call-signature">resetExploration</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#resetexploration-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Returns to the configured initial view.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L409">three/src/OrbitGraph.ts:409</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="search"><span>search</span><a href="#search" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -163,20 +357,68 @@
 <li><span><span class="tsd-kind-parameter">query</span>: <span class="tsd-signature-type">string</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L319">three/src/OrbitGraph.ts:319</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L464">three/src/OrbitGraph.ts:464</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="setdata"><span>set<wbr/>Data</span><a href="#setdata" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
 <div class="tsd-signature tsd-anchor-link" id="setdata-1"><span class="tsd-kind-call-signature">setData</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">data</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GraphData</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#setdata-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Replaces the complete source graph and resets exploration state.</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li><span><span class="tsd-kind-parameter">data</span>: <span class="tsd-signature-type">GraphData</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L207">three/src/OrbitGraph.ts:207</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L218">three/src/OrbitGraph.ts:218</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="setdatasource"><span>set<wbr/>Data<wbr/>Source</span><a href="#setdatasource" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="setdatasource-1"><span class="tsd-kind-call-signature">setDataSource</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">dataSource</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">GraphDataSource</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#setdatasource-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Sets or replaces the asynchronous source used for lazy graph loading.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">dataSource</span>: <span class="tsd-signature-type">GraphDataSource</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L287">three/src/OrbitGraph.ts:287</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="setinitialview"><span>set<wbr/>Initial<wbr/>View</span><a href="#setinitialview" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="setinitialview-1"><span class="tsd-kind-call-signature">setInitialView</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">view</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GraphInitialView</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#setinitialview-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Changes the initial exploration entry point and resets expansions.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">view</span>: <span class="tsd-signature-type">GraphInitialView</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L233">three/src/OrbitGraph.ts:233</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="setlayout"><span>set<wbr/>Layout</span><a href="#setlayout" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="setlayout-1"><span class="tsd-kind-call-signature">setLayout</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">layout</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GraphLayout</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">options</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">GraphLayoutOptions</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#setlayout-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Changes the visual arrangement of the active graph subset.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">layout</span>: <span class="tsd-signature-type">GraphLayout</span></span></li>
+<li><span><span class="tsd-kind-parameter">options</span>: <span class="tsd-signature-type">GraphLayoutOptions</span><span class="tsd-signature-symbol"> = {}</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L239">three/src/OrbitGraph.ts:239</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="setminimumlinkweight"><span>set<wbr/>Minimum<wbr/>Link<wbr/>Weight</span><a href="#setminimumlinkweight" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -189,7 +431,7 @@
 <li><span><span class="tsd-kind-parameter">weight</span>: <span class="tsd-signature-type">number</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L334">three/src/OrbitGraph.ts:334</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L479">three/src/OrbitGraph.ts:479</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="settypefilters"><span>set<wbr/>Type<wbr/>Filters</span><a href="#settypefilters" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -202,7 +444,18 @@
 <li><span><span class="tsd-kind-parameter">types</span>: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L329">three/src/OrbitGraph.ts:329</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L474">three/src/OrbitGraph.ts:474</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="showall"><span>show<wbr/>All</span><a href="#showall" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="showall-1"><span class="tsd-kind-call-signature">showAll</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#showall-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Makes the complete graph active in the renderer and simulation.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L415">three/src/OrbitGraph.ts:415</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="toggletypefilter"><span>toggle<wbr/>Type<wbr/>Filter</span><a href="#toggletypefilter" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -215,7 +468,7 @@
 <li><span><span class="tsd-kind-parameter">type</span>: <span class="tsd-signature-type">string</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L324">three/src/OrbitGraph.ts:324</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L469">three/src/OrbitGraph.ts:469</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="unpinnode"><span>unpin<wbr/>Node</span><a href="#unpinnode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -228,7 +481,7 @@
 <li><span><span class="tsd-kind-parameter">nodeId</span>: <span class="tsd-signature-type">string</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/three/src/OrbitGraph.ts#L360">three/src/OrbitGraph.ts:360</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/three/src/OrbitGraph.ts#L549">three/src/OrbitGraph.ts:549</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -247,7 +500,7 @@
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Constructors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Constructors</summary>
 <div><a href="#constructor"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Constructor"><use href="../assets/icons.svg#icon-512"></use></svg><span>constructor</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Methods</summary>
-<div><a href="#addlink"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Link</span></a><a href="#addnode"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Node</span></a><a href="#clearfilters"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>clear<wbr/>Filters</span></a><a href="#destroy"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>destroy</span></a><a href="#focusnode"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>focus<wbr/>Node</span></a><a href="#removelink"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>remove<wbr/>Link</span></a><a href="#removenode"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>remove<wbr/>Node</span></a><a href="#resetcamera"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>reset<wbr/>Camera</span></a><a href="#search"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>search</span></a><a href="#setdata"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Data</span></a><a href="#setminimumlinkweight"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Minimum<wbr/>Link<wbr/>Weight</span></a><a href="#settypefilters"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Type<wbr/>Filters</span></a><a href="#toggletypefilter"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>toggle<wbr/>Type<wbr/>Filter</span></a><a href="#unpinnode"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>unpin<wbr/>Node</span></a></div></details></div></details></div>
+<div><a href="#addlink"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Link</span></a><a href="#addnode"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Node</span></a><a href="#clearfilters"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>clear<wbr/>Filters</span></a><a href="#collapsenode"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>collapse<wbr/>Node</span></a><a href="#destroy"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>destroy</span></a><a href="#expandnode"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>expand<wbr/>Node</span></a><a href="#exportviewstate"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>export<wbr/>View<wbr/>State</span></a><a href="#focusnode"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>focus<wbr/>Node</span></a><a href="#focuspath"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>focus<wbr/>Path</span></a><a href="#getexplorationhistory"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>get<wbr/>Exploration<wbr/>History</span></a><a href="#getloadingstate"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>get<wbr/>Loading<wbr/>State</span></a><a href="#getnodeexplorationstate"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>get<wbr/>Node<wbr/>Exploration<wbr/>State</span></a><a href="#goback"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>go<wbr/>Back</span></a><a href="#goforward"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>go<wbr/>Forward</span></a><a href="#importviewstate"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>import<wbr/>View<wbr/>State</span></a><a href="#loadneighborhood"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>load<wbr/>Neighborhood</span></a><a href="#loadnode"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>load<wbr/>Node</span></a><a href="#removelink"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>remove<wbr/>Link</span></a><a href="#removenode"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>remove<wbr/>Node</span></a><a href="#resetcamera"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>reset<wbr/>Camera</span></a><a href="#resetexploration"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>reset<wbr/>Exploration</span></a><a href="#search"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>search</span></a><a href="#setdata"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Data</span></a><a href="#setdatasource"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Data<wbr/>Source</span></a><a href="#setinitialview"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Initial<wbr/>View</span></a><a href="#setlayout"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Layout</span></a><a href="#setminimumlinkweight"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Minimum<wbr/>Link<wbr/>Weight</span></a><a href="#settypefilters"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Type<wbr/>Filters</span></a><a href="#showall"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>show<wbr/>All</span></a><a href="#toggletypefilter"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>toggle<wbr/>Type<wbr/>Filter</span></a><a href="#unpinnode"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>unpin<wbr/>Node</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">OrbitGraph API - v0.3.0</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">
