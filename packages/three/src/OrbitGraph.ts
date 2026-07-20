@@ -4,15 +4,17 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type {
     GraphData,
     GraphExpansionOptions,
+    GraphExplorationHistoryState,
     GraphInitialView,
+    GraphLayout,
+    GraphLayoutOptions,
     GraphLink,
     GraphNode,
+    GraphNodeExplorationState,
+    GraphPathOptions,
     GraphSelection,
     OrbitGraphOptions,
     VisibleGraphData,
-    GraphExplorationHistoryState,
-    GraphNodeExplorationState,
-    GraphPathOptions
 } from "@orbitgraph/core";
 
 import { GraphCamera } from "./GraphCamera";
@@ -70,6 +72,8 @@ export class OrbitGraph {
     private data: GraphData = { nodes: [], links: [] };
     private physicsNodes: PhysicsNode[] = [];
     private physicsLinks: PhysicsLink[] = [];
+    private layout: GraphLayout;
+    private layoutOptions: GraphLayoutOptions;
 
     constructor(
         private readonly container: HTMLElement,
@@ -79,6 +83,8 @@ export class OrbitGraph {
         const height = container.clientHeight || window.innerHeight;
 
         this.explorer = new GraphExplorer(options.initialView);
+        this.layout = options.layout ?? "force";
+        this.layoutOptions = options.layoutOptions ?? {};
 
         this.scene.background = new THREE.Color(
             options.backgroundColor ?? "#050816",
@@ -214,6 +220,19 @@ export class OrbitGraph {
         this.refreshVisibleGraph();
     }
 
+    /** Changes the visual arrangement of the active graph subset. */
+    setLayout(
+        layout: GraphLayout,
+        options: GraphLayoutOptions = {},
+    ): void {
+        this.layout = layout;
+        this.layoutOptions = options;
+
+        this.physics.setLayout(layout, options);
+        this.graphRenderer.syncPositions();
+        this.labels.updatePosition();
+    }
+
     /** Reveals a node's neighborhood without mounting the entire graph. */
     expandNode(nodeId: string, options: GraphExpansionOptions = {}): void {
         this.explorer.expandNode(nodeId, options);
@@ -325,6 +344,48 @@ export class OrbitGraph {
         this.emitSelection({ kind: "node", node });
     }
 
+    focusPath(
+        sourceId: string,
+        targetId: string,
+        options: GraphPathOptions = {},
+    ): boolean {
+        const found = this.explorer.focusPath(sourceId, targetId, options);
+
+        if (found) {
+            this.refreshVisibleGraph();
+        }
+
+        return found;
+    }
+
+    goBack(): boolean {
+        const changed = this.explorer.goBack();
+
+        if (changed) {
+            this.refreshVisibleGraph();
+        }
+
+        return changed;
+    }
+
+    goForward(): boolean {
+        const changed = this.explorer.goForward();
+
+        if (changed) {
+            this.refreshVisibleGraph();
+        }
+
+        return changed;
+    }
+
+    getExplorationHistory(): GraphExplorationHistoryState {
+        return this.explorer.getHistoryState();
+    }
+
+    getNodeExplorationState(nodeId: string): GraphNodeExplorationState {
+        return this.explorer.getNodeExplorationState(nodeId);
+    }
+
     unpinNode(nodeId: string): void {
         const node = this.nodes.get(nodeId);
 
@@ -384,7 +445,11 @@ export class OrbitGraph {
                     this.graphRenderer.syncPositions();
                     this.labels.updatePosition();
                 },
+                this.layout,
+                this.layoutOptions,
             );
+
+            this.graphRenderer.syncPositions();
         }
 
         this.options.onVisibleDataChange?.(visible);
@@ -423,44 +488,6 @@ export class OrbitGraph {
                 link.id ??
                 `${link.source}__${link.type ?? "related"}__${link.target}`,
         };
-    }
-
-    focusPath(sourceId: string, targetId: string, options: GraphPathOptions = {}): boolean {
-        const found = this.explorer.focusPath(sourceId, targetId, options);
-
-        if (found) {
-            this.refreshVisibleGraph();
-        }
-
-        return found;
-    }
-
-    goBack(): boolean {
-        const changed = this.explorer.goBack();
-
-        if (changed) {
-            this.refreshVisibleGraph();
-        }
-
-        return changed;
-    }
-
-    goForward(): boolean {
-        const changed = this.explorer.goForward();
-
-        if (changed) {
-            this.refreshVisibleGraph();
-        }
-
-        return changed;
-    }
-
-    getExplorationHistory(): GraphExplorationHistoryState {
-        return this.explorer.getHistoryState();
-    }
-
-    getNodeExplorationState(nodeId: string): GraphNodeExplorationState {
-        return this.explorer.getNodeExplorationState(nodeId);
     }
 
     private emitSelection(selection: GraphSelection): void {

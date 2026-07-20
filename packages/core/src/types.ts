@@ -254,6 +254,12 @@ export type OrbitGraphOptions = {
     /** Called when the selected node or relationship changes. */
     onSelectionChange?: (selection: GraphSelection) => void;
 
+    /** Initial visual arrangement of the active graph. @defaultValue "force" */
+     layout?: GraphLayout;
+    
+     /** Configuration used by the initial layout. */
+     layoutOptions?: GraphLayoutOptions;
+
     /**
      * Called after exploration and filters change the rendered graph subset.
      */
@@ -312,4 +318,19 @@ export type LinkHoverEvent = {
 export type VisibleGraphData = {
     nodes: GraphNode[];
     links: GraphLink[];
+};
+
+/** Visual arrangement used to position active graph nodes. */
+export type GraphLayout = "force" | "radial" | "grid" | "hierarchical";
+
+/** Additional configuration for a graph layout. */
+export type GraphLayoutOptions = {
+    /** Root node used by the hierarchical layout. Defaults to the first active node. */
+    rootId?: string;
+
+    /** Relationship direction used to build hierarchy levels. @defaultValue "outgoing" */
+    direction?: GraphDirection;
+
+    /** Distance between layout positions. @defaultValue 12 or 14 depending on layout. */
+    spacing?: number;
 };
