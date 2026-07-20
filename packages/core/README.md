@@ -1,16 +1,16 @@
 # @orbitgraph/core
 
-Core TypeScript types and graph data utilities for OrbitGraph.
+Shared TypeScript data model and graph utilities for OrbitGraph.
 
-This package is renderer-agnostic. Use it to define graph data, access shared types, and work with graph relationships independently of Three.js or React.
+`@orbitgraph/core` is renderer-agnostic: use it to model relationship data, explore it with the `Graph` utility, define remote data sources, and share types between browser, server, and React code.
 
-## Installation
+## Install
 
 ```bash
 npm install @orbitgraph/core
 ```
 
-## Data model
+## Define graph data
 
 ```ts
 import type { GraphData } from "@orbitgraph/core";
@@ -20,11 +20,8 @@ const data: GraphData = {
     {
       id: "team",
       label: "Product Team",
-      type: "group",
-      data: {
-        department: "Product",
-        active: true,
-      },
+      type: "team",
+      data: { region: "North" },
     },
     {
       id: "service",
@@ -39,17 +36,15 @@ const data: GraphData = {
       target: "service",
       type: "owns",
       weight: 0.9,
-      data: {
-        environment: "production",
-      },
+      data: { environment: "production" },
     },
   ],
 };
 ```
 
-## Graph utility
+Nodes and relationships can store JSON-compatible metadata in `data`.
 
-`Graph` stores nodes and relationships in memory and exposes basic traversal helpers.
+## Use the Graph utility
 
 ```ts
 import { Graph } from "@orbitgraph/core";
@@ -59,51 +54,62 @@ const graph = new Graph(data);
 graph.getNode("team");
 graph.getNeighbors("team");
 graph.getNodeLinks("team");
+```
 
-graph.addNode({ id: "dashboard", type: "resource" });
-graph.addLink({
-  source: "team",
-  target: "dashboard",
-  type: "manages",
-});
+## Lazy data sources
+
+Use `GraphDataSource` when a graph is too large to send to the client at once. `@orbitgraph/three` calls these functions; your application decides whether they use REST, GraphQL, WebSockets, or another transport.
+
+```ts
+import type { GraphDataSource } from "@orbitgraph/core";
+
+const source: GraphDataSource = {
+  async getNode(nodeId) {
+    const response = await fetch(`/api/nodes/${nodeId}`);
+    return response.ok ? response.json() : undefined;
+  },
+
+  async getNeighborhood({ nodeId, limit = 50, offset = 0 }) {
+    const response = await fetch(
+      `/api/nodes/${nodeId}/relationships?limit=${limit}&offset=${offset}`,
+    );
+
+    return response.json();
+  },
+};
+```
+
+The neighborhood result contains the newly available nodes and relationships:
+
+```ts
+{
+  nodes: [{ id: "person-1", label: "Person 1" }],
+  links: [{ source: "team", target: "person-1", type: "manages" }],
+  totalNeighbors: 850,
+  hasMore: true,
+  nextOffset: 50
+}
 ```
 
 ## Important types
 
 | Type | Purpose |
 | --- | --- |
-| `GraphNode` | Graph entity with an ID, optional visual properties, and JSON-compatible metadata. |
-| `GraphLink` | Directed relationship between a source and target node. |
-| `GraphData` | Collection of graph nodes and relationships. |
-| `JSONValue` | JSON-compatible primitive, array, or object. |
-| `GraphDirection` | `incoming`, `outgoing`, or `both`. |
-| `GraphExpansionOptions` | Depth, direction, relationship type, and pagination options for expansion. |
-| `GraphInitialView` | Initial `all`, `node`, `neighborhood`, or `type` exploration view. |
-| `LinkFlowOptions` | Optional animated relationship-flow configuration. |
-| `GraphSelection` | Current selected node, selected relationship, or `null`. |
-| `OrbitGraphOptions` | Renderer options and event callback types shared with other packages. |
-
-## Metadata
-
-Both nodes and links accept JSON-compatible metadata through `data`.
-
-```ts
-const node = {
-    id: "api",
-    label: "Public API",
-    type: "service",
-    data: {
-        version: "v1",
-        regions: ["us-east", "eu-west"],
-        healthy: true,
-    },
-};
-```
+| `GraphNode` | A graph entity with identity, optional styling, and metadata. |
+| `GraphLink` | A directed relationship between two node ids. |
+| `GraphData` | A collection of nodes and links. |
+| `Graph` | In-memory helper for reading and editing graph data. |
+| `GraphInitialView` | Defines the first visible graph subset. |
+| `GraphExpansionOptions` | Configures depth, direction, type filtering, and pagination. |
+| `GraphLayout` | `force`, `radial`, `grid`, or `hierarchical`. |
+| `GraphDataSource` | Application-provided asynchronous node and neighborhood loader. |
+| `OrbitGraphViewState` | Serializable exploration, filter, and layout state. |
+| `JSONValue` | JSON-compatible value supported by metadata. |
 
 ## Related packages
 
-- [`@orbitgraph/three`](https://www.npmjs.com/package/@orbitgraph/three): 3D WebGL renderer.
-- [`@orbitgraph/react`](https://www.npmjs.com/package/@orbitgraph/react): React bindings.
+- [`@orbitgraph/three`](https://www.npmjs.com/package/@orbitgraph/three): Three.js/WebGL renderer and interactive exploration API.
+- [`@orbitgraph/react`](https://www.npmjs.com/package/@orbitgraph/react): React component bindings.
 
 ## License
 
