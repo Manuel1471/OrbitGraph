@@ -1,6 +1,6 @@
 {
   "name": "@orbitgraph/three",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "Three.js renderer for OrbitGraph.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -20,7 +20,7 @@
     "build": "tsup src/index.ts --format esm,cjs --dts --clean"
   },
   "dependencies": {
-    "@orbitgraph/core": "file:../core",
+    "@orbitgraph/core": "^1.0.0",
     "d3-force-3d": "^3.0.6"
   },
   "peerDependencies": {

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>JSONValue | OrbitGraph API - v0.3.0</title><meta name="description" content="Documentation for OrbitGraph API"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>GraphNeighborhoodLoadOptions | OrbitGraph API - v0.3.0</title><meta name="description" content="Documentation for OrbitGraph API"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
 <div class="tsd-toolbar-contents container"><a href="../index.html" class="title">OrbitGraph API - v0.3.0</a>
 <div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
 <ul role="listbox" id="tsd-search-results"></ul>
@@ -9,13 +9,26 @@
 <div class="tsd-page-title">
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
 <li><a href="../modules/core_src.html">core/src</a></li>
-<li><a href="" aria-current="page">JSONValue</a></li></ul>
-<h1>Type Alias JSONValue</h1></div>
-<div class="tsd-signature"><span class="tsd-kind-type-alias">JSONValue</span><span class="tsd-signature-symbol">:</span> <a href="core_src.JSONPrimitive.html" class="tsd-signature-type tsd-kind-type-alias">JSONPrimitive</a> <span class="tsd-signature-symbol">|</span> <a href="" class="tsd-signature-type tsd-kind-type-alias">JSONValue</a><span class="tsd-signature-symbol">[]</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-signature-symbol">[</span><span class="tsd-kind-index-signature">key</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]:</span> <a href="" class="tsd-signature-type tsd-kind-type-alias">JSONValue</a> <span class="tsd-signature-symbol">}</span></div>
-<div class="tsd-comment tsd-typography"><p>A JSON-compatible value that can be stored in node or relationship metadata.</p>
-</div><aside class="tsd-sources">
+<li><a href="" aria-current="page">GraphNeighborhoodLoadOptions</a></li></ul>
+<h1>Type Alias GraphNeighborhoodLoadOptions</h1></div>
+<div class="tsd-signature"><span class="tsd-kind-type-alias">GraphNeighborhoodLoadOptions</span><span class="tsd-signature-symbol">:</span> <a href="core_src.GraphExpansionOptions.html" class="tsd-signature-type tsd-kind-type-alias">GraphExpansionOptions</a> <span class="tsd-signature-symbol">&amp;</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">force</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">}</span></div>
+<div class="tsd-comment tsd-typography"><p>Options used when loading an asynchronous node neighborhood.</p>
+</div>
+<div class="tsd-type-declaration">
+<h4>Type Declaration</h4>
+<ul class="tsd-parameters">
+<li class="tsd-parameter">
+<h5><code class="tsd-tag">Optional</code><span class="tsd-kind-property">force</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span></h5>
+<div class="tsd-comment tsd-typography"><p>Ignores OrbitGraph's in-memory page cache.</p>
+</div>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-defaultValue">
+<h4 class="tsd-anchor-link" id="default-value">Default Value<a href="#default-value" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-9">false</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/types.ts#L9">core/src/types.ts:9</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/types.ts#L443">core/src/types.ts:443</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

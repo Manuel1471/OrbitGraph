@@ -17,6 +17,8 @@
     "build:react": "npm run build --workspace=@orbitgraph/react",
     "build": "npm run build:core && npm run build:three && npm run build:react",
     "dev:benchmark": "vite examples/benchmark --host",
+    "dev:vanilla": "vite examples/vanilla --host",
+    "dev:react": "vite examples/react --host",
     "docs": "typedoc"
   },
   "repository": {

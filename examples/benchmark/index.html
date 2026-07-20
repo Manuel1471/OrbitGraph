@@ -10,29 +10,61 @@
     <aside class="panel">
         <span class="eyebrow">PERFORMANCE</span>
         <h1>OrbitGraph Benchmark</h1>
-        <p>Prueba el rendimiento con grafos generados automáticamente.</p>
+        <p>Compare full graph rendering with progressive exploration.</p>
 
         <div class="controls">
-            <button type="button" data-size="100">100 nodos</button>
-            <button type="button" data-size="500">500 nodos</button>
-            <button type="button" data-size="1000">1,000 nodos</button>
-            <button type="button" data-size="5000">5,000 nodos</button>
+            <button type="button" data-size="100">100 nodes</button>
+            <button type="button" data-size="500">500 nodes</button>
+            <button type="button" data-size="1000">1,000 nodes</button>
+            <button type="button" data-size="5000">5,000 nodes</button>
+            <button type="button" data-size="10000">10,000 nodes</button>
         </div>
 
-        <button id="regenerate" class="secondary" type="button">
-            Regenerar datos
-        </button>
+        <label for="custom-size">Custom node count</label>
+
+        <div class="custom-size">
+            <input
+                    id="custom-size"
+                    type="number"
+                    min="1"
+                    max="50000"
+                    step="100"
+                    value="10000"
+            />
+
+            <button id="load-custom-size" type="button">
+                Load
+            </button>
+        </div>
+
+        <label for="initial-view">Initial view</label>
+        <select id="initial-view">
+            <option value="all">Full graph</option>
+            <option value="neighborhood">Node neighborhood</option>
+        </select>
+
+        <label for="layout">Layout</label>
+        <select id="layout">
+            <option value="force">Force</option>
+            <option value="radial">Radial</option>
+            <option value="grid">Grid</option>
+            <option value="hierarchical">Hierarchical</option>
+        </select>
+
+        <button id="regenerate" class="secondary" type="button">Regenerate data</button>
 
         <label class="flow-control">
             <input id="link-flow" type="checkbox" />
-            Flujo eléctrico
+            Enable relationship flow
         </label>
 
         <div class="stats">
             <div><span>FPS</span><strong id="fps">0</strong></div>
-            <div><span>Nodos</span><strong id="node-count">0</strong></div>
-            <div><span>Relaciones</span><strong id="link-count">0</strong></div>
+            <div><span>Visible nodes</span><strong id="node-count">0</strong></div>
+            <div><span>Visible links</span><strong id="link-count">0</strong></div>
         </div>
+
+        <p class="hint" id="dataset-summary"></p>
     </aside>
 
     <div id="graph"></div>

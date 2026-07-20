@@ -18,12 +18,12 @@ to a specific node.</p>
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-example">
-<h4 class="tsd-anchor-link" id="example">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">graph</span><span class="hl-1"> = </span><span class="hl-5">new</span><span class="hl-1"> </span><span class="hl-0">Graph</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-4">nodes:</span><span class="hl-1"> [</span><br/><span class="hl-1">    { </span><span class="hl-4">id:</span><span class="hl-1"> </span><span class="hl-2">&quot;team&quot;</span><span class="hl-1">, </span><span class="hl-4">label:</span><span class="hl-1"> </span><span class="hl-2">&quot;Product Team&quot;</span><span class="hl-1"> },</span><br/><span class="hl-1">    { </span><span class="hl-4">id:</span><span class="hl-1"> </span><span class="hl-2">&quot;service&quot;</span><span class="hl-1">, </span><span class="hl-4">label:</span><span class="hl-1"> </span><span class="hl-2">&quot;Notification Service&quot;</span><span class="hl-1"> }</span><br/><span class="hl-1">  ],</span><br/><span class="hl-1">  </span><span class="hl-4">links:</span><span class="hl-1"> [</span><br/><span class="hl-1">    {</span><br/><span class="hl-1">      </span><span class="hl-4">source:</span><span class="hl-1"> </span><span class="hl-2">&quot;team&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-4">target:</span><span class="hl-1"> </span><span class="hl-2">&quot;service&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-4">type:</span><span class="hl-1"> </span><span class="hl-2">&quot;owns&quot;</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">  ]</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-4">graph</span><span class="hl-1">.</span><span class="hl-0">getNeighbors</span><span class="hl-1">(</span><span class="hl-2">&quot;team&quot;</span><span class="hl-1">));</span>
+<h4 class="tsd-anchor-link" id="example">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-9">const</span><span class="hl-1"> </span><span class="hl-10">graph</span><span class="hl-1"> = </span><span class="hl-9">new</span><span class="hl-1"> </span><span class="hl-0">Graph</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-8">nodes:</span><span class="hl-1"> [</span><br/><span class="hl-1">    { </span><span class="hl-8">id:</span><span class="hl-1"> </span><span class="hl-2">&quot;team&quot;</span><span class="hl-1">, </span><span class="hl-8">label:</span><span class="hl-1"> </span><span class="hl-2">&quot;Product Team&quot;</span><span class="hl-1"> },</span><br/><span class="hl-1">    { </span><span class="hl-8">id:</span><span class="hl-1"> </span><span class="hl-2">&quot;service&quot;</span><span class="hl-1">, </span><span class="hl-8">label:</span><span class="hl-1"> </span><span class="hl-2">&quot;Notification Service&quot;</span><span class="hl-1"> }</span><br/><span class="hl-1">  ],</span><br/><span class="hl-1">  </span><span class="hl-8">links:</span><span class="hl-1"> [</span><br/><span class="hl-1">    {</span><br/><span class="hl-1">      </span><span class="hl-8">source:</span><span class="hl-1"> </span><span class="hl-2">&quot;team&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-8">target:</span><span class="hl-1"> </span><span class="hl-2">&quot;service&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-8">type:</span><span class="hl-1"> </span><span class="hl-2">&quot;owns&quot;</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">  ]</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-8">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-8">graph</span><span class="hl-1">.</span><span class="hl-0">getNeighbors</span><span class="hl-1">(</span><span class="hl-2">&quot;team&quot;</span><span class="hl-1">));</span>
 </code><button type="button">Copy</button></pre>
 
 </div></div></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L28">core/src/Graph.ts:28</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L28">core/src/Graph.ts:28</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -67,7 +67,7 @@ to a specific node.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="" class="tsd-signature-type tsd-kind-class">Graph</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L38">core/src/Graph.ts:38</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L38">core/src/Graph.ts:38</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -94,7 +94,7 @@ relationship type, and target.</p>
 <h4 class="tsd-anchor-link" id="throws">Throws<a href="#throws" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>When the source or target node does not exist.</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L90">core/src/Graph.ts:90</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L90">core/src/Graph.ts:90</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="addnode"><span>add<wbr/>Node</span><a href="#addnode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -112,7 +112,7 @@ relationship type, and target.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L72">core/src/Graph.ts:72</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L72">core/src/Graph.ts:72</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="getlink"><span>get<wbr/>Link</span><a href="#getlink" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -130,7 +130,7 @@ relationship type, and target.</p>
 <h4 class="tsd-returns-title">Returns <a href="../types/core_src.GraphLink.html" class="tsd-signature-type tsd-kind-type-alias">GraphLink</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><p>The relationship, or <code>undefined</code> when it does not exist.</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L128">core/src/Graph.ts:128</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L128">core/src/Graph.ts:128</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="getlinks"><span>get<wbr/>Links</span><a href="#getlinks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -141,7 +141,7 @@ relationship type, and target.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <a href="../types/core_src.GraphLink.html" class="tsd-signature-type tsd-kind-type-alias">GraphLink</a><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L142">core/src/Graph.ts:142</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L142">core/src/Graph.ts:142</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="getneighbors"><span>get<wbr/>Neighbors</span><a href="#getneighbors" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -160,7 +160,7 @@ relationship type, and target.</p>
 <h4 class="tsd-returns-title">Returns <a href="../types/core_src.GraphNode.html" class="tsd-signature-type tsd-kind-type-alias">GraphNode</a><span class="tsd-signature-symbol">[]</span></h4><p>Directly connected nodes.</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L154">core/src/Graph.ts:154</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L154">core/src/Graph.ts:154</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="getnode"><span>get<wbr/>Node</span><a href="#getnode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -178,7 +178,7 @@ relationship type, and target.</p>
 <h4 class="tsd-returns-title">Returns <a href="../types/core_src.GraphNode.html" class="tsd-signature-type tsd-kind-type-alias">GraphNode</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><p>The node, or <code>undefined</code> when it does not exist.</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L118">core/src/Graph.ts:118</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L118">core/src/Graph.ts:118</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="getnodelinks"><span>get<wbr/>Node<wbr/>Links</span><a href="#getnodelinks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -195,7 +195,7 @@ relationship type, and target.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="../types/core_src.GraphLink.html" class="tsd-signature-type tsd-kind-type-alias">GraphLink</a><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L183">core/src/Graph.ts:183</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L183">core/src/Graph.ts:183</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="getnodes"><span>get<wbr/>Nodes</span><a href="#getnodes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -206,7 +206,7 @@ relationship type, and target.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <a href="../types/core_src.GraphNode.html" class="tsd-signature-type tsd-kind-type-alias">GraphNode</a><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L135">core/src/Graph.ts:135</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L135">core/src/Graph.ts:135</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="removelink"><span>remove<wbr/>Link</span><a href="#removelink" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -224,7 +224,7 @@ relationship type, and target.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L214">core/src/Graph.ts:214</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L214">core/src/Graph.ts:214</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="removenode"><span>remove<wbr/>Node</span><a href="#removenode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -241,7 +241,7 @@ relationship type, and target.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L196">core/src/Graph.ts:196</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L196">core/src/Graph.ts:196</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="setdata"><span>set<wbr/>Data</span><a href="#setdata" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -259,7 +259,7 @@ relationship type, and target.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L51">core/src/Graph.ts:51</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L51">core/src/Graph.ts:51</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="tojson"><span>to<wbr/>JSON</span><a href="#tojson" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -271,7 +271,7 @@ relationship type, and target.</p>
 <h4 class="tsd-returns-title">Returns <a href="../types/core_src.GraphData.html" class="tsd-signature-type tsd-kind-type-alias">GraphData</a></h4><p>A <code>GraphData</code> object containing all nodes and links.</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/ecab960ecdd60cddf2aa332ab03ba84d09d6e0c6/packages/core/src/Graph.ts#L231">core/src/Graph.ts:231</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/Manuel1471/OrbitGraph/blob/e2b7cf72d9b8ddb970c41bfc0ec9818d61f94e63/packages/core/src/Graph.ts#L231">core/src/Graph.ts:231</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

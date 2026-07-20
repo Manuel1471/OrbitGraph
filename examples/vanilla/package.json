@@ -8,8 +8,8 @@
     "build": "tsc && vite build"
   },
   "dependencies": {
-    "@orbitgraph/core": "^0.1.0",
-    "@orbitgraph/three": "^0.1.0",
+    "@orbitgraph/core": "^0.5.0",
+    "@orbitgraph/three": "^0.5.0",
     "three": "^0.185.1"
   },
   "devDependencies": {
