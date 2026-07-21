@@ -273,6 +273,12 @@ export type OrbitGraphOptions = {
      * Called after exploration and filters change the rendered graph subset.
      */
     onVisibleDataChange?: (data: VisibleGraphData) => void;
+
+    /** Keyboard navigation and screen-reader configuration. */
+    accessibility?: GraphAccessibilityOptions;
+
+    /** Called when keyboard focus moves to a visible node or is cleared. */
+    onKeyboardFocusChange?: (node: GraphNode | null) => void;
 };
 
 /**
@@ -479,4 +485,21 @@ export type OrbitGraphCameraOptions = {
 
     /** Maximum distance between the camera and its target. @defaultValue 1000 */
     maxDistance?: number;
+};
+
+/**
+ * Accessibility configuration for an OrbitGraph instance.
+ */
+export type GraphAccessibilityOptions = {
+    /**
+     * Enables keyboard navigation for visible graph nodes.
+     * @defaultValue true
+     */
+    keyboardNavigation?: boolean;
+
+    /**
+     * Accessible name announced for the graph canvas.
+     * @defaultValue "Interactive relationship graph"
+     */
+    ariaLabel?: string;
 };
