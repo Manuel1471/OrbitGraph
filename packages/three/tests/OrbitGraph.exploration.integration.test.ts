@@ -81,8 +81,10 @@ vi.mock("../src/PhysicsEngine", () => ({
 
 vi.mock("../src/GraphCamera", () => ({
     GraphCamera: class {
-        reset(): void {}
-        focusNode(): void {}
+        update = vi.fn();
+        focusNode = vi.fn();
+        reset = vi.fn();
+        dispose = vi.fn();
     },
 }));
 
