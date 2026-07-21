@@ -10,6 +10,7 @@ import type {
     GraphLayout,
     GraphLayoutOptions,
     GraphLink,
+    GraphJSONExportOptions,
     GraphLoadingState,
     GraphNode,
     GraphNodeExplorationState,
@@ -19,11 +20,13 @@ import type {
     GraphSelection,
     OrbitGraphOptions,
     OrbitGraphViewState,
+    VisibleGraphData,
 } from "@orbitgraph/core";
 
 import { GraphCamera } from "./GraphCamera";
 import { GraphDataStore } from "./GraphDataStore";
 import { GraphExplorer } from "./GraphExplorer";
+import { GraphExporter } from "./GraphExporter";
 import { GraphFilter } from "./GraphFilter";
 import { GraphInteraction } from "./GraphInteraction";
 import { GraphKeyboardNavigation } from "./GraphKeyboardNavigation";
@@ -73,9 +76,11 @@ export class OrbitGraph {
     private readonly runtime: GraphRuntime;
     private readonly interaction: GraphInteraction;
     private readonly keyboardNavigation: GraphKeyboardNavigation;
+    private readonly exporter: GraphExporter;
 
     private layout: GraphLayout;
     private layoutOptions: GraphLayoutOptions;
+    private visibleData: VisibleGraphData = { nodes: [], links: [] };
 
     constructor(
         private readonly container: HTMLElement,
@@ -170,6 +175,13 @@ export class OrbitGraph {
             this.graphCamera,
             this.particles,
         );
+
+        this.exporter = new GraphExporter({
+            canvas: this.renderer.domElement,
+            render: () => this.renderer.render(this.scene, this.camera),
+            getData: () => this.dataStore.getData(),
+            getVisibleData: () => this.visibleData,
+        });
 
         this.interaction = new GraphInteraction(
             this.renderer.domElement,
@@ -463,6 +475,28 @@ export class OrbitGraph {
         this.views.unpinNode(nodeId);
     }
 
+    /** Creates a PNG Blob containing the current rendered graph view. */
+    exportPNG(): Promise<Blob> {
+        return this.exporter.exportPNG();
+    }
+
+    /** Downloads the current rendered graph view as a PNG file. */
+    downloadPNG(fileName = "orbitgraph.png"): Promise<void> {
+        return this.exporter.downloadPNG(fileName);
+    }
+
+    /** Serializes the complete graph or the active visible subset as JSON. */
+    exportJSON(options: GraphJSONExportOptions = {}): string {
+        return this.exporter.exportJSON(options);
+    }
+
+    /** Downloads graph data as a JSON file. */
+    downloadJSON(
+        options: GraphJSONExportOptions & { fileName?: string } = {},
+    ): void {
+        this.exporter.downloadJSON(options);
+    }
+
     destroy(): void {
         this.runtime.stop();
         this.resizeObserver.disconnect();
@@ -480,7 +514,7 @@ export class OrbitGraph {
     }
 
     private refreshVisibleGraph(): void {
-        this.views.refresh();
+        this.visibleData = this.views.refresh();
     }
 
     private emitSelection(selection: GraphSelection): void {

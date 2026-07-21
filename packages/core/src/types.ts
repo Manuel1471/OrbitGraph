@@ -503,3 +503,18 @@ export type GraphAccessibilityOptions = {
      */
     ariaLabel?: string;
 };
+
+/** Selects which graph data is included in a JSON export. */
+export type GraphExportScope = "all" | "visible";
+
+/** Options used when serializing graph data as JSON. */
+export type GraphJSONExportOptions = {
+    /**
+     * Exports the complete source graph or only the active explored and
+     * filtered subset. @defaultValue "all"
+     */
+    scope?: GraphExportScope;
+
+    /** Formats JSON with indentation when enabled. @defaultValue true */
+    pretty?: boolean;
+};
