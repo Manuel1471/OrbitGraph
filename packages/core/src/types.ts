@@ -266,6 +266,9 @@ export type OrbitGraphOptions = {
     /** Called when a lazy data-source request starts or finishes. */
     onLoadingChange?: (state: GraphLoadingState) => void;
 
+    /** Camera navigation and distance constraints. */
+    camera?: OrbitGraphCameraOptions;
+
     /**
      * Called after exploration and filters change the rendered graph subset.
      */
@@ -453,4 +456,27 @@ export type GraphLoadingState = {
     operation: "node" | "neighborhood" | null;
     /** Requested node id, or null when idle. */
     nodeId: string | null;
+};
+
+/**
+ * Configuration for OrbitGraph camera navigation.
+ *
+ * Touch navigation is always enabled through OrbitControls:
+ * one finger rotates, while two fingers pan and zoom.
+ */
+export type OrbitGraphCameraOptions = {
+    /** Enables desktop keyboard movement with WASD and Q/E. @defaultValue true */
+    keyboardNavigation?: boolean;
+
+    /** Base speed for keyboard movement. @defaultValue 18 */
+    movementSpeed?: number;
+
+    /** Multiplier applied while Shift is pressed. @defaultValue 2.5 */
+    boostMultiplier?: number;
+
+    /** Minimum distance between the camera and its target. @defaultValue 2 */
+    minDistance?: number;
+
+    /** Maximum distance between the camera and its target. @defaultValue 1000 */
+    maxDistance?: number;
 };

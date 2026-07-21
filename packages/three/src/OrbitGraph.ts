@@ -87,6 +87,7 @@ export class OrbitGraph {
         operation: null,
         nodeId: null,
     };
+    private previousFrameTime = performance.now();
 
     constructor(
         private readonly container: HTMLElement,
@@ -120,10 +121,6 @@ export class OrbitGraph {
             this.camera,
             this.renderer.domElement,
         );
-        this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.08;
-        this.controls.minDistance = 10;
-        this.controls.maxDistance = 250;
 
         this.scene.add(this.group);
         this.scene.add(new THREE.AmbientLight("#ffffff", 1.5));
@@ -142,7 +139,12 @@ export class OrbitGraph {
             },
         );
 
-        this.graphCamera = new GraphCamera(this.camera, this.controls);
+        this.graphCamera = new GraphCamera(
+            this.camera,
+            this.controls,
+            this.renderer.domElement,
+            options.camera,
+        );
         this.labels = new NodeLabelRenderer(this.scene, this.nodes);
         this.particles = new LinkParticleRenderer(
             this.scene,
@@ -557,6 +559,7 @@ export class OrbitGraph {
     destroy(): void {
         this.resizeObserver.disconnect();
         this.interaction.dispose();
+        this.graphCamera.dispose();
         this.clearActiveGraph();
         this.particles.dispose();
         this.controls.dispose();
@@ -744,8 +747,14 @@ export class OrbitGraph {
 
     private animate = (): void => {
         requestAnimationFrame(this.animate);
-        this.controls.update();
-        this.particles.update(performance.now() / 1000);
+
+        const now = performance.now();
+        const deltaSeconds = (now - this.previousFrameTime) / 1000;
+
+        this.previousFrameTime = now;
+
+        this.graphCamera.update(deltaSeconds);
+        this.particles.update(now / 1000);
         this.renderer.render(this.scene, this.camera);
     };
 }
