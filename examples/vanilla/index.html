@@ -7,50 +7,42 @@
 </head>
 <body>
 <main>
-    <aside class="panel">
+    <aside class="panel controls-panel">
         <span class="eyebrow">VANILLA EXAMPLE</span>
-        <h1>Organization Map</h1>
-        <p>Start with one team, reveal its relationships, and explore the graph.</p>
+        <h1>Relationship Explorer</h1>
+        <p>
+            Starts with one organization. Reveal its connected network only when needed.
+        </p>
+
+        <div class="actions">
+            <button id="expand-root" type="button">Expand organization</button>
+            <button id="show-all" type="button">Show all</button>
+            <button id="reset-exploration" type="button">Reset exploration</button>
+            <button id="focus-root" type="button">Focus organization</button>
+            <button id="reset-camera" type="button">Reset camera</button>
+        </div>
+
+        <span class="section-title">Export</span>
+        <div class="actions two-columns">
+            <button id="export-png" type="button">Download PNG</button>
+            <button id="export-json" type="button">Visible JSON</button>
+        </div>
+
+        <p class="hint">
+            Keyboard: arrows navigate, Enter focuses, + expands, − collapses, F focuses the camera, Escape clears selection.
+        </p>
+    </aside>
+
+    <aside class="panel details-panel">
+        <span class="eyebrow">GRAPH STATE</span>
+        <h2 id="detail-title">Explore the network</h2>
+        <p id="detail-subtitle">Select a node, use the keyboard, or reveal its relationships.</p>
 
         <div class="stats">
             <span><strong id="node-count">0</strong> visible nodes</span>
-            <span><strong id="link-count">0</strong> relationships</span>
+            <span><strong id="link-count">0</strong> visible links</span>
         </div>
 
-        <label class="control-label" for="layout">Layout</label>
-        <select id="layout">
-            <option value="force">Force</option>
-            <option value="radial">Radial</option>
-            <option value="grid">Grid</option>
-            <option value="hierarchical">Hierarchical</option>
-        </select>
-
-        <label class="control-label" for="search">Search visible nodes</label>
-        <input id="search" type="search" placeholder="Search by name or type" />
-
-        <div class="actions">
-            <button id="expand" type="button">Reveal team connections</button>
-            <button id="collapse" type="button">Collapse connections</button>
-            <button id="reset" type="button">Reset exploration</button>
-            <button id="show-all" type="button">Show all loaded data</button>
-            <button id="focus-path" type="button">Focus delivery path</button>
-        </div>
-
-        <div class="history-actions">
-            <button id="back" type="button">← Back</button>
-            <button id="forward" type="button">Forward →</button>
-        </div>
-
-        <label class="toggle">
-            <input id="link-flow" type="checkbox" />
-            <span>Enable relationship flow</span>
-        </label>
-    </aside>
-
-    <aside id="details" class="details is-empty">
-        <span class="eyebrow">SELECTION</span>
-        <h2 id="detail-title">Select a node or relationship</h2>
-        <p id="detail-subtitle">Metadata will appear here.</p>
         <pre id="detail-data"></pre>
     </aside>
 

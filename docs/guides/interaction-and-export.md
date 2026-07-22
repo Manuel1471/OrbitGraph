@@ -12,7 +12,7 @@ const graph = createOrbitGraph(container, {
     boostMultiplier: 2.5,
     minDistance: 2,
     maxDistance: 1000,
-  },
+  },[index (3).html](../../../../Downloads/index%20%283%29.html)
 });
 ```
 
