@@ -35,6 +35,7 @@ import { GraphRenderer } from "./GraphRenderer";
 import { GraphRuntime } from "./GraphRuntime";
 import { GraphViewSynchronizer } from "./GraphViewSynchronizer";
 import { LinkParticleRenderer } from "./LinkParticleRenderer";
+import { GraphMobileControls } from "./GraphMobileControls";
 import { NodeLabelRenderer } from "./NodeLabelRenderer";
 import { PhysicsEngine } from "./PhysicsEngine";
 import type {
@@ -77,6 +78,7 @@ export class OrbitGraph {
     private readonly interaction: GraphInteraction;
     private readonly keyboardNavigation: GraphKeyboardNavigation;
     private readonly exporter: GraphExporter;
+    private readonly mobileControls: GraphMobileControls;
 
     private layout: GraphLayout;
     private layoutOptions: GraphLayoutOptions;
@@ -86,6 +88,7 @@ export class OrbitGraph {
         private readonly container: HTMLElement,
         private readonly options: OrbitGraphOptions = {},
     ) {
+
         const width = container.clientWidth || window.innerWidth;
         const height = container.clientHeight || window.innerHeight;
 
@@ -268,6 +271,16 @@ export class OrbitGraph {
                 },
             },
             this.options.accessibility,
+        );
+
+        this.mobileControls = new GraphMobileControls(
+            this.container,
+            {
+                onZoomIn: () => this.graphCamera.zoomBy(0.8),
+                onZoomOut: () => this.graphCamera.zoomBy(1.25),
+                onReset: () => this.resetCamera(),
+            },
+            this.options.mobileControls,
         );
 
         this.resizeObserver = new ResizeObserver(() => {
@@ -500,6 +513,7 @@ export class OrbitGraph {
     destroy(): void {
         this.runtime.stop();
         this.resizeObserver.disconnect();
+        this.mobileControls.dispose();
         this.keyboardNavigation.dispose();
         this.interaction.dispose();
         this.graphCamera.dispose();

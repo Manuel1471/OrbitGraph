@@ -18,12 +18,16 @@ export class GraphCamera {
 
     private readonly previousTouchAction: string;
 
+    private readonly minDistance: number;
+    private readonly maxDistance: number;
+
     constructor(
         private readonly camera: THREE.PerspectiveCamera,
         private readonly controls: OrbitControls,
         private readonly element: HTMLElement,
         options: OrbitGraphCameraOptions = {},
     ) {
+
         this.movementSpeed = options.movementSpeed ?? 18;
         this.boostMultiplier = options.boostMultiplier ?? 2.5;
         this.keyboardNavigation = options.keyboardNavigation ?? true;
@@ -31,6 +35,12 @@ export class GraphCamera {
         this.previousTouchAction = this.element.style.touchAction;
 
         this.configureControls(options);
+
+        this.minDistance = options.minDistance ?? 2;
+        this.maxDistance = options.maxDistance ?? 1000;
+
+        this.controls.minDistance = this.minDistance;
+        this.controls.maxDistance = this.maxDistance;
 
         window.addEventListener("keydown", this.handleKeyDown);
         window.addEventListener("keyup", this.handleKeyUp);
@@ -125,6 +135,28 @@ export class GraphCamera {
             position.clone().add(direction.multiplyScalar(24)),
         );
 
+        this.controls.update();
+    }
+
+
+    /** Moves the camera closer to or farther from its current target. */
+    zoomBy(scale: number): void {
+        const offset = this.camera.position.clone().sub(this.controls.target);
+        const currentDistance = offset.length();
+
+        if (currentDistance === 0) {
+            return;
+        }
+
+        const distance = THREE.MathUtils.clamp(
+            currentDistance * scale,
+            this.minDistance,
+            this.maxDistance,
+        );
+
+        this.camera.position.copy(
+            this.controls.target.clone().add(offset.normalize().multiplyScalar(distance)),
+        );
         this.controls.update();
     }
 

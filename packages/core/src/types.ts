@@ -279,6 +279,9 @@ export type OrbitGraphOptions = {
 
     /** Called when keyboard focus moves to a visible node or is cleared. */
     onKeyboardFocusChange?: (node: GraphNode | null) => void;
+
+    /** Optional responsive camera-control overlay for touch devices. */
+    mobileControls?: GraphMobileControlsOptions;
 };
 
 /**
@@ -517,4 +520,25 @@ export type GraphJSONExportOptions = {
 
     /** Formats JSON with indentation when enabled. @defaultValue true */
     pretty?: boolean;
+};
+
+/** Configuration for the optional touch-friendly camera control overlay. */
+export type GraphMobileControlsOptions = {
+    /**
+     * Shows the overlay. `"auto"` only shows it on coarse-pointer devices
+     * such as phones and tablets. @defaultValue "auto"
+     */
+    enabled?: boolean | "auto";
+
+    /** Corner used to place the controls. @defaultValue "bottom-right" */
+    position?: "bottom-left" | "bottom-right";
+
+    /** Shows zoom in and zoom out buttons. @defaultValue true */
+    showZoomButtons?: boolean;
+
+    /** Shows a reset-camera button. @defaultValue true */
+    showResetButton?: boolean;
+
+    /** Accessible label for the camera-control group. */
+    ariaLabel?: string;
 };
