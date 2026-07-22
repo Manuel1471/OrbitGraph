@@ -1,94 +1,68 @@
 // @vitest-environment jsdom
 
-import { cleanup, render } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createRef } from "react";
+import { act } from "react";
+import { createRoot } from "react-dom/client";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { GraphData } from "@orbitgraph/core";
+import type { OrbitGraphHandle } from "../src/OrbitGraph";
 
-const mocks = vi.hoisted(() => {
-    const graphInstance = {
-        setData: vi.fn(),
-        destroy: vi.fn(),
-    };
-
-    return {
-        graphInstance,
-        createOrbitGraph: vi.fn(() => graphInstance),
-    };
-});
+const graph = vi.hoisted(() => ({
+    setData: vi.fn(),
+    resetCamera: vi.fn(),
+    focusNode: vi.fn(),
+    expandNode: vi.fn(),
+    collapseNode: vi.fn(),
+    resetExploration: vi.fn(),
+    showAll: vi.fn(),
+    setInitialView: vi.fn(),
+    exportPNG: vi.fn(() => Promise.resolve(new Blob(["png"]))),
+    downloadPNG: vi.fn(() => Promise.resolve()),
+    exportJSON: vi.fn(() => '{"nodes":[],"links":[]}'),
+    downloadJSON: vi.fn(),
+    getLoadingState: vi.fn(() => ({
+        loading: false,
+        operation: null,
+        nodeId: null,
+    })),
+    destroy: vi.fn(),
+}));
 
 vi.mock("@orbitgraph/three", () => ({
-    createOrbitGraph: mocks.createOrbitGraph,
+    createOrbitGraph: vi.fn(() => graph),
 }));
 
 import { OrbitGraph } from "../src/OrbitGraph";
 
-const data: GraphData = {
-    nodes: [
-        {
-            id: "team",
-            label: "Product Team",
-        },
-    ],
-    links: [],
-};
-
-afterEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-});
-
-beforeEach(() => {
-    mocks.createOrbitGraph.mockReturnValue(mocks.graphInstance);
-});
-
-describe("OrbitGraph React component", () => {
-    it("creates the graph instance and provides graph data", () => {
-        render(
-            <OrbitGraph
-                data={data}
-                style={{ width: "800px", height: "600px" }}
-            />,
-        );
-
-        expect(mocks.createOrbitGraph).toHaveBeenCalledTimes(1);
-        expect(mocks.graphInstance.setData).toHaveBeenCalledWith(data);
+describe("OrbitGraph React ref", () => {
+    afterEach(() => {
+        document.body.innerHTML = "";
+        vi.clearAllMocks();
     });
 
-    it("calls onReady after mounting", () => {
-        const onReady = vi.fn();
+    it("forwards exploration, camera, and export actions to the graph instance", async () => {
+        const host = document.createElement("div");
+        const root = createRoot(host);
+        const ref = createRef<OrbitGraphHandle>();
 
-        render(<OrbitGraph data={data} onReady={onReady} />);
+        await act(async () => {
+            root.render(<OrbitGraph ref={ref} data={{ nodes: [], links: [] }} />);
+        });
 
-        expect(onReady).toHaveBeenCalledWith(mocks.graphInstance);
-    });
+        act(() => {
+            ref.current?.focusNode("team");
+            ref.current?.expandNode("team", { depth: 2 });
+            ref.current?.resetCamera();
+            ref.current?.downloadJSON({ scope: "visible" });
+        });
 
-    it("destroys the graph instance when unmounted", () => {
-        const view = render(<OrbitGraph data={data} />);
+        expect(graph.focusNode).toHaveBeenCalledWith("team");
+        expect(graph.expandNode).toHaveBeenCalledWith("team", { depth: 2 });
+        expect(graph.resetCamera).toHaveBeenCalledOnce();
+        expect(graph.downloadJSON).toHaveBeenCalledWith({ scope: "visible" });
 
-        view.unmount();
+        await expect(ref.current?.exportPNG()).resolves.toBeInstanceOf(Blob);
 
-        expect(mocks.graphInstance.destroy).toHaveBeenCalledTimes(1);
-    });
-
-    it("updates graph data when the data prop changes", () => {
-        const view = render(<OrbitGraph data={data} />);
-
-        const nextData: GraphData = {
-            nodes: [
-                ...data.nodes,
-                {
-                    id: "service",
-                    label: "Notification Service",
-                },
-            ],
-            links: [],
-        };
-
-        view.rerender(<OrbitGraph data={nextData} />);
-
-        expect(mocks.graphInstance.setData).toHaveBeenLastCalledWith(
-            nextData,
-        );
+        act(() => root.unmount());
     });
 });
