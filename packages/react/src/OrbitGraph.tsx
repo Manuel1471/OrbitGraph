@@ -9,7 +9,11 @@ import {
 
 import type {
     GraphData,
+    GraphExpansionOptions,
+    GraphInitialView,
+    GraphJSONExportOptions,
     GraphLoadingState,
+    GraphNode,
     GraphSelection,
     OrbitGraphOptions,
     VisibleGraphData,
@@ -21,23 +25,60 @@ import {
 } from "@orbitgraph/three";
 
 /**
- * Imperative access to the underlying `@orbitgraph/three` instance.
+ * Imperative actions exposed through an `OrbitGraph` React ref.
  *
- * The returned instance exposes methods such as `expandNode`, `setLayout`,
- * `loadNeighborhood`, `exportViewState`, and `destroy`.
+ * Use this for user-driven actions such as camera movement, expanding a
+ * relationship branch, or downloading an export. Keep graph data in the
+ * declarative `data` prop.
  */
 export type OrbitGraphHandle = {
-    getInstance(): OrbitGraphInstance | null;
+    /** Moves the camera to include all currently visible nodes. */
+    resetCamera(): void;
+
+    /** Focuses the camera and selects a currently visible node. */
+    focusNode(nodeId: string): void;
+
+    /** Reveals the selected node's relationship neighborhood. */
+    expandNode(nodeId: string, options?: GraphExpansionOptions): void;
+
+    /** Removes an explicit expansion from the current exploration view. */
+    collapseNode(nodeId: string): void;
+
+    /** Returns the graph to the configured `initialView`. */
+    resetExploration(): void;
+
+    /** Temporarily reveals the complete source graph. */
+    showAll(): void;
+
+    /** Changes the initial exploration configuration. */
+    setInitialView(view: GraphInitialView): void;
+
+    /** Creates a PNG Blob of the current rendered graph view. */
+    exportPNG(): Promise<Blob>;
+
+    /** Downloads the current rendered graph view as a PNG file. */
+    downloadPNG(fileName?: string): Promise<void>;
+
+    /** Serializes complete or visible graph data as JSON. */
+    exportJSON(options?: GraphJSONExportOptions): string;
+
+    /** Downloads complete or visible graph data as JSON. */
+    downloadJSON(
+        options?: GraphJSONExportOptions & { fileName?: string },
+    ): void;
+
+    /** Returns the current lazy-loading operation, when configured. */
+    getLoadingState(): GraphLoadingState;
 };
 
 export type OrbitGraphProps = Omit<
     HTMLAttributes<HTMLDivElement>,
     "children"
 > & {
-    /** Complete data currently known by the application. */
+    /** Complete source data. Replacing it resets exploration to `initialView`. */
     data: GraphData;
 
-    /** Renderer options that do not use a React callback prop. */
+    /** Renderer, camera, exploration, mobile, and link-flow configuration. */
     options?: Omit<
         OrbitGraphOptions,
         | "onSelectionChange"
@@ -47,15 +88,14 @@ export type OrbitGraphProps = Omit<
         | "onLinkHover"
         | "onVisibleDataChange"
         | "onLoadingChange"
+        | "onKeyboardFocusChange"
     >;
-
     style?: CSSProperties;
 
-    /** Called after the underlying Three.js graph is created and receives data. */
-    onReady?: (graph: OrbitGraphInstance) => void;
     onSelectionChange?: (selection: GraphSelection) => void;
     onVisibleDataChange?: (data: VisibleGraphData) => void;
     onLoadingChange?: (state: GraphLoadingState) => void;
+    onKeyboardFocusChange?: (node: GraphNode | null) => void;
     onNodeClick?: OrbitGraphOptions["onNodeClick"];
     onLinkClick?: OrbitGraphOptions["onLinkClick"];
     onNodeHover?: OrbitGraphOptions["onNodeHover"];
@@ -63,20 +103,20 @@ export type OrbitGraphProps = Omit<
 };
 
 /**
- * React container for an OrbitGraph renderer.
+ * React wrapper for OrbitGraph's Three.js renderer.
  *
- * Use a ref and `getInstance()` when an application needs imperative graph
- * actions such as lazy loading, expanding a node, or saving view state.
+ * Pass a ref when a parent component needs to invoke graph actions. Use props
+ * and callbacks for data and UI state that should remain declarative.
  */
 export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
     function OrbitGraph(
         {
             data,
             options,
-            onReady,
             onSelectionChange,
             onVisibleDataChange,
             onLoadingChange,
+            onKeyboardFocusChange,
             onNodeClick,
             onLinkClick,
             onNodeHover,
@@ -90,10 +130,10 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
         const graphRef = useRef<OrbitGraphInstance | null>(null);
 
         const callbacksRef = useRef({
-            onReady,
             onSelectionChange,
             onVisibleDataChange,
             onLoadingChange,
+            onKeyboardFocusChange,
             onNodeClick,
             onLinkClick,
             onNodeHover,
@@ -101,10 +141,10 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
         });
 
         callbacksRef.current = {
-            onReady,
             onSelectionChange,
             onVisibleDataChange,
             onLoadingChange,
+            onKeyboardFocusChange,
             onNodeClick,
             onLinkClick,
             onNodeHover,
@@ -113,8 +153,51 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
 
         useImperativeHandle(
             ref,
-            () => ({
-                getInstance: () => graphRef.current,
+            (): OrbitGraphHandle => ({
+                resetCamera: () => graphRef.current?.resetCamera(),
+                focusNode: (nodeId) => graphRef.current?.focusNode(nodeId),
+                expandNode: (nodeId, expansionOptions) => {
+                    graphRef.current?.expandNode(nodeId, expansionOptions);
+                },
+                collapseNode: (nodeId) => graphRef.current?.collapseNode(nodeId),
+                resetExploration: () => graphRef.current?.resetExploration(),
+                showAll: () => graphRef.current?.showAll(),
+                setInitialView: (view) => graphRef.current?.setInitialView(view),
+                exportPNG: () => {
+                    if (!graphRef.current) {
+                        return Promise.reject(
+                            new Error("OrbitGraph is not mounted."),
+                        );
+                    }
+
+                    return graphRef.current.exportPNG();
+                },
+                downloadPNG: (fileName) => {
+                    if (!graphRef.current) {
+                        return Promise.reject(
+                            new Error("OrbitGraph is not mounted."),
+                        );
+                    }
+
+                    return graphRef.current.downloadPNG(fileName);
+                },
+                exportJSON: (exportOptions) => {
+                    if (!graphRef.current) {
+                        throw new Error("OrbitGraph is not mounted.");
+                    }
+
+                    return graphRef.current.exportJSON(exportOptions);
+                },
+                downloadJSON: (exportOptions) => {
+                    graphRef.current?.downloadJSON(exportOptions);
+                },
+                getLoadingState: () => {
+                    return graphRef.current?.getLoadingState() ?? {
+                        loading: false,
+                        operation: null,
+                        nodeId: null,
+                    };
+                },
             }),
             [],
         );
@@ -137,6 +220,9 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
                 onLoadingChange: (state) => {
                     callbacksRef.current.onLoadingChange?.(state);
                 },
+                onKeyboardFocusChange: (node) => {
+                    callbacksRef.current.onKeyboardFocusChange?.(node);
+                },
                 onNodeClick: (event) => {
                     callbacksRef.current.onNodeClick?.(event);
                 },
@@ -153,7 +239,6 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
 
             graphRef.current = graph;
             graph.setData(data);
-            callbacksRef.current.onReady?.(graph);
 
             return () => {
                 graph.destroy();
@@ -180,5 +265,3 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
         );
     },
 );
-
-OrbitGraph.displayName = "OrbitGraph";

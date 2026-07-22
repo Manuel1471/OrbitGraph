@@ -266,10 +266,22 @@ export type OrbitGraphOptions = {
     /** Called when a lazy data-source request starts or finishes. */
     onLoadingChange?: (state: GraphLoadingState) => void;
 
+    /** Camera navigation and distance constraints. */
+    camera?: OrbitGraphCameraOptions;
+
     /**
      * Called after exploration and filters change the rendered graph subset.
      */
     onVisibleDataChange?: (data: VisibleGraphData) => void;
+
+    /** Keyboard navigation and screen-reader configuration. */
+    accessibility?: GraphAccessibilityOptions;
+
+    /** Called when keyboard focus moves to a visible node or is cleared. */
+    onKeyboardFocusChange?: (node: GraphNode | null) => void;
+
+    /** Optional responsive camera-control overlay for touch devices. */
+    mobileControls?: GraphMobileControlsOptions;
 };
 
 /**
@@ -453,4 +465,80 @@ export type GraphLoadingState = {
     operation: "node" | "neighborhood" | null;
     /** Requested node id, or null when idle. */
     nodeId: string | null;
+};
+
+/**
+ * Configuration for OrbitGraph camera navigation.
+ *
+ * Touch navigation is always enabled through OrbitControls:
+ * one finger rotates, while two fingers pan and zoom.
+ */
+export type OrbitGraphCameraOptions = {
+    /** Enables desktop keyboard movement with WASD and Q/E. @defaultValue true */
+    keyboardNavigation?: boolean;
+
+    /** Base speed for keyboard movement. @defaultValue 18 */
+    movementSpeed?: number;
+
+    /** Multiplier applied while Shift is pressed. @defaultValue 2.5 */
+    boostMultiplier?: number;
+
+    /** Minimum distance between the camera and its target. @defaultValue 2 */
+    minDistance?: number;
+
+    /** Maximum distance between the camera and its target. @defaultValue 1000 */
+    maxDistance?: number;
+};
+
+/**
+ * Accessibility configuration for an OrbitGraph instance.
+ */
+export type GraphAccessibilityOptions = {
+    /**
+     * Enables keyboard navigation for visible graph nodes.
+     * @defaultValue true
+     */
+    keyboardNavigation?: boolean;
+
+    /**
+     * Accessible name announced for the graph canvas.
+     * @defaultValue "Interactive relationship graph"
+     */
+    ariaLabel?: string;
+};
+
+/** Selects which graph data is included in a JSON export. */
+export type GraphExportScope = "all" | "visible";
+
+/** Options used when serializing graph data as JSON. */
+export type GraphJSONExportOptions = {
+    /**
+     * Exports the complete source graph or only the active explored and
+     * filtered subset. @defaultValue "all"
+     */
+    scope?: GraphExportScope;
+
+    /** Formats JSON with indentation when enabled. @defaultValue true */
+    pretty?: boolean;
+};
+
+/** Configuration for the optional touch-friendly camera control overlay. */
+export type GraphMobileControlsOptions = {
+    /**
+     * Shows the overlay. `"auto"` only shows it on coarse-pointer devices
+     * such as phones and tablets. @defaultValue "auto"
+     */
+    enabled?: boolean | "auto";
+
+    /** Corner used to place the controls. @defaultValue "bottom-right" */
+    position?: "bottom-left" | "bottom-right";
+
+    /** Shows zoom in and zoom out buttons. @defaultValue true */
+    showZoomButtons?: boolean;
+
+    /** Shows a reset-camera button. @defaultValue true */
+    showResetButton?: boolean;
+
+    /** Accessible label for the camera-control group. */
+    ariaLabel?: string;
 };

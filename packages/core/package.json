@@ -1,6 +1,6 @@
 {
   "name": "@orbitgraph/core",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Core data structures and graph utilities for OrbitGraph.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -30,5 +30,8 @@
     "visualization",
     "typescript",
     "3d"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

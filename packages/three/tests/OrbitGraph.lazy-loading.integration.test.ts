@@ -75,9 +75,10 @@ vi.mock("three/examples/jsm/controls/OrbitControls.js", () => ({
 
 vi.mock("../src/GraphCamera", () => ({
     GraphCamera: class {
-        constructor(..._args: unknown[]) {}
-        reset = vi.fn();
+        update = vi.fn();
         focusNode = vi.fn();
+        reset = vi.fn();
+        dispose = vi.fn();
     },
 }));
 

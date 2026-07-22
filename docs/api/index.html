@@ -10,9 +10,8 @@
 <h1>OrbitGraph API - v0.3.0</h1></div>
 <div class="tsd-panel tsd-typography"><h1 id="orbitgraph" class="tsd-anchor-link">OrbitGraph<a href="#orbitgraph" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
 <blockquote>
-<p>A TypeScript library for exploring complex relationship graphs in 3D.</p>
+<p>Explore connected data in 3D — start small, follow relationships, and reveal only what matters.</p>
 </blockquote>
-<p>OrbitGraph renders nodes and directed relationships as an interactive WebGL universe. It is built for networks of people, services, documents, events, organizations, dependencies, resources, and knowledge graphs.</p>
 <p><img src="media/example.png" alt="OrbitGraph preview"></p>
 <h2 id="start-here" class="tsd-anchor-link">Start here<a href="#start-here" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <table>
@@ -24,74 +23,39 @@
 </thead>
 <tbody>
 <tr>
-<td>Install OrbitGraph and render my first graph</td>
+<td>Render my first graph</td>
 <td><a href="#quick-start">Quick start</a></td>
 </tr>
 <tr>
-<td>Copy methods and configuration recipes</td>
+<td>Copy API recipes</td>
 <td><a href="media/README.md">API guide</a></td>
 </tr>
 <tr>
-<td>Start from a node, type, or neighborhood</td>
+<td>Explore a large graph progressively</td>
 <td><a href="documents/relationship-exploration.html">Relationship exploration</a></td>
 </tr>
 <tr>
-<td>Learn the data model</td>
-<td><a href="documents/getting-started.html">Getting started</a></td>
+<td>Use touch, keyboard, camera, and exports</td>
+<td><a href="./docs/guides/interaction-and-export.md">Interaction guide</a></td>
 </tr>
 <tr>
-<td>Measure large graph performance</td>
+<td>Test graph size and FPS</td>
 <td><a href="documents/performance.html">Performance guide</a></td>
-</tr>
-<tr>
-<td>Run complete applications</td>
-<td><a href="#examples">Examples</a></td>
 </tr>
 </tbody>
 </table>
 <h2 id="features" class="tsd-anchor-link">Features<a href="#features" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <ul>
-<li>3D force-directed graph layout</li>
-<li>Orbit, zoom, pan, drag, and pin nodes</li>
-<li>Directed relationships with arrows, colors, and weight-based opacity</li>
-<li>Optional animated energy flow along relationships</li>
-<li>Node and relationship selection with hover labels and JSON metadata</li>
-<li>Search, multi-type filters, and minimum relationship weight</li>
-<li>Progressive exploration with <code>initialView</code>, expansion, and collapse controls</li>
-<li>Incremental graph updates</li>
+<li>3D force-directed graph layouts with orbit, pan, zoom, drag, and pin interactions</li>
+<li>Progressive exploration: start from a node, neighborhood, or type instead of rendering all data</li>
+<li>Search, type filters, link-weight filtering, selections, labels, paths, and exploration history</li>
+<li>Responsive touch gestures plus optional large mobile camera controls</li>
+<li>Keyboard navigation with visible focus and accessible canvas labels</li>
+<li>Optional animated relationship flow</li>
+<li>PNG screenshots and complete or visible JSON exports</li>
 <li>Vanilla JavaScript and React support</li>
 </ul>
-<h2 id="packages" class="tsd-anchor-link">Packages<a href="#packages" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<table>
-<thead>
-<tr>
-<th>Package</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><a href="https://www.npmjs.com/package/@orbitgraph/core"><code>@orbitgraph/core</code></a></td>
-<td>Graph types and data utilities</td>
-</tr>
-<tr>
-<td><a href="https://www.npmjs.com/package/@orbitgraph/three"><code>@orbitgraph/three</code></a></td>
-<td>Three.js/WebGL renderer</td>
-</tr>
-<tr>
-<td><a href="https://www.npmjs.com/package/@orbitgraph/react"><code>@orbitgraph/react</code></a></td>
-<td>React component bindings</td>
-</tr>
-</tbody>
-</table>
-<h2 id="requirements" class="tsd-anchor-link">Requirements<a href="#requirements" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<ul>
-<li>Node.js 18 or newer</li>
-<li>Modern browser with WebGL support</li>
-<li>Three.js <code>^0.185.0</code></li>
-<li>React 18 or 19 for <code>@orbitgraph/react</code></li>
-</ul>
-<h2 id="installation" class="tsd-anchor-link">Installation<a href="#installation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h2 id="install" class="tsd-anchor-link">Install<a href="#install" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <h3 id="vanilla-javascript" class="tsd-anchor-link">Vanilla JavaScript<a href="#vanilla-javascript" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-2">@orbitgraph/core</span><span class="hl-1"> </span><span class="hl-2">@orbitgraph/three</span><span class="hl-1"> </span><span class="hl-2">three</span>
 </code><button type="button">Copy</button></pre>
@@ -101,67 +65,51 @@
 </code><button type="button">Copy</button></pre>
 
 <h2 id="quick-start" class="tsd-anchor-link">Quick start<a href="#quick-start" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<pre><code class="html"><span class="hl-3">&lt;</span><span class="hl-4">div</span><span class="hl-1"> </span><span class="hl-5">id</span><span class="hl-1">=</span><span class="hl-6">&quot;graph&quot;</span><span class="hl-1"> </span><span class="hl-5">style</span><span class="hl-1">=</span><span class="hl-6">&quot;width: 100vw; height: 100vh&quot;</span><span class="hl-3">&gt;&lt;/</span><span class="hl-4">div</span><span class="hl-3">&gt;</span>
+<pre><code class="ts"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">createOrbitGraph</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@orbitgraph/three&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> </span><span class="hl-3">type</span><span class="hl-1"> { </span><span class="hl-4">GraphData</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@orbitgraph/core&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">data</span><span class="hl-1">: </span><span class="hl-7">GraphData</span><span class="hl-1"> = {</span><br/><span class="hl-1">  </span><span class="hl-4">nodes:</span><span class="hl-1"> [</span><br/><span class="hl-1">    { </span><span class="hl-4">id:</span><span class="hl-1"> </span><span class="hl-2">&quot;team&quot;</span><span class="hl-1">, </span><span class="hl-4">label:</span><span class="hl-1"> </span><span class="hl-2">&quot;Product Team&quot;</span><span class="hl-1">, </span><span class="hl-4">type:</span><span class="hl-1"> </span><span class="hl-2">&quot;group&quot;</span><span class="hl-1">, </span><span class="hl-4">color:</span><span class="hl-1"> </span><span class="hl-2">&quot;#22d3ee&quot;</span><span class="hl-1"> },</span><br/><span class="hl-1">    { </span><span class="hl-4">id:</span><span class="hl-1"> </span><span class="hl-2">&quot;workspace&quot;</span><span class="hl-1">, </span><span class="hl-4">label:</span><span class="hl-1"> </span><span class="hl-2">&quot;Workspace&quot;</span><span class="hl-1">, </span><span class="hl-4">type:</span><span class="hl-1"> </span><span class="hl-2">&quot;resource&quot;</span><span class="hl-1">, </span><span class="hl-4">color:</span><span class="hl-1"> </span><span class="hl-2">&quot;#a855f7&quot;</span><span class="hl-1"> },</span><br/><span class="hl-1">  ],</span><br/><span class="hl-1">  </span><span class="hl-4">links:</span><span class="hl-1"> [</span><br/><span class="hl-1">    { </span><span class="hl-4">source:</span><span class="hl-1"> </span><span class="hl-2">&quot;team&quot;</span><span class="hl-1">, </span><span class="hl-4">target:</span><span class="hl-1"> </span><span class="hl-2">&quot;workspace&quot;</span><span class="hl-1">, </span><span class="hl-4">type:</span><span class="hl-1"> </span><span class="hl-2">&quot;manages&quot;</span><span class="hl-1">, </span><span class="hl-4">weight:</span><span class="hl-1"> </span><span class="hl-8">1</span><span class="hl-1"> },</span><br/><span class="hl-1">  ],</span><br/><span class="hl-1">};</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">container</span><span class="hl-1"> = </span><span class="hl-4">document</span><span class="hl-1">.</span><span class="hl-0">querySelector</span><span class="hl-1">&lt;</span><span class="hl-7">HTMLElement</span><span class="hl-1">&gt;(</span><span class="hl-2">&quot;#graph&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-3">if</span><span class="hl-1"> (!</span><span class="hl-4">container</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-3">throw</span><span class="hl-1"> </span><span class="hl-5">new</span><span class="hl-1"> </span><span class="hl-0">Error</span><span class="hl-1">(</span><span class="hl-2">&quot;Graph container was not found.&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">graph</span><span class="hl-1"> = </span><span class="hl-0">createOrbitGraph</span><span class="hl-1">(</span><span class="hl-4">container</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-4">mobileControls:</span><span class="hl-1"> { </span><span class="hl-4">enabled:</span><span class="hl-1"> </span><span class="hl-2">&quot;auto&quot;</span><span class="hl-1"> },</span><br/><span class="hl-1">  </span><span class="hl-4">accessibility:</span><span class="hl-1"> { </span><span class="hl-4">ariaLabel:</span><span class="hl-1"> </span><span class="hl-2">&quot;Product relationships&quot;</span><span class="hl-1"> },</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-4">graph</span><span class="hl-1">.</span><span class="hl-0">setData</span><span class="hl-1">(</span><span class="hl-4">data</span><span class="hl-1">);</span>
 </code><button type="button">Copy</button></pre>
 
-<pre><code class="ts"><span class="hl-7">import</span><span class="hl-1"> { </span><span class="hl-8">createOrbitGraph</span><span class="hl-1"> } </span><span class="hl-7">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@orbitgraph/three&quot;</span><span class="hl-1">;</span><br/><span class="hl-7">import</span><span class="hl-1"> </span><span class="hl-7">type</span><span class="hl-1"> { </span><span class="hl-8">GraphData</span><span class="hl-1"> } </span><span class="hl-7">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@orbitgraph/core&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-9">const</span><span class="hl-1"> </span><span class="hl-10">data</span><span class="hl-1">: </span><span class="hl-11">GraphData</span><span class="hl-1"> = {</span><br/><span class="hl-1">  </span><span class="hl-8">nodes:</span><span class="hl-1"> [</span><br/><span class="hl-1">    {</span><br/><span class="hl-1">      </span><span class="hl-8">id:</span><span class="hl-1"> </span><span class="hl-2">&quot;team&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-8">label:</span><span class="hl-1"> </span><span class="hl-2">&quot;Product Team&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-8">type:</span><span class="hl-1"> </span><span class="hl-2">&quot;group&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-8">color:</span><span class="hl-1"> </span><span class="hl-2">&quot;#22d3ee&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    },</span><br/><span class="hl-1">    {</span><br/><span class="hl-1">      </span><span class="hl-8">id:</span><span class="hl-1"> </span><span class="hl-2">&quot;workspace&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-8">label:</span><span class="hl-1"> </span><span class="hl-2">&quot;Workspace&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-8">type:</span><span class="hl-1"> </span><span class="hl-2">&quot;resource&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-8">color:</span><span class="hl-1"> </span><span class="hl-2">&quot;#a855f7&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    },</span><br/><span class="hl-1">  ],</span><br/><span class="hl-1">  </span><span class="hl-8">links:</span><span class="hl-1"> [</span><br/><span class="hl-1">    {</span><br/><span class="hl-1">      </span><span class="hl-8">source:</span><span class="hl-1"> </span><span class="hl-2">&quot;team&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-8">target:</span><span class="hl-1"> </span><span class="hl-2">&quot;workspace&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-8">type:</span><span class="hl-1"> </span><span class="hl-2">&quot;manages&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-8">weight:</span><span class="hl-1"> </span><span class="hl-12">1</span><span class="hl-1">,</span><br/><span class="hl-1">    },</span><br/><span class="hl-1">  ],</span><br/><span class="hl-1">};</span><br/><br/><span class="hl-9">const</span><span class="hl-1"> </span><span class="hl-10">container</span><span class="hl-1"> = </span><span class="hl-8">document</span><span class="hl-1">.</span><span class="hl-0">querySelector</span><span class="hl-1">&lt;</span><span class="hl-11">HTMLElement</span><span class="hl-1">&gt;(</span><span class="hl-2">&quot;#graph&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-7">if</span><span class="hl-1"> (!</span><span class="hl-8">container</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-7">throw</span><span class="hl-1"> </span><span class="hl-9">new</span><span class="hl-1"> </span><span class="hl-0">Error</span><span class="hl-1">(</span><span class="hl-2">&quot;Graph container was not found.&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-9">const</span><span class="hl-1"> </span><span class="hl-10">graph</span><span class="hl-1"> = </span><span class="hl-0">createOrbitGraph</span><span class="hl-1">(</span><span class="hl-8">container</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-8">linkFlow:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-8">enabled:</span><span class="hl-1"> </span><span class="hl-9">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-8">maxParticles:</span><span class="hl-1"> </span><span class="hl-12">140</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-8">particleSize:</span><span class="hl-1"> </span><span class="hl-12">0.09</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-8">particleSpeed:</span><span class="hl-1"> </span><span class="hl-12">0.12</span><span class="hl-1">,</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-8">graph</span><span class="hl-1">.</span><span class="hl-0">setData</span><span class="hl-1">(</span><span class="hl-8">data</span><span class="hl-1">);</span>
-</code><button type="button">Copy</button></pre>
-
-<p>For the complete method reference, options, filters, events, React usage, and exploration recipes, see the <a href="media/README.md">API guide</a>.</p>
 <h2 id="explore-large-graphs-progressively" class="tsd-anchor-link">Explore large graphs progressively<a href="#explore-large-graphs-progressively" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>Do not render everything when users only need one part of a large network.</p>
-<pre><code class="ts"><span class="hl-9">const</span><span class="hl-1"> </span><span class="hl-10">graph</span><span class="hl-1"> = </span><span class="hl-0">createOrbitGraph</span><span class="hl-1">(</span><span class="hl-8">container</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-8">initialView:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-8">mode:</span><span class="hl-1"> </span><span class="hl-2">&quot;type&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-8">nodeType:</span><span class="hl-1"> </span><span class="hl-2">&quot;group&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-8">maxNodes:</span><span class="hl-1"> </span><span class="hl-12">100</span><span class="hl-1">,</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-8">graph</span><span class="hl-1">.</span><span class="hl-0">setData</span><span class="hl-1">(</span><span class="hl-8">data</span><span class="hl-1">);</span><br/><br/><span class="hl-8">graph</span><span class="hl-1">.</span><span class="hl-0">expandNode</span><span class="hl-1">(</span><span class="hl-2">&quot;team&quot;</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-8">depth:</span><span class="hl-1"> </span><span class="hl-12">1</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-8">direction:</span><span class="hl-1"> </span><span class="hl-2">&quot;outgoing&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">});</span>
+<pre><code class="ts"><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">graph</span><span class="hl-1"> = </span><span class="hl-0">createOrbitGraph</span><span class="hl-1">(</span><span class="hl-4">container</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-4">initialView:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">mode:</span><span class="hl-1"> </span><span class="hl-2">&quot;neighborhood&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-4">nodeId:</span><span class="hl-1"> </span><span class="hl-2">&quot;team&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-4">depth:</span><span class="hl-1"> </span><span class="hl-8">1</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-4">direction:</span><span class="hl-1"> </span><span class="hl-2">&quot;outgoing&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-4">graph</span><span class="hl-1">.</span><span class="hl-0">setData</span><span class="hl-1">(</span><span class="hl-4">data</span><span class="hl-1">);</span><br/><span class="hl-4">graph</span><span class="hl-1">.</span><span class="hl-0">expandNode</span><span class="hl-1">(</span><span class="hl-2">&quot;team&quot;</span><span class="hl-1">, { </span><span class="hl-4">depth:</span><span class="hl-1"> </span><span class="hl-8">1</span><span class="hl-1">, </span><span class="hl-4">direction:</span><span class="hl-1"> </span><span class="hl-2">&quot;outgoing&quot;</span><span class="hl-1"> });</span>
 </code><button type="button">Copy</button></pre>
 
-<p>The full source data remains available in memory, but nodes outside the active exploration are not mounted in the renderer or force simulation. Read the <a href="documents/relationship-exploration.html">relationship exploration guide</a> for <code>all</code>, <code>node</code>, <code>neighborhood</code>, <code>type</code>, expansion, collapse, and reset behavior.</p>
-<h2 id="benchmark" class="tsd-anchor-link">Benchmark<a href="#benchmark" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>OrbitGraph includes an interactive benchmark for generated graphs with 100, 500, 1,000, and 5,000 nodes.</p>
-<p><img src="media/example_benchmark.png" alt="OrbitGraph benchmark"></p>
-<p>It displays FPS plus node and relationship totals, and lets you compare optional energy flow against performance.</p>
+<p>Nodes outside the explored subset are not mounted in WebGL or the force simulation.</p>
+<h2 id="interaction-and-export" class="tsd-anchor-link">Interaction and export<a href="#interaction-and-export" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="ts"><span class="hl-4">graph</span><span class="hl-1">.</span><span class="hl-0">focusNode</span><span class="hl-1">(</span><span class="hl-2">&quot;workspace&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">graph</span><span class="hl-1">.</span><span class="hl-0">resetCamera</span><span class="hl-1">();</span><br/><br/><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">graph</span><span class="hl-1">.</span><span class="hl-0">downloadPNG</span><span class="hl-1">(</span><span class="hl-2">&quot;product-network.png&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">graph</span><span class="hl-1">.</span><span class="hl-0">downloadJSON</span><span class="hl-1">({ </span><span class="hl-4">scope:</span><span class="hl-1"> </span><span class="hl-2">&quot;visible&quot;</span><span class="hl-1">, </span><span class="hl-4">fileName:</span><span class="hl-1"> </span><span class="hl-2">&quot;visible-network.json&quot;</span><span class="hl-1"> });</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Keyboard navigation is enabled by default. Use arrow keys to move focus, <code>Enter</code> to focus a node, <code>+</code> to expand, <code>-</code> to collapse, and <code>Escape</code> to clear the current selection.</p>
+<h2 id="benchmark-and-examples" class="tsd-anchor-link">Benchmark and examples<a href="#benchmark-and-examples" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">build</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">dev:benchmark</span>
 </code><button type="button">Copy</button></pre>
 
-<p>Open the local Vite URL, usually <code>http://localhost:5173</code>.</p>
-<p>For interpretation and performance guidance, see <a href="documents/performance.html">Performance</a>.</p>
-<h2 id="examples" class="tsd-anchor-link">Examples<a href="#examples" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <table>
 <thead>
 <tr>
 <th>Example</th>
-<th>What it demonstrates</th>
+<th>Purpose</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><a href="media/vanilla"><code>examples/vanilla</code></a></td>
-<td>Direct browser integration with TypeScript</td>
+<td>Direct TypeScript/browser integration</td>
 </tr>
 <tr>
 <td><a href="media/react"><code>examples/react</code></a></td>
-<td>OrbitGraph mounted as a React component</td>
+<td>React component, callbacks, and refs</td>
 </tr>
 <tr>
 <td><a href="media/benchmark"><code>examples/benchmark</code></a></td>
-<td>Generated large graphs and FPS comparison</td>
+<td>Generated graphs and FPS comparison</td>
 </tr>
 </tbody>
 </table>
 <h2 id="development" class="tsd-anchor-link">Development<a href="#development" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">typecheck</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:run</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">build</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">dev</span>
+<pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">typecheck</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:run</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">build</span>
 </code><button type="button">Copy</button></pre>
 
-<h2 id="documentation-map" class="tsd-anchor-link">Documentation map<a href="#documentation-map" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<pre><code class="text">README.md                         Start here
-docs/api/README.md                Copy-and-use API reference
-docs/guides/getting-started.md    Data model and first graph
-docs/guides/relationship-exploration.md
-                                  Progressive exploration behavior
-docs/guides/performance.md        Benchmark and performance guidance
-examples/                         Runnable consumer applications
-</code><button type="button">Copy</button></pre>
-
-<h2 id="status" class="tsd-anchor-link">Status<a href="#status" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>OrbitGraph is under active development. The public API is documented and tested; review the <a href="./ROADMAP.md">Roadmap</a> for planned enhancements.</p>
+<h2 id="roadmap" class="tsd-anchor-link">Roadmap<a href="#roadmap" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>See <a href="./ROADMAP.md">ROADMAP.md</a>. The next planned release focuses on Worker-based graph computation and graph analytics.</p>
 <h2 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p>MIT</p>
 </div></div>
@@ -183,20 +131,17 @@ examples/                         Runnable consumer applications
 <ul>
 <li><a href="#start-here"><span>Start here</span></a></li>
 <li><a href="#features"><span>Features</span></a></li>
-<li><a href="#packages"><span>Packages</span></a></li>
-<li><a href="#requirements"><span>Requirements</span></a></li>
-<li><a href="#installation"><span>Installation</span></a></li>
+<li><a href="#install"><span>Install</span></a></li>
 <li>
 <ul>
 <li><a href="#vanilla-javascript"><span>Vanilla <wbr/>Java<wbr/>Script</span></a></li>
 <li><a href="#react"><span>React</span></a></li></ul></li>
 <li><a href="#quick-start"><span>Quick start</span></a></li>
 <li><a href="#explore-large-graphs-progressively"><span>Explore large graphs progressively</span></a></li>
-<li><a href="#benchmark"><span>Benchmark</span></a></li>
-<li><a href="#examples"><span>Examples</span></a></li>
+<li><a href="#interaction-and-export"><span>Interaction and export</span></a></li>
+<li><a href="#benchmark-and-examples"><span>Benchmark and examples</span></a></li>
 <li><a href="#development"><span>Development</span></a></li>
-<li><a href="#documentation-map"><span>Documentation map</span></a></li>
-<li><a href="#status"><span>Status</span></a></li>
+<li><a href="#roadmap"><span>Roadmap</span></a></li>
 <li><a href="#license"><span>License</span></a></li></ul></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="modules.html">OrbitGraph API - v0.3.0</a>

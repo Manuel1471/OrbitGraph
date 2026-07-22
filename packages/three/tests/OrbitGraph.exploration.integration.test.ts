@@ -52,6 +52,8 @@ vi.mock("../src/GraphRenderer", () => ({
             this.linkIds.push(link.id ?? "unknown");
         }
 
+        setKeyboardFocus(): void {}
+
         clear(): void {
             harness.rendererNodes.push([...this.nodeIds].sort());
             harness.rendererLinks.push([...this.linkIds].sort());
@@ -72,6 +74,8 @@ vi.mock("../src/PhysicsEngine", () => ({
         stop(): void {
             harness.physicsStops += 1;
         }
+
+        setLayout(): void {}
         startDrag(): void {}
         drag(): void {}
         endDrag(): void {}
@@ -81,8 +85,10 @@ vi.mock("../src/PhysicsEngine", () => ({
 
 vi.mock("../src/GraphCamera", () => ({
     GraphCamera: class {
-        reset(): void {}
-        focusNode(): void {}
+        update = vi.fn();
+        focusNode = vi.fn();
+        reset = vi.fn();
+        dispose = vi.fn();
     },
 }));
 
@@ -109,6 +115,12 @@ vi.mock("../src/LinkParticleRenderer", () => ({
     },
 }));
 
+vi.mock("../src/GraphKeyboardNavigation", () => ({
+    GraphKeyboardNavigation: class {
+        dispose(): void {}
+    },
+}));
+
 import { createOrbitGraph } from "../src/OrbitGraph";
 
 const data: GraphData = {
@@ -119,8 +131,18 @@ const data: GraphData = {
         { id: "hidden", label: "Hidden Person", type: "guest" },
     ],
     links: [
-        { id: "promoter-a", source: "promoter", target: "guest-a", type: "invited" },
-        { id: "a-b", source: "guest-a", target: "guest-b", type: "invited" },
+        {
+            id: "promoter-a",
+            source: "promoter",
+            target: "guest-a",
+            type: "invited",
+        },
+        {
+            id: "a-b",
+            source: "guest-a",
+            target: "guest-b",
+            type: "invited",
+        },
     ],
 };
 
@@ -140,7 +162,9 @@ describe("OrbitGraph exploration integration", () => {
                 disconnect(): void {}
             },
         );
+
         vi.stubGlobal("requestAnimationFrame", () => 0);
+        vi.stubGlobal("cancelAnimationFrame", () => {});
     });
 
     it("mounts only explored nodes, keeps hidden nodes out of physics, and resets correctly", () => {
@@ -170,11 +194,16 @@ describe("OrbitGraph exploration integration", () => {
         });
 
         expect(harness.physicsNodes.at(-1)).toEqual(["guest-a", "promoter"]);
-        expect(visibleData.mock.calls.at(-1)?.[0].nodes.map((node: { id: string }) => node.id).sort())
-            .toEqual(["guest-a", "promoter"]);
+        expect(
+            visibleData.mock.calls
+                .at(-1)?.[0]
+                .nodes.map((node: { id: string }) => node.id)
+                .sort(),
+        ).toEqual(["guest-a", "promoter"]);
 
         // Search only filters the explored subset: it cannot reveal "hidden".
         graph.search("hidden");
+
         expect(visibleData.mock.calls.at(-1)?.[0]).toEqual({
             nodes: [],
             links: [],
@@ -185,6 +214,7 @@ describe("OrbitGraph exploration integration", () => {
         expect(harness.physicsNodes.at(-1)).toEqual(["guest-a", "promoter"]);
 
         graph.showAll();
+
         expect(harness.physicsNodes.at(-1)).toEqual([
             "guest-a",
             "guest-b",

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import type { GraphLink } from "@orbitgraph/core";
+
 import type { PhysicsNode } from "./PhysicsEngine";
 import type {
     GraphLinkArrowMap,
@@ -34,6 +35,31 @@ export class GraphRenderer {
     private readonly batchedLinkGeometry: THREE.BufferGeometry;
     private readonly batchedLinkMaterial: THREE.LineBasicMaterial;
     private readonly batchedLinks: THREE.LineSegments;
+
+    /*
+     * A single reusable visual indicator for keyboard focus.
+     * It does not create a new Three.js object for every focused node.
+     */
+    private readonly keyboardFocusGeometry = new THREE.SphereGeometry(
+        1.35,
+        12,
+        12,
+    );
+
+    private readonly keyboardFocusMaterial = new THREE.MeshBasicMaterial({
+        color: "#f8fafc",
+        transparent: true,
+        opacity: 0.9,
+        wireframe: true,
+        depthTest: false,
+    });
+
+    private readonly keyboardFocusMesh = new THREE.Mesh(
+        this.keyboardFocusGeometry,
+        this.keyboardFocusMaterial,
+    );
+
+    private keyboardFocusedNodeId: string | null = null;
 
     private visibleNodeIds = new Set<string>();
     private minimumLinkWeight = 0;
@@ -70,15 +96,24 @@ export class GraphRenderer {
         );
 
         /*
-         * No hacemos raycast en este objeto agrupado.
-         * Los links grandes no son seleccionables, pero los nodos sí.
+         * No raycast is performed against the large batched-link object.
+         * Nodes remain interactive while detailed links are disabled.
          */
         this.batchedLinks.raycast = () => {};
 
         this.batchedLinks.frustumCulled = false;
         this.batchedLinks.visible = false;
 
+        this.keyboardFocusMesh.visible = false;
+        this.keyboardFocusMesh.renderOrder = 2;
+
+        /*
+         * The focus indicator is visual only and must never intercept clicks.
+         */
+        this.keyboardFocusMesh.raycast = () => {};
+
         this.group.add(this.batchedLinks);
+        this.group.add(this.keyboardFocusMesh);
     }
 
     addNode(node: PhysicsNode): void {
@@ -102,6 +137,8 @@ export class GraphRenderer {
         ) {
             this.enableBatchedLinks();
         }
+
+        this.syncKeyboardFocus();
     }
 
     updateNode(node: PhysicsNode): void {
@@ -133,6 +170,8 @@ export class GraphRenderer {
         if (this.useBatchedLinks) {
             this.batchNeedsRebuild = true;
         }
+
+        this.syncKeyboardFocus();
     }
 
     addLink(link: GraphLink): void {
@@ -182,6 +221,7 @@ export class GraphRenderer {
                 this.syncBatchedLinkPositions();
             }
 
+            this.syncKeyboardFocus();
             return;
         }
 
@@ -208,6 +248,8 @@ export class GraphRenderer {
                 this.positionArrow(arrow, source, target);
             }
         }
+
+        this.syncKeyboardFocus();
     }
 
     setVisibleNodeIds(nodeIds: Set<string>, minimumWeight: number): void {
@@ -217,6 +259,8 @@ export class GraphRenderer {
         for (const [nodeId, mesh] of this.nodeMeshes) {
             mesh.visible = nodeIds.has(nodeId);
         }
+
+        this.syncKeyboardFocus();
 
         if (this.useBatchedLinks) {
             this.batchNeedsRebuild = true;
@@ -241,6 +285,14 @@ export class GraphRenderer {
         }
     }
 
+    /**
+     * Displays a visual focus ring around a node selected through the keyboard.
+     */
+    setKeyboardFocus(nodeId: string | null): void {
+        this.keyboardFocusedNodeId = nodeId;
+        this.syncKeyboardFocus();
+    }
+
     clear(): void {
         for (const nodeId of [...this.nodeMeshes.keys()]) {
             this.removeNode(nodeId);
@@ -253,9 +305,36 @@ export class GraphRenderer {
         this.batchedLinkGeometry.setDrawRange(0, 0);
         this.batchedLinks.visible = false;
 
+        /*
+         * Keep the focused id. If that node remains in the next active view,
+         * syncPositions() restores its indicator automatically.
+         */
+        this.keyboardFocusMesh.visible = false;
+
         this.useBatchedLinks = false;
         this.showLinkArrows = true;
         this.batchNeedsRebuild = true;
+    }
+
+    private syncKeyboardFocus(): void {
+        if (!this.keyboardFocusedNodeId) {
+            this.keyboardFocusMesh.visible = false;
+            return;
+        }
+
+        const node = this.nodes.get(this.keyboardFocusedNodeId);
+        const nodeMesh = this.nodeMeshes.get(this.keyboardFocusedNodeId);
+
+        if (!node || !nodeMesh || !nodeMesh.visible) {
+            this.keyboardFocusMesh.visible = false;
+            return;
+        }
+
+        const nodeSize = node.size ?? this.options.nodeSize;
+
+        this.keyboardFocusMesh.position.copy(nodeMesh.position);
+        this.keyboardFocusMesh.scale.setScalar(nodeSize);
+        this.keyboardFocusMesh.visible = true;
     }
 
     private enableBatchedLinks(): void {
@@ -382,7 +461,11 @@ export class GraphRenderer {
             "position",
         ) as THREE.BufferAttribute;
 
-        for (let index = 0; index < this.batchedVisibleLinks.length; index += 1) {
+        for (
+            let index = 0;
+            index < this.batchedVisibleLinks.length;
+            index += 1
+        ) {
             const link = this.batchedVisibleLinks[index];
             const source = this.nodes.get(link.source);
             const target = this.nodes.get(link.target);
@@ -410,7 +493,11 @@ export class GraphRenderer {
             "color",
         ) as THREE.BufferAttribute;
 
-        for (let index = 0; index < this.batchedVisibleLinks.length; index += 1) {
+        for (
+            let index = 0;
+            index < this.batchedVisibleLinks.length;
+            index += 1
+        ) {
             const link = this.batchedVisibleLinks[index];
             const vertexIndex = index * 2;
             const intensity = 0.35 + (link.weight ?? 0.6) * 0.65;

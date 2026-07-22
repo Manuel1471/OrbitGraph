@@ -41,6 +41,8 @@
   },
   "homepage": "https://github.com/Manuel1471/OrbitGraph#readme",
   "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^26.1.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
