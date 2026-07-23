@@ -38,6 +38,7 @@ import { LinkParticleRenderer } from "./LinkParticleRenderer";
 import { GraphMobileControls } from "./GraphMobileControls";
 import { NodeLabelRenderer } from "./NodeLabelRenderer";
 import { PhysicsEngine } from "./PhysicsEngine";
+import { GraphAnalyticsController } from "./GraphAnalyticsController";
 import type {
     GraphLinkArrowMap,
     GraphLinkLineMap,
@@ -61,6 +62,7 @@ export class OrbitGraph {
     private readonly explorer: GraphExplorer;
     private readonly filter = new GraphFilter();
     private readonly physics: PhysicsEngine;
+    public readonly analytics: GraphAnalyticsController;
 
     /** Active objects only; they are replaced after each view refresh. */
     private readonly nodes: GraphNodeMap = new Map();
@@ -160,6 +162,11 @@ export class OrbitGraph {
                 layoutOptions: this.layoutOptions,
                 onVisibleDataChange: options.onVisibleDataChange,
             },
+        );
+
+        this.analytics = new GraphAnalyticsController(
+            () => this.dataStore.getData(),
+            () => this.visibleData,
         );
 
         this.lazyLoader = new GraphLazyLoader(
