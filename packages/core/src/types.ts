@@ -269,6 +269,9 @@ export type OrbitGraphOptions = {
     /** Camera navigation and distance constraints. */
     camera?: OrbitGraphCameraOptions;
 
+    /** Configuration for the force simulation runtime. */
+    physics?: OrbitGraphPhysicsOptions;
+
     /**
      * Called after exploration and filters change the rendered graph subset.
      */
@@ -541,4 +544,17 @@ export type GraphMobileControlsOptions = {
 
     /** Accessible label for the camera-control group. */
     ariaLabel?: string;
+};
+
+/** Configuration for OrbitGraph's force simulation. */
+export type OrbitGraphPhysicsOptions = {
+    /**
+     * Runs force simulation in a module Web Worker when supported.
+     * Falls back to the main thread in unsupported environments.
+     * @defaultValue true
+     */
+    worker?: boolean;
+
+    /** Maximum position updates sent from the worker per second. @defaultValue 60 */
+    tickRate?: number;
 };

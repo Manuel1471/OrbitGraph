@@ -75,6 +75,10 @@ vi.mock("../src/PhysicsEngine", () => ({
             harness.physicsStops += 1;
         }
 
+        dispose(): void {
+            this.stop();
+        }
+
         setLayout(): void {}
         startDrag(): void {}
         drag(): void {}

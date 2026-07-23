@@ -60,7 +60,7 @@ export class OrbitGraph {
     private readonly dataStore = new GraphDataStore();
     private readonly explorer: GraphExplorer;
     private readonly filter = new GraphFilter();
-    private readonly physics = new PhysicsEngine();
+    private readonly physics: PhysicsEngine;
 
     /** Active objects only; they are replaced after each view refresh. */
     private readonly nodes: GraphNodeMap = new Map();
@@ -93,6 +93,7 @@ export class OrbitGraph {
         const height = container.clientHeight || window.innerHeight;
 
         this.explorer = new GraphExplorer(options.initialView);
+        this.physics = new PhysicsEngine(options.physics);
         this.layout = options.layout ?? "force";
         this.layoutOptions = options.layoutOptions ?? {};
 
@@ -518,6 +519,7 @@ export class OrbitGraph {
         this.interaction.dispose();
         this.graphCamera.dispose();
         this.views.clear();
+        this.physics.dispose();
         this.particles.dispose();
         this.controls.dispose();
         this.renderer.dispose();
