@@ -2,73 +2,77 @@
 
 All notable changes to OrbitGraph are documented in this file.
 
-The project follows [Semantic Versioning](https://semver.org/). Package versions are released together for `@orbitgraph/core`, `@orbitgraph/three`, and `@orbitgraph/react`.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/).
 
-## [1.1.0] - 2026-07-21
+## [1.2.0]
 
 ### Added
 
-- Hybrid desktop, touch, and keyboard camera navigation with configurable movement and zoom limits.
-- Optional responsive mobile camera controls with large zoom and reset targets, enabled automatically on coarse-pointer devices.
-- Keyboard accessibility for visible graph nodes, including focus indication, node activation, expansion, collapse, and selection clearing.
-- PNG export and download for the current rendered graph view.
-- Complete or visible graph data export and download as JSON.
-- React `OrbitGraphHandle` ref API for camera, exploration, export, and loading-state actions.
-- React callbacks for lazy-loading state and keyboard focus changes.
-- React component, mobile controls, keyboard navigation, and export test coverage.
+- Optional `createGraphQLDataSource()` adapter in `@orbitgraph/three` for mapping GraphQL responses to `GraphDataSource`.
+- Generic GraphQL request abstraction that supports built-in `fetch` or an existing GraphQL client without adding a GraphQL client dependency.
+- Structured remote-loading errors through `GraphLoadError` and `GraphLoadingState.error`.
+- `onDiagnostic` callback for application logging, telemetry, and error reporting.
+- Direct `onDiagnostic` prop in `@orbitgraph/react`.
+- Error coverage for node and neighborhood lazy-loading failures.
+- Graph analytics APIs for degree, in-degree, out-degree, PageRank, betweenness centrality, and community detection.
+- `graph.analytics` controller in `@orbitgraph/three` with `all` and `visible` data scopes.
+- Worker-backed force physics for supported browsers, with a local simulation fallback.
 
 ### Changed
 
-- Refactored the Three.js facade into focused runtime, data-store, lazy-loader, view-synchronizer, and interaction modules.
-- Updated documentation and examples for camera, accessibility, responsive controls, and exports.
+- Remote requests continue to reject their original promise after OrbitGraph emits loading state and diagnostics, preserving application-level retry and recovery control.
+- Force-directed layouts can run outside the browser main thread through module Workers.
 
-## [1.0.0] - 2026-07-20
+## [1.1.0]
 
 ### Added
 
-- Progressive graph exploration through `initialView` modes: `all`, `node`, `neighborhood`, and `type`.
-- Exploration controls, history, shortest-path focus, lazy data loading, persisted view state, and multiple layouts.
-- Vanilla and React examples, benchmark tooling, CI validation, API docs, contribution guide, security policy, and community files.
+- Improved camera navigation with desktop and touch-friendly controls.
+- Keyboard navigation and visible keyboard focus support.
+- PNG and JSON export utilities.
+- Responsive mobile graph controls.
+- React imperative ref support for exploration, camera, loading, and export actions.
+- React component test coverage in the validation workflow.
+- Additional examples and documentation for interaction, exports, accessibility, and mobile usage.
 
 ### Changed
 
-- Hidden exploration data is excluded from rendering and force simulation.
-- Search and filters refine the explored subset instead of revealing hidden data.
-- Renderer and physics behavior were optimized for large graphs.
+- Refactored the Three.js runtime into smaller focused controllers and synchronizers.
+- Improved CI validation to run workspace builds and tests on pull requests.
 
-## [0.5.0] - 2026-07-20
-
-### Added
-
-- Optional animated relationship flow and interactive performance benchmark.
-
-### Changed
-
-- Reused renderer geometries and materials and reduced expensive link visuals for large graphs.
-
-## [0.4.0] - 2026-07-20
+## [1.0.0]
 
 ### Added
 
-- Initial `@orbitgraph/react` package, package READMEs, API docs, and consumer examples.
+- Initial stable release of OrbitGraph.
+- TypeScript monorepo packages for `@orbitgraph/core`, `@orbitgraph/three`, and `@orbitgraph/react`.
+- Interactive 3D force-directed graph rendering with Three.js.
+- Node and relationship selection, hover behavior, search, type filters, and minimum relationship weight filters.
+- Progressive graph exploration with initial views, expansion, collapse, navigation history, and path focus.
+- Optional animated relationship flow.
+- Vanilla JavaScript, React, benchmark, and playground examples.
+- Documentation, API reference, contribution guide, security policy, Code of Conduct, issue templates, and pull request validation.
 
-## [0.3.0] - 2026-07-20
+### Performance
+
+- Large graph benchmark with generated data sets from 100 to 10,000 nodes.
+- Hidden exploration data excluded from active rendering and physics simulation.
+
+## [0.5.0]
 
 ### Added
 
-- Labels, arrows, hover events, selections, metadata, search, filters, and incremental update APIs.
+- Loading state callbacks for lazy graph data.
+- Exploration improvements and related React bindings.
 
-## [0.2.0] - 2026-07-20
-
-### Added
-
-- Three.js graph renderer with 3D force layout, orbit controls, zoom, drag, and pinning.
-
-## [0.1.0] - 2026-07-20
+## [0.4.0]
 
 ### Added
 
-- Initial `@orbitgraph/core` and `@orbitgraph/three` releases.
+- Initial exploration API, incremental view updates, and expanded package documentation.
 
-[Unreleased]: https://github.com/Manuel1471/OrbitGraph/compare/1.0.0...HEAD
-[1.0.0]: https://github.com/Manuel1471/OrbitGraph/releases/tag/1.0.0
+## [0.3.0]
+
+### Added
+
+- First public multi-package release with core graph types, Three.js rendering, and React bindings.

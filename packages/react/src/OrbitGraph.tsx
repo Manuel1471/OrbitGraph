@@ -9,6 +9,7 @@ import {
 
 import type {
     GraphData,
+    GraphDiagnostic,
     GraphExpansionOptions,
     GraphInitialView,
     GraphJSONExportOptions,
@@ -82,19 +83,21 @@ export type OrbitGraphProps = Omit<
     options?: Omit<
         OrbitGraphOptions,
         | "onSelectionChange"
+        | "onVisibleDataChange"
+        | "onLoadingChange"
+        | "onDiagnostic"
+        | "onKeyboardFocusChange"
         | "onNodeClick"
         | "onLinkClick"
         | "onNodeHover"
         | "onLinkHover"
-        | "onVisibleDataChange"
-        | "onLoadingChange"
-        | "onKeyboardFocusChange"
     >;
     style?: CSSProperties;
 
     onSelectionChange?: (selection: GraphSelection) => void;
     onVisibleDataChange?: (data: VisibleGraphData) => void;
     onLoadingChange?: (state: GraphLoadingState) => void;
+    onDiagnostic?: (diagnostic: GraphDiagnostic) => void;
     onKeyboardFocusChange?: (node: GraphNode | null) => void;
     onNodeClick?: OrbitGraphOptions["onNodeClick"];
     onLinkClick?: OrbitGraphOptions["onLinkClick"];
@@ -116,6 +119,7 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
             onSelectionChange,
             onVisibleDataChange,
             onLoadingChange,
+            onDiagnostic,
             onKeyboardFocusChange,
             onNodeClick,
             onLinkClick,
@@ -133,6 +137,7 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
             onSelectionChange,
             onVisibleDataChange,
             onLoadingChange,
+            onDiagnostic,
             onKeyboardFocusChange,
             onNodeClick,
             onLinkClick,
@@ -144,6 +149,7 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
             onSelectionChange,
             onVisibleDataChange,
             onLoadingChange,
+            onDiagnostic,
             onKeyboardFocusChange,
             onNodeClick,
             onLinkClick,
@@ -159,10 +165,14 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
                 expandNode: (nodeId, expansionOptions) => {
                     graphRef.current?.expandNode(nodeId, expansionOptions);
                 },
-                collapseNode: (nodeId) => graphRef.current?.collapseNode(nodeId),
+                collapseNode: (nodeId) => {
+                    graphRef.current?.collapseNode(nodeId);
+                },
                 resetExploration: () => graphRef.current?.resetExploration(),
                 showAll: () => graphRef.current?.showAll(),
-                setInitialView: (view) => graphRef.current?.setInitialView(view),
+                setInitialView: (view) => {
+                    graphRef.current?.setInitialView(view);
+                },
                 exportPNG: () => {
                     if (!graphRef.current) {
                         return Promise.reject(
@@ -196,7 +206,7 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
                         loading: false,
                         operation: null,
                         nodeId: null,
-                        error: null
+                        error: null,
                     };
                 },
             }),
@@ -220,6 +230,9 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
                 },
                 onLoadingChange: (state) => {
                     callbacksRef.current.onLoadingChange?.(state);
+                },
+                onDiagnostic: (diagnostic) => {
+                    callbacksRef.current.onDiagnostic?.(diagnostic);
                 },
                 onKeyboardFocusChange: (node) => {
                     callbacksRef.current.onKeyboardFocusChange?.(node);
