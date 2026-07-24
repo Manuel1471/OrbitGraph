@@ -176,6 +176,7 @@ export class OrbitGraph {
                 dataSource: options.dataSource,
                 onDataChange: () => this.refreshVisibleGraph(),
                 onLoadingChange: options.onLoadingChange,
+                onDiagnostic: options.onDiagnostic,
             },
         );
 

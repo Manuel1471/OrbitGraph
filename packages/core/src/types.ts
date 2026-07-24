@@ -285,6 +285,9 @@ export type OrbitGraphOptions = {
 
     /** Optional responsive camera-control overlay for touch devices. */
     mobileControls?: GraphMobileControlsOptions;
+
+    /** Receives non-visual diagnostics from data loading operations. */
+    onDiagnostic?: (diagnostic: GraphDiagnostic) => void;
 };
 
 /**
@@ -460,16 +463,6 @@ export type GraphNeighborhoodLoadOptions = GraphExpansionOptions & {
     force?: boolean;
 };
 
-/** Current lazy-load activity, useful for consumer loading indicators. */
-export type GraphLoadingState = {
-    /** Whether a source request is currently active. */
-    loading: boolean;
-    /** Operation currently running, or null when idle. */
-    operation: "node" | "neighborhood" | null;
-    /** Requested node id, or null when idle. */
-    nodeId: string | null;
-};
-
 /**
  * Configuration for OrbitGraph camera navigation.
  *
@@ -557,4 +550,38 @@ export type OrbitGraphPhysicsOptions = {
 
     /** Maximum position updates sent from the worker per second. @defaultValue 60 */
     tickRate?: number;
+};
+
+/** An operation that can request graph data asynchronously. */
+export type GraphLoadOperation = "node" | "neighborhood";
+
+/** Structured information about a failed graph data request. */
+export type GraphLoadError = {
+    /** Stable error category for application-level handling. */
+    code: "data-source-unavailable" | "request-failed";
+    /** Human-readable description of the failure. */
+    message: string;
+    /** Operation that failed. */
+    operation: GraphLoadOperation;
+    /** Node associated with the failed operation. */
+    nodeId: string;
+};
+
+/** A non-visual diagnostic emitted by OrbitGraph. */
+export type GraphDiagnostic = {
+    level: "error";
+    code: GraphLoadError["code"];
+    message: string;
+    operation: GraphLoadOperation;
+    nodeId: string;
+    error: GraphLoadError;
+};
+
+/** Current state of asynchronous graph loading. */
+export type GraphLoadingState = {
+    loading: boolean;
+    operation: GraphLoadOperation | null;
+    nodeId: string | null;
+    /** Most recent loading error. Cleared when a new request begins or succeeds. */
+    error: GraphLoadError | null;
 };

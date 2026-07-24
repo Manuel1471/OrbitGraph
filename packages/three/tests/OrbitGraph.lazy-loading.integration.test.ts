@@ -247,6 +247,7 @@ describe("OrbitGraph lazy loading", () => {
             loading: false,
             operation: null,
             nodeId: null,
+            error: null,
         });
         expect(loadingStates).toEqual([
             "true:node",

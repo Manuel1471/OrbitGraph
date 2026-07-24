@@ -196,6 +196,7 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
                         loading: false,
                         operation: null,
                         nodeId: null,
+                        error: null
                     };
                 },
             }),
