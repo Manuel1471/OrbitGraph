@@ -36,8 +36,11 @@ import { GraphRuntime } from "./GraphRuntime";
 import { GraphViewSynchronizer } from "./GraphViewSynchronizer";
 import { LinkParticleRenderer } from "./LinkParticleRenderer";
 import { GraphMobileControls } from "./GraphMobileControls";
+import { GraphMiniMap } from "./GraphMiniMap";
 import { NodeLabelRenderer } from "./NodeLabelRenderer";
 import { PhysicsEngine } from "./PhysicsEngine";
+import { GraphAnalyticsController } from "./GraphAnalyticsController";
+import { GraphPresentationController } from "./GraphPresentationController";
 import type {
     GraphLinkArrowMap,
     GraphLinkLineMap,
@@ -60,7 +63,9 @@ export class OrbitGraph {
     private readonly dataStore = new GraphDataStore();
     private readonly explorer: GraphExplorer;
     private readonly filter = new GraphFilter();
-    private readonly physics = new PhysicsEngine();
+    private readonly physics: PhysicsEngine;
+    public readonly analytics: GraphAnalyticsController;
+    public readonly presentation: GraphPresentationController;
 
     /** Active objects only; they are replaced after each view refresh. */
     private readonly nodes: GraphNodeMap = new Map();
@@ -79,6 +84,7 @@ export class OrbitGraph {
     private readonly keyboardNavigation: GraphKeyboardNavigation;
     private readonly exporter: GraphExporter;
     private readonly mobileControls: GraphMobileControls;
+    private readonly miniMap: GraphMiniMap;
 
     private layout: GraphLayout;
     private layoutOptions: GraphLayoutOptions;
@@ -93,6 +99,7 @@ export class OrbitGraph {
         const height = container.clientHeight || window.innerHeight;
 
         this.explorer = new GraphExplorer(options.initialView);
+        this.physics = new PhysicsEngine(options.physics);
         this.layout = options.layout ?? "force";
         this.layoutOptions = options.layoutOptions ?? {};
 
@@ -133,6 +140,10 @@ export class OrbitGraph {
             },
         );
 
+        this.presentation = new GraphPresentationController(
+            this.graphRenderer,
+        );
+
         this.graphCamera = new GraphCamera(
             this.camera,
             this.controls,
@@ -140,10 +151,16 @@ export class OrbitGraph {
             options.camera,
         );
         this.labels = new NodeLabelRenderer(this.scene, this.nodes);
+        this.labels.setOptions(options.labels);
         this.particles = new LinkParticleRenderer(
             this.scene,
             this.nodes,
             options.linkFlow,
+        );
+        this.miniMap = new GraphMiniMap(
+            this.container,
+            this.graphCamera,
+            options.miniMap,
         );
 
         this.views = new GraphViewSynchronizer(
@@ -158,7 +175,15 @@ export class OrbitGraph {
                 layout: this.layout,
                 layoutOptions: this.layoutOptions,
                 onVisibleDataChange: options.onVisibleDataChange,
+                onGraphPositionChange: (nodes, links) => {
+                    this.miniMap.update(nodes, links);
+                },
             },
+        );
+
+        this.analytics = new GraphAnalyticsController(
+            () => this.dataStore.getData(),
+            () => this.visibleData,
         );
 
         this.lazyLoader = new GraphLazyLoader(
@@ -168,6 +193,7 @@ export class OrbitGraph {
                 dataSource: options.dataSource,
                 onDataChange: () => this.refreshVisibleGraph(),
                 onLoadingChange: options.onLoadingChange,
+                onDiagnostic: options.onDiagnostic,
             },
         );
 
@@ -204,6 +230,8 @@ export class OrbitGraph {
                 onNodeHover: (node, event) => {
                     if (node) {
                         this.labels.show(node);
+                    } else {
+                        this.labels.hide();
                     }
 
                     this.options.onNodeHover?.({ node, nativeEvent: event });
@@ -292,6 +320,8 @@ export class OrbitGraph {
 
     /** Replaces all graph data and returns exploration to its initial view. */
     setData(data: GraphData): void {
+        this.presentation.clearNodeStyles();
+        this.labels.setSelectedNode(null);
         this.dataStore.setData(data);
         this.explorer.setData(this.dataStore.getData());
         this.explorer.reset();
@@ -516,8 +546,10 @@ export class OrbitGraph {
         this.mobileControls.dispose();
         this.keyboardNavigation.dispose();
         this.interaction.dispose();
+        this.miniMap.dispose();
         this.graphCamera.dispose();
         this.views.clear();
+        this.physics.dispose();
         this.particles.dispose();
         this.controls.dispose();
         this.renderer.dispose();
@@ -532,6 +564,9 @@ export class OrbitGraph {
     }
 
     private emitSelection(selection: GraphSelection): void {
+        this.labels.setSelectedNode(
+            selection?.kind === "node" ? selection.node : null,
+        );
         this.options.onSelectionChange?.(selection);
     }
 }

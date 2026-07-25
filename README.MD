@@ -1,129 +1,155 @@
 # OrbitGraph
 
-> Explore connected data in 3D — start small, follow relationships, and reveal only what matters.
+> Explore connected data in 3D — load only what matters, reveal relationships progressively, and explain the structure visually.
 
 ![OrbitGraph preview](./assets/example.png)
 
-## Start here
-
-| I want to... | Go to |
-| --- | --- |
-| Render my first graph | [Quick start](#quick-start) |
-| Copy API recipes | [API guide](./docs/api/README.md) |
-| Explore a large graph progressively | [Relationship exploration](./docs/guides/relationship-exploration.md) |
-| Use touch, keyboard, camera, and exports | [Interaction guide](./docs/guides/interaction-and-export.md) |
-| Test graph size and FPS | [Performance guide](./docs/guides/performance.md) |
-
-## Features
-
-- 3D force-directed graph layouts with orbit, pan, zoom, drag, and pin interactions
-- Progressive exploration: start from a node, neighborhood, or type instead of rendering all data
-- Search, type filters, link-weight filtering, selections, labels, paths, and exploration history
-- Responsive touch gestures plus optional large mobile camera controls
-- Keyboard navigation with visible focus and accessible canvas labels
-- Optional animated relationship flow
-- PNG screenshots and complete or visible JSON exports
-- Vanilla JavaScript and React support
+OrbitGraph is a TypeScript library for interactive relationship graphs. It combines Three.js rendering, force-directed layouts, progressive exploration, analytics, remote data loading, and React bindings in a small set of focused packages.
 
 ## Install
-
-### Vanilla JavaScript
 
 ```bash
 npm install @orbitgraph/core @orbitgraph/three three
 ```
 
-### React
+<details>
+<summary><strong>Using React?</strong></summary>
 
 ```bash
 npm install @orbitgraph/core @orbitgraph/three @orbitgraph/react three
 ```
 
-## Quick start
+</details>
+
+## Start with a useful view
 
 ```ts
 import { createOrbitGraph } from "@orbitgraph/three";
 import type { GraphData } from "@orbitgraph/core";
 
 const data: GraphData = {
-  nodes: [
-    { id: "team", label: "Product Team", type: "group", color: "#22d3ee" },
-    { id: "workspace", label: "Workspace", type: "resource", color: "#a855f7" },
-  ],
-  links: [
-    { source: "team", target: "workspace", type: "manages", weight: 1 },
-  ],
+    nodes: [
+        { id: "team", label: "Product Team", type: "team", color: "#22d3ee" },
+        { id: "api", label: "Public API", type: "service", color: "#3b82f6" },
+    ],
+    links: [
+        { id: "team-owns-api", source: "team", target: "api", type: "owns", weight: 0.95 },
+    ],
 };
 
 const container = document.querySelector<HTMLElement>("#graph");
 
 if (!container) {
-  throw new Error("Graph container was not found.");
+    throw new Error("Graph container was not found.");
 }
 
 const graph = createOrbitGraph(container, {
-  mobileControls: { enabled: "auto" },
-  accessibility: { ariaLabel: "Product relationships" },
+    initialView: { mode: "node", nodeId: "team" },
+    labels: {
+        mode: "important",
+        importantNodeIds: ["team"],
+        showNodeType: true,
+    },
+    miniMap: {
+        enabled: true,
+        interactive: true,
+    },
 });
 
 graph.setData(data);
+graph.expandNode("team", { direction: "outgoing" });
 ```
 
-## Explore large graphs progressively
+Hidden nodes are kept out of WebGL and the active physics simulation until exploration reveals them.
+
+## What OrbitGraph includes
+
+- 3D force-directed, radial, grid, and hierarchical layouts.
+- Progressive exploration from a node, neighborhood, or node type.
+- Local search, type filters, link-weight filters, history, and path focus.
+- Worker-backed physics with automatic main-thread fallback.
+- Optional remote loading through `GraphDataSource` and a GraphQL adapter.
+- Degree, PageRank, betweenness, and community detection.
+- Visual presentation APIs for analytics: color, scale, glow, and legends you control.
+- Intelligent persistent labels, hover labels, and an interactive mini-map.
+- Desktop keyboard movement, keyboard graph navigation, touch controls, and mobile controls.
+- Node/link events, selection, diagnostics, loading state, PNG export, JSON export, and view-state persistence.
+- Vanilla JavaScript and React support.
+
+## Packages
+
+| Package | Purpose |
+| --- | --- |
+| [`@orbitgraph/core`](./packages/core) | Data types, analytics, communities, and data-source contracts. |
+| [`@orbitgraph/three`](./packages/three) | Three.js renderer and imperative graph API. |
+| [`@orbitgraph/react`](./packages/react) | React component and ref-based actions. |
+
+## Explore and analyze
+
+```ts
+const pageRank = graph.analytics.pageRank({ scope: "visible" });
+
+graph.presentation.setNodeStyles({
+    "api": {
+        color: "#facc15",
+        scale: 1.6,
+        glow: 0.9,
+    },
+});
+
+const communities = await graph.analytics.detectCommunitiesAsync({
+    scope: "visible",
+    weighted: true,
+});
+```
+
+Analytics calculate data; they never change your graph automatically. Your application decides how results should appear.
+
+## Remote data
 
 ```ts
 const graph = createOrbitGraph(container, {
-  initialView: {
-    mode: "neighborhood",
-    nodeId: "team",
-    depth: 1,
-    direction: "outgoing",
-  },
+    dataSource: {
+        async getNode(nodeId) {
+            return fetch(`/api/nodes/${nodeId}`).then((response) => response.json());
+        },
+        async getNeighborhood({ nodeId, limit = 25, offset = 0 }) {
+            return fetch(`/api/nodes/${nodeId}/neighbors?limit=${limit}&offset=${offset}`)
+                .then((response) => response.json());
+        },
+    },
 });
 
-graph.setData(data);
-graph.expandNode("team", { depth: 1, direction: "outgoing" });
+await graph.loadNeighborhood("team", { limit: 25, offset: 0 });
 ```
 
-Nodes outside the explored subset are not mounted in WebGL or the force simulation.
+## Documentation
 
-## Interaction and export
+- [Complete API reference](./docs/api/API.md)
+- [Core package documentation](./packages/core/README.md)
+- [Three.js package documentation](./packages/three/README.md)
+- [React package documentation](./packages/react/README.md)
+- [Changelog](./CHANGELOG.md)
+- [Contributing](./CONTRIBUTING.md)
 
-```ts
-graph.focusNode("workspace");
-graph.resetCamera();
-
-await graph.downloadPNG("product-network.png");
-graph.downloadJSON({ scope: "visible", fileName: "visible-network.json" });
-```
-
-Keyboard navigation is enabled by default. Use arrow keys to move focus, `Enter` to focus a node, `+` to expand, `-` to collapse, and `Escape` to clear the current selection.
-
-## Benchmark and examples
+## Examples
 
 ```bash
-npm run build
+npm install
+npm run dev:vanilla
+npm run dev:react
 npm run dev:benchmark
 ```
 
-| Example | Purpose |
-| --- | --- |
-| [`examples/vanilla`](./examples/vanilla) | Direct TypeScript/browser integration |
-| [`examples/react`](./examples/react) | React component, callbacks, and refs |
-| [`examples/benchmark`](./examples/benchmark) | Generated graphs and FPS comparison |
+The Vanilla and React examples demonstrate remote relationship pages, analytics, community visualization, labels, mini-map navigation, selection details, loading states, diagnostics, and exports.
 
 ## Development
 
 ```bash
-npm install
 npm run typecheck
 npm run test:run
 npm run build
 ```
-
-## Roadmap
-
-See [ROADMAP.md](./ROADMAP.md). The next planned release focuses on Worker-based graph computation and graph analytics.
 
 ## License
 

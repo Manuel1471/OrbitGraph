@@ -9,10 +9,13 @@ import {
 
 import type {
     GraphData,
+    GraphDiagnostic,
     GraphExpansionOptions,
     GraphInitialView,
     GraphJSONExportOptions,
     GraphLoadingState,
+    GraphNeighborhoodLoadOptions,
+    GraphNeighborhoodResult,
     GraphNode,
     GraphSelection,
     OrbitGraphOptions,
@@ -21,7 +24,9 @@ import type {
 
 import {
     createOrbitGraph,
+    type GraphAnalyticsController,
     type OrbitGraph as OrbitGraphInstance,
+    type GraphPresentationController,
 } from "@orbitgraph/three";
 
 /**
@@ -53,6 +58,21 @@ export type OrbitGraphHandle = {
     /** Changes the initial exploration configuration. */
     setInitialView(view: GraphInitialView): void;
 
+    /** Loads one node through the configured remote data source. */
+    loadNode(nodeId: string): Promise<GraphNode | undefined>;
+
+    /** Loads and merges one remote relationship neighborhood page. */
+    loadNeighborhood(
+        nodeId: string,
+        options?: GraphNeighborhoodLoadOptions,
+    ): Promise<GraphNeighborhoodResult | null>;
+
+    /** Provides graph metrics for the complete or visible data scope. */
+    getAnalytics(): GraphAnalyticsController;
+
+    /** Provides temporary visual styles without mutating source graph data. */
+    getPresentation(): GraphPresentationController;
+
     /** Creates a PNG Blob of the current rendered graph view. */
     exportPNG(): Promise<Blob>;
 
@@ -82,19 +102,21 @@ export type OrbitGraphProps = Omit<
     options?: Omit<
         OrbitGraphOptions,
         | "onSelectionChange"
+        | "onVisibleDataChange"
+        | "onLoadingChange"
+        | "onDiagnostic"
+        | "onKeyboardFocusChange"
         | "onNodeClick"
         | "onLinkClick"
         | "onNodeHover"
         | "onLinkHover"
-        | "onVisibleDataChange"
-        | "onLoadingChange"
-        | "onKeyboardFocusChange"
     >;
     style?: CSSProperties;
 
     onSelectionChange?: (selection: GraphSelection) => void;
     onVisibleDataChange?: (data: VisibleGraphData) => void;
     onLoadingChange?: (state: GraphLoadingState) => void;
+    onDiagnostic?: (diagnostic: GraphDiagnostic) => void;
     onKeyboardFocusChange?: (node: GraphNode | null) => void;
     onNodeClick?: OrbitGraphOptions["onNodeClick"];
     onLinkClick?: OrbitGraphOptions["onLinkClick"];
@@ -116,6 +138,7 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
             onSelectionChange,
             onVisibleDataChange,
             onLoadingChange,
+            onDiagnostic,
             onKeyboardFocusChange,
             onNodeClick,
             onLinkClick,
@@ -133,6 +156,7 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
             onSelectionChange,
             onVisibleDataChange,
             onLoadingChange,
+            onDiagnostic,
             onKeyboardFocusChange,
             onNodeClick,
             onLinkClick,
@@ -144,6 +168,7 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
             onSelectionChange,
             onVisibleDataChange,
             onLoadingChange,
+            onDiagnostic,
             onKeyboardFocusChange,
             onNodeClick,
             onLinkClick,
@@ -159,10 +184,49 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
                 expandNode: (nodeId, expansionOptions) => {
                     graphRef.current?.expandNode(nodeId, expansionOptions);
                 },
-                collapseNode: (nodeId) => graphRef.current?.collapseNode(nodeId),
+                collapseNode: (nodeId) => {
+                    graphRef.current?.collapseNode(nodeId);
+                },
                 resetExploration: () => graphRef.current?.resetExploration(),
                 showAll: () => graphRef.current?.showAll(),
-                setInitialView: (view) => graphRef.current?.setInitialView(view),
+                setInitialView: (view) => {
+                    graphRef.current?.setInitialView(view);
+                },
+                loadNode: (nodeId) => {
+                    if (!graphRef.current) {
+                        return Promise.reject(
+                            new Error("OrbitGraph is not mounted."),
+                        );
+                    }
+
+                    return graphRef.current.loadNode(nodeId);
+                },
+                loadNeighborhood: (nodeId, loadOptions) => {
+                    if (!graphRef.current) {
+                        return Promise.reject(
+                            new Error("OrbitGraph is not mounted."),
+                        );
+                    }
+
+                    return graphRef.current.loadNeighborhood(
+                        nodeId,
+                        loadOptions,
+                    );
+                },
+                getAnalytics: () => {
+                    if (!graphRef.current) {
+                        throw new Error("OrbitGraph is not mounted.");
+                    }
+
+                    return graphRef.current.analytics;
+                },
+                getPresentation: () => {
+                    if (!graphRef.current) {
+                        throw new Error("OrbitGraph is not mounted.");
+                    }
+
+                    return graphRef.current.presentation;
+                },
                 exportPNG: () => {
                     if (!graphRef.current) {
                         return Promise.reject(
@@ -196,6 +260,7 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
                         loading: false,
                         operation: null,
                         nodeId: null,
+                        error: null,
                     };
                 },
             }),
@@ -219,6 +284,9 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
                 },
                 onLoadingChange: (state) => {
                     callbacksRef.current.onLoadingChange?.(state);
+                },
+                onDiagnostic: (diagnostic) => {
+                    callbacksRef.current.onDiagnostic?.(diagnostic);
                 },
                 onKeyboardFocusChange: (node) => {
                     callbacksRef.current.onKeyboardFocusChange?.(node);

@@ -1,6 +1,8 @@
 import type {
     GraphDataSource,
+    GraphDiagnostic,
     GraphExpansionOptions,
+    GraphLoadError,
     GraphLoadingState,
     GraphNeighborhoodLoadOptions,
     GraphNeighborhoodResult,
@@ -14,6 +16,7 @@ type GraphLazyLoaderOptions = {
     dataSource?: GraphDataSource;
     onDataChange: () => void;
     onLoadingChange?: (state: GraphLoadingState) => void;
+    onDiagnostic?: (diagnostic: GraphDiagnostic) => void;
 };
 
 /**
@@ -23,10 +26,12 @@ type GraphLazyLoaderOptions = {
 export class GraphLazyLoader {
     private dataSource: GraphDataSource | undefined;
     private readonly loadedNeighborhoodKeys = new Set<string>();
+
     private loadingState: GraphLoadingState = {
         loading: false,
         operation: null,
         nodeId: null,
+        error: null,
     };
 
     constructor(
@@ -58,35 +63,53 @@ export class GraphLazyLoader {
         }
 
         if (!this.dataSource?.getNode) {
-            throw new Error(
+            const loadError = this.createLoadError(
+                "data-source-unavailable",
                 "A GraphDataSource with getNode() is required to load a node.",
+                "node",
+                nodeId,
             );
+
+            this.reportFailure(loadError);
+
+            throw new Error(loadError.message);
         }
 
         this.setLoadingState({
             loading: true,
             operation: "node",
             nodeId,
+            error: null,
         });
 
         try {
             const node = await this.dataSource.getNode(nodeId);
 
-            if (!node) {
-                return undefined;
+            if (node) {
+                this.dataStore.merge({ nodes: [node], links: [] });
+                this.explorer.updateData(this.dataStore.getData());
+                this.options.onDataChange();
             }
 
-            this.dataStore.merge({ nodes: [node], links: [] });
-            this.explorer.updateData(this.dataStore.getData());
-            this.options.onDataChange();
-
-            return node;
-        } finally {
             this.setLoadingState({
                 loading: false,
                 operation: null,
                 nodeId: null,
+                error: null,
             });
+
+            return node;
+        } catch (error) {
+            this.reportFailure(
+                this.createLoadError(
+                    "request-failed",
+                    this.getErrorMessage(error, `Unable to load node "${nodeId}".`),
+                    "node",
+                    nodeId,
+                ),
+            );
+
+            throw error;
         }
     }
 
@@ -95,17 +118,28 @@ export class GraphLazyLoader {
         options: GraphNeighborhoodLoadOptions = {},
     ): Promise<GraphNeighborhoodResult | null> {
         if (!this.dataSource) {
-            throw new Error(
+            const loadError = this.createLoadError(
+                "data-source-unavailable",
                 "A GraphDataSource is required to load a neighborhood.",
+                "neighborhood",
+                nodeId,
             );
+
+            this.reportFailure(loadError);
+
+            throw new Error(loadError.message);
         }
 
         const { force = false, ...expansionOptions } = options;
-        const cacheKey = this.getNeighborhoodCacheKey(nodeId, expansionOptions);
+        const cacheKey = this.getNeighborhoodCacheKey(
+            nodeId,
+            expansionOptions,
+        );
 
         if (!force && this.loadedNeighborhoodKeys.has(cacheKey)) {
             this.explorer.expandNode(nodeId, expansionOptions);
             this.options.onDataChange();
+
             return null;
         }
 
@@ -113,6 +147,7 @@ export class GraphLazyLoader {
             loading: true,
             operation: "neighborhood",
             nodeId,
+            error: null,
         });
 
         try {
@@ -127,14 +162,69 @@ export class GraphLazyLoader {
             this.explorer.expandNode(nodeId, expansionOptions);
             this.options.onDataChange();
 
-            return result;
-        } finally {
             this.setLoadingState({
                 loading: false,
                 operation: null,
                 nodeId: null,
+                error: null,
             });
+
+            return result;
+        } catch (error) {
+            this.reportFailure(
+                this.createLoadError(
+                    "request-failed",
+                    this.getErrorMessage(
+                        error,
+                        `Unable to load the neighborhood for "${nodeId}".`,
+                    ),
+                    "neighborhood",
+                    nodeId,
+                ),
+            );
+
+            throw error;
         }
+    }
+
+    private reportFailure(error: GraphLoadError): void {
+        this.setLoadingState({
+            loading: false,
+            operation: null,
+            nodeId: null,
+            error,
+        });
+
+        this.options.onDiagnostic?.({
+            level: "error",
+            code: error.code,
+            message: error.message,
+            operation: error.operation,
+            nodeId: error.nodeId,
+            error,
+        });
+    }
+
+    private createLoadError(
+        code: GraphLoadError["code"],
+        message: string,
+        operation: GraphLoadError["operation"],
+        nodeId: string,
+    ): GraphLoadError {
+        return {
+            code,
+            message,
+            operation,
+            nodeId,
+        };
+    }
+
+    private getErrorMessage(error: unknown, fallback: string): string {
+        if (error instanceof Error && error.message) {
+            return error.message;
+        }
+
+        return fallback;
     }
 
     private setLoadingState(state: GraphLoadingState): void {

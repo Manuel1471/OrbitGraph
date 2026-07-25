@@ -2,7 +2,7 @@
 
 Three.js/WebGL renderer for OrbitGraph.
 
-It renders interactive 3D relationship graphs with progressive exploration, mouse and touch navigation, keyboard accessibility, camera controls, filters, labels, exports, and optional animated link flow.
+It provides the imperative graph instance, interaction model, progressive exploration, Worker physics, layouts, analytics controllers, visual presentation, exports, intelligent labels, and mini-map navigation.
 
 ## Install
 
@@ -14,93 +14,28 @@ npm install @orbitgraph/core @orbitgraph/three three
 
 ```ts
 import { createOrbitGraph } from "@orbitgraph/three";
+import type { GraphData } from "@orbitgraph/core";
 
-const graph = createOrbitGraph(document.querySelector("#graph")!, {
-  backgroundColor: "#050816",
-  mobileControls: { enabled: "auto" },
+const graph = createOrbitGraph(document.querySelector<HTMLElement>("#graph")!, {
+    initialView: { mode: "node", nodeId: "team" },
+    labels: { mode: "important", importantNodeIds: ["team"] },
+    miniMap: { enabled: true, interactive: true },
+    physics: { worker: true },
 });
 
-graph.setData({
-  nodes: [
-    { id: "team", label: "Product Team", type: "group" },
-    { id: "workspace", label: "Workspace", type: "resource" },
-  ],
-  links: [
-    { source: "team", target: "workspace", type: "manages", weight: 1 },
-  ],
-});
+const data: GraphData = {
+    nodes: [
+        { id: "team", label: "Product Team", type: "team" },
+        { id: "api", label: "Public API", type: "service" },
+    ],
+    links: [{ id: "team-api", source: "team", target: "api", type: "owns" }],
+};
+
+graph.setData(data);
+graph.expandNode("team", { direction: "outgoing" });
 ```
 
-## Configure interaction
-
-```ts
-createOrbitGraph(container, {
-  camera: {
-    keyboardNavigation: true,
-    movementSpeed: 18,
-    boostMultiplier: 2.5,
-    minDistance: 2,
-    maxDistance: 1000,
-  },
-  accessibility: {
-    keyboardNavigation: true,
-    ariaLabel: "Interactive product relationship graph",
-  },
-  mobileControls: {
-    enabled: "auto",
-    position: "bottom-right",
-    showZoomButtons: true,
-    showResetButton: true,
-  },
-});
-```
-
-Touch gestures are always available through OrbitControls: one finger rotates; two fingers pan and pinch-zoom. `mobileControls` adds large zoom and reset targets on coarse-pointer devices.
-
-### Keyboard controls
-
-| Key | Action |
-| --- | --- |
-| Arrow keys | Move focus between visible nodes |
-| `Enter` | Focus the selected node |
-| `+` | Expand the focused node |
-| `-` | Collapse the focused node |
-| `F` | Focus the camera on the node |
-| `Escape` | Clear selection and keyboard focus |
-
-## Progressive exploration
-
-```ts
-const graph = createOrbitGraph(container, {
-  initialView: {
-    mode: "type",
-    nodeType: "group",
-    maxNodes: 100,
-  },
-});
-
-graph.expandNode("team", {
-  depth: 1,
-  direction: "outgoing",
-  relationshipTypes: ["manages"],
-});
-```
-
-## Export
-
-```ts
-const image = await graph.exportPNG();
-await graph.downloadPNG("network.png");
-
-const allData = graph.exportJSON();
-const visibleData = graph.exportJSON({ scope: "visible" });
-graph.downloadJSON({
-  scope: "visible",
-  fileName: "visible-network.json",
-});
-```
-
-## Instance API
+## Main API
 
 ```ts
 graph.setData(data);
@@ -109,28 +44,104 @@ graph.removeNode(nodeId);
 graph.addLink(link);
 graph.removeLink(linkId);
 
-graph.search("service");
-graph.toggleTypeFilter("service");
-graph.setMinimumLinkWeight(0.7);
-graph.clearFilters();
-
-graph.expandNode("team");
-graph.collapseNode("team");
+graph.expandNode(nodeId, options);
+graph.collapseNode(nodeId);
 graph.resetExploration();
 graph.showAll();
 
-graph.focusNode("team");
-graph.focusPath("team", "service");
-graph.resetCamera();
-graph.unpinNode("team");
+graph.search("api");
+graph.setTypeFilters(["team", "service"]);
+graph.setMinimumLinkWeight(0.7);
+graph.clearFilters();
 
+graph.focusNode("api");
+graph.resetCamera();
+graph.unpinNode("api");
 graph.destroy();
+```
+
+For the complete API and option definitions, see the [API reference](../../docs/API.md).
+
+## Remote loading
+
+```ts
+const graph = createOrbitGraph(container, { dataSource });
+
+await graph.loadNode("team");
+await graph.loadNeighborhood("team", {
+    direction: "outgoing",
+    limit: 25,
+    offset: 0,
+});
+
+const state = graph.getLoadingState();
+```
+
+The loader merges received records, caches repeated neighborhood pages, emits loading state, and sends failures through `onDiagnostic`.
+
+`createGraphQLDataSource()` is available as an optional GraphQL adapter. OrbitGraph remains independent from any GraphQL client or server.
+
+## Analytics and presentation
+
+```ts
+const pageRank = graph.analytics.pageRank({ scope: "visible" });
+const degree = graph.analytics.degree({ scope: "visible" });
+const bridges = graph.analytics.betweenness({ scope: "visible", normalized: true });
+const communities = await graph.analytics.detectCommunitiesAsync({ scope: "visible" });
+
+graph.presentation.setNodeStyles({
+    "api": { color: "#facc15", scale: 1.6, glow: 0.9 },
+});
+
+graph.presentation.clearNodeStyles();
+```
+
+Analytics are read-only. `presentation` applies temporary visual styles without mutating source graph data.
+
+## Visual and interaction options
+
+```ts
+const graph = createOrbitGraph(container, {
+    backgroundColor: "#050816",
+    nodeColor: "#22d3ee",
+    nodeSize: 0.75,
+    linkColor: "#6366f1",
+    linkOpacity: 0.5,
+    linkFlow: { enabled: true, maxParticles: 100 },
+    labels: { mode: "important", maxVisible: 20, showNodeType: true },
+    miniMap: { enabled: true, position: "bottom-right", interactive: true },
+    camera: { keyboardNavigation: true, minDistance: 2, maxDistance: 1000 },
+    physics: { worker: true, tickRate: 60 },
+});
+```
+
+## Events
+
+```ts
+const graph = createOrbitGraph(container, {
+    onNodeClick: ({ node }) => console.log(node),
+    onLinkClick: ({ link }) => console.log(link),
+    onSelectionChange: (selection) => console.log(selection),
+    onVisibleDataChange: ({ nodes, links }) => console.log(nodes.length, links.length),
+    onLoadingChange: (state) => console.log(state),
+    onDiagnostic: (diagnostic) => console.error(diagnostic),
+});
+```
+
+## Export and view state
+
+```ts
+await graph.downloadPNG("architecture.png");
+graph.downloadJSON({ scope: "visible", fileName: "explored-graph.json" });
+
+const viewState = graph.exportViewState();
+graph.importViewState(viewState);
 ```
 
 ## Related packages
 
-- [`@orbitgraph/core`](https://www.npmjs.com/package/@orbitgraph/core)
-- [`@orbitgraph/react`](https://www.npmjs.com/package/@orbitgraph/react)
+- [`@orbitgraph/core`](https://www.npmjs.com/package/@orbitgraph/core): types and graph utilities.
+- [`@orbitgraph/react`](https://www.npmjs.com/package/@orbitgraph/react): React bindings.
 
 ## License
 

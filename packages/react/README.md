@@ -2,7 +2,7 @@
 
 React bindings for OrbitGraph.
 
-The `OrbitGraph` component mounts the WebGL renderer, updates it when `data` changes, forwards callbacks as React props, and exposes user-triggered graph actions through a ref.
+`@orbitgraph/react` mounts the Three.js renderer, updates it when `data` changes, forwards events declaratively, and exposes user-driven actions through a typed ref.
 
 ## Install
 
@@ -20,102 +20,128 @@ import { OrbitGraph, type OrbitGraphHandle } from "@orbitgraph/react";
 import type { GraphData } from "@orbitgraph/core";
 
 const data: GraphData = {
-  nodes: [
-    { id: "team", label: "Product Team", type: "group", color: "#22d3ee" },
-    { id: "workspace", label: "Workspace", type: "resource", color: "#a855f7" },
-  ],
-  links: [
-    { source: "team", target: "workspace", type: "manages", weight: 1 },
-  ],
+    nodes: [
+        { id: "team", label: "Product Team", type: "team", color: "#22d3ee" },
+        { id: "api", label: "Public API", type: "service", color: "#3b82f6" },
+    ],
+    links: [{ id: "team-api", source: "team", target: "api", type: "owns" }],
 };
 
 export function App() {
-  const graphRef = useRef<OrbitGraphHandle>(null);
+    const graphRef = useRef<OrbitGraphHandle>(null);
 
-  return (
-    <>
-      <button onClick={() => graphRef.current?.resetCamera()}>
-        Reset camera
-      </button>
+    return (
+        <>
+            <button onClick={() => graphRef.current?.focusNode("team")}>
+                Focus team
+            </button>
 
-      <button onClick={() => graphRef.current?.downloadPNG("network.png")}>
-        Export PNG
-      </button>
-
-      <OrbitGraph
-        ref={graphRef}
-        data={data}
-        style={{ width: "100%", height: "100vh" }}
-        options={{
-          mobileControls: { enabled: "auto" },
-          accessibility: { ariaLabel: "Product relationship graph" },
-        }}
-      />
-    </>
-  );
+            <OrbitGraph
+                ref={graphRef}
+                data={data}
+                style={{ width: "100%", height: "100vh" }}
+                options={{
+                    initialView: { mode: "node", nodeId: "team" },
+                    labels: { mode: "important", importantNodeIds: ["team"] },
+                    miniMap: { enabled: true, interactive: true },
+                    physics: { worker: true },
+                }}
+                onSelectionChange={(selection) => console.log(selection)}
+            />
+        </>
+    );
 }
 ```
 
-## Props and callbacks
+## Props
 
-```tsx
-<OrbitGraph
-  data={data}
-  options={{
-    initialView: { mode: "type", nodeType: "group" },
-    linkFlow: { enabled: true, maxParticles: 140 },
-    mobileControls: { enabled: "auto" },
-  }}
-  onSelectionChange={(selection) => console.log(selection)}
-  onVisibleDataChange={({ nodes, links }) => console.log(nodes, links)}
-  onLoadingChange={(state) => console.log(state.loading)}
-  onKeyboardFocusChange={(node) => console.log(node)}
-  onNodeClick={({ node }) => console.log(node)}
-/>
+```ts
+type OrbitGraphProps = {
+    data: GraphData;
+    options?: OrbitGraphOptions;
+    className?: string;
+    style?: React.CSSProperties;
+
+    onSelectionChange?: (selection: GraphSelection) => void;
+    onVisibleDataChange?: (data: VisibleGraphData) => void;
+    onLoadingChange?: (state: GraphLoadingState) => void;
+    onDiagnostic?: (diagnostic: GraphDiagnostic) => void;
+    onKeyboardFocusChange?: (node: GraphNode | null) => void;
+    onNodeClick?: OrbitGraphOptions["onNodeClick"];
+    onLinkClick?: OrbitGraphOptions["onLinkClick"];
+    onNodeHover?: OrbitGraphOptions["onNodeHover"];
+    onLinkHover?: OrbitGraphOptions["onLinkHover"];
+};
 ```
 
-`data` is declarative: replacing it updates the underlying graph and restores its configured `initialView`.
+`data` is declarative: replacing it resets exploration to the configured `initialView`. Put all renderer, physics, labels, mini-map, camera, and remote source configuration in `options`.
 
 ## Ref API
 
-Use `OrbitGraphHandle` for actions initiated by buttons, menus, or other React UI.
-
 ```ts
-graphRef.current?.focusNode("team");
-graphRef.current?.expandNode("team", { depth: 1 });
-graphRef.current?.collapseNode("team");
-graphRef.current?.resetExploration();
-graphRef.current?.showAll();
+type OrbitGraphHandle = {
+    resetCamera(): void;
+    focusNode(nodeId: string): void;
+    expandNode(nodeId: string, options?: GraphExpansionOptions): void;
+    collapseNode(nodeId: string): void;
+    resetExploration(): void;
+    showAll(): void;
+    setInitialView(view: GraphInitialView): void;
 
-await graphRef.current?.downloadPNG("network.png");
-const json = graphRef.current?.exportJSON({ scope: "visible" });
-graphRef.current?.downloadJSON({ scope: "visible" });
+    loadNode(nodeId: string): Promise<GraphNode | undefined>;
+    loadNeighborhood(nodeId: string, options?: GraphNeighborhoodLoadOptions): Promise<GraphNeighborhoodResult | null>;
+    getLoadingState(): GraphLoadingState;
+
+    exportPNG(): Promise<Blob>;
+    downloadPNG(fileName?: string): Promise<void>;
+    exportJSON(options?: GraphJSONExportOptions): string;
+    downloadJSON(options?: GraphJSONExportOptions & { fileName?: string }): void;
+
+    getAnalytics(): GraphAnalyticsController;
+    getPresentation(): GraphPresentationController;
+};
 ```
 
-The handle also provides `resetCamera`, `setInitialView`, `exportPNG`, `getLoadingState`, and the exploration methods above.
+Use the ref for actions caused by buttons, menus, shortcuts, or external application state. Keep graph data itself in the `data` prop.
 
-## Visual and interaction configuration
+## Remote loading and diagnostics
 
 ```tsx
 <OrbitGraph
-  data={data}
-  options={{
-    backgroundColor: "#050816",
-    nodeColor: "#22d3ee",
-    nodeSize: 0.8,
-    linkColor: "#6366f1",
-    linkOpacity: 0.5,
-    camera: { minDistance: 2, maxDistance: 1000 },
-    mobileControls: { enabled: "auto", position: "bottom-right" },
-    accessibility: { keyboardNavigation: true },
-  }}
+    ref={graphRef}
+    data={initialData}
+    options={{ dataSource }}
+    onLoadingChange={(state) => setLoadingState(state)}
+    onDiagnostic={(diagnostic) => setError(diagnostic.message)}
 />
 ```
 
+```ts
+await graphRef.current?.loadNeighborhood("team", {
+    direction: "outgoing",
+    limit: 25,
+    offset: 0,
+});
+```
+
+## Analytics
+
+```ts
+const graph = graphRef.current;
+
+const pageRank = graph?.getAnalytics().pageRank({ scope: "visible" });
+
+graph?.getPresentation().setNodeStyles({
+    "api": { color: "#facc15", scale: 1.6, glow: 0.9 },
+});
+```
+
+Use `getAnalytics()` for degree, PageRank, betweenness, and communities. Use `getPresentation()` to turn results into temporary color, size, and glow styles.
+
 ## Related packages
 
-- [`@orbitgraph/core`](https://www.npmjs.com/package/@orbitgraph/core)
-- [`@orbitgraph/three`](https://www.npmjs.com/package/@orbitgraph/three)
+- [`@orbitgraph/core`](https://www.npmjs.com/package/@orbitgraph/core): shared types and analysis utilities.
+- [`@orbitgraph/three`](https://www.npmjs.com/package/@orbitgraph/three): Three.js renderer used by this component.
 
 ## License
 

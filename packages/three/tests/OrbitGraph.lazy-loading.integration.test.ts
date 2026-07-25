@@ -129,6 +129,9 @@ vi.mock("../src/GraphFilter", () => ({
             selectedTypes: [],
             minimumLinkWeight: 0,
         }));
+        getMinimumLinkWeight(): number {
+            return 0;
+        }
         setState = vi.fn();
         getVisibleData = <T>(data: T): T => data;
     },
@@ -140,6 +143,7 @@ vi.mock("../src/GraphRenderer", () => ({
         addNode = vi.fn();
         addLink = vi.fn();
         clear = vi.fn();
+        setVisibleNodeIds(): void {}
         syncPositions = vi.fn();
     },
 }));
@@ -156,10 +160,13 @@ vi.mock("../src/LinkParticleRenderer", () => ({
 
 vi.mock("../src/NodeLabelRenderer", () => ({
     NodeLabelRenderer: class {
-        constructor(..._args: unknown[]) {}
-        show = vi.fn();
-        hide = vi.fn();
-        updatePosition = vi.fn();
+        setOptions(): void {}
+        setVisibleNodes(): void {}
+        setSelectedNode(): void {}
+        show(): void {}
+        hide(): void {}
+        clear(): void {}
+        updatePosition(): void {}
     },
 }));
 
@@ -247,6 +254,7 @@ describe("OrbitGraph lazy loading", () => {
             loading: false,
             operation: null,
             nodeId: null,
+            error: null,
         });
         expect(loadingStates).toEqual([
             "true:node",

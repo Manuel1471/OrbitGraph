@@ -211,6 +211,78 @@ export type LinkFlowOptions = {
     particleSpeed?: number;
 };
 
+/** Strategy used to decide which node labels remain visible. */
+export type GraphLabelMode =
+    | "hover"
+    | "selected"
+    | "important"
+    | "all";
+
+/**
+ * Configuration for persistent node labels.
+ *
+ * Labels are capped to preserve readability and avoid creating excessive
+ * canvas textures in large graph views.
+ */
+export type GraphLabelsOptions = {
+    /**
+     * - `"hover"`: only the currently hovered node label is shown.
+     * - `"selected"`: the selected node label remains visible.
+     * - `"important"`: prioritizes `importantNodeIds`, then larger nodes.
+     * - `"all"`: shows visible nodes until `maxVisible` is reached.
+     * @defaultValue "hover"
+     */
+    mode?: GraphLabelMode;
+
+    /** Maximum number of persistent labels rendered at once. @defaultValue 80 */
+    maxVisible?: number;
+
+    /** Node ids prioritized in `"important"` label mode. */
+    importantNodeIds?: string[];
+
+    /** Displays a node type beneath its label when available. @defaultValue false */
+    showNodeType?: boolean;
+
+    /** Relative label font size. @defaultValue 1 */
+    fontScale?: number;
+};
+
+/** Screen corner used to place the graph mini-map. */
+export type GraphMiniMapPosition =
+    | "top-left"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-right";
+
+/**
+ * Configuration for the optional overview mini-map.
+ *
+ * The mini-map represents the currently visible graph subset. It is rendered
+ * with Canvas 2D and therefore does not create a second WebGL renderer.
+ */
+export type GraphMiniMapOptions = {
+    /** Enables the mini-map. @defaultValue false */
+    enabled?: boolean;
+
+    /** Screen corner used to position the mini-map. @defaultValue "bottom-right" */
+    position?: GraphMiniMapPosition;
+
+    /** Width in CSS pixels. @defaultValue 180 */
+    width?: number;
+
+    /** Height in CSS pixels. @defaultValue 120 */
+    height?: number;
+
+    /** Lets users click or tap the overview to move the camera target. @defaultValue true */
+    interactive?: boolean;
+
+    /** Draws the current camera target over the overview. @defaultValue true */
+    showViewport?: boolean;
+
+    /** Accessible name announced for the mini-map control. @defaultValue "Graph overview" */
+    ariaLabel?: string;
+};
+
 /**
  * Configuration options for an OrbitGraph instance.
  */
@@ -239,6 +311,12 @@ export type OrbitGraphOptions = {
     /** Configuration for optional animated relationship flow. */
     linkFlow?: LinkFlowOptions;
 
+    /** Configuration for hover and persistent node labels. */
+    labels?: GraphLabelsOptions;
+
+    /** Configuration for the optional graph overview mini-map. */
+    miniMap?: GraphMiniMapOptions;
+
     /** Called after clicking a node. */
     onNodeClick?: (event: NodeClickEvent) => void;
 
@@ -257,8 +335,8 @@ export type OrbitGraphOptions = {
     /** Initial visual arrangement of the active graph. @defaultValue "force" */
     layout?: GraphLayout;
 
-     /** Configuration used by the initial layout. */
-     layoutOptions?: GraphLayoutOptions;
+    /** Configuration used by the initial layout. */
+    layoutOptions?: GraphLayoutOptions;
 
     /** Optional asynchronous source used to load nodes and neighborhoods on demand. */
     dataSource?: GraphDataSource;
@@ -268,6 +346,9 @@ export type OrbitGraphOptions = {
 
     /** Camera navigation and distance constraints. */
     camera?: OrbitGraphCameraOptions;
+
+    /** Configuration for the force simulation runtime. */
+    physics?: OrbitGraphPhysicsOptions;
 
     /**
      * Called after exploration and filters change the rendered graph subset.
@@ -282,6 +363,9 @@ export type OrbitGraphOptions = {
 
     /** Optional responsive camera-control overlay for touch devices. */
     mobileControls?: GraphMobileControlsOptions;
+
+    /** Receives non-visual diagnostics from data loading operations. */
+    onDiagnostic?: (diagnostic: GraphDiagnostic) => void;
 };
 
 /**
@@ -457,16 +541,6 @@ export type GraphNeighborhoodLoadOptions = GraphExpansionOptions & {
     force?: boolean;
 };
 
-/** Current lazy-load activity, useful for consumer loading indicators. */
-export type GraphLoadingState = {
-    /** Whether a source request is currently active. */
-    loading: boolean;
-    /** Operation currently running, or null when idle. */
-    operation: "node" | "neighborhood" | null;
-    /** Requested node id, or null when idle. */
-    nodeId: string | null;
-};
-
 /**
  * Configuration for OrbitGraph camera navigation.
  *
@@ -541,4 +615,51 @@ export type GraphMobileControlsOptions = {
 
     /** Accessible label for the camera-control group. */
     ariaLabel?: string;
+};
+
+/** Configuration for OrbitGraph's force simulation. */
+export type OrbitGraphPhysicsOptions = {
+    /**
+     * Runs force simulation in a module Web Worker when supported.
+     * Falls back to the main thread in unsupported environments.
+     * @defaultValue true
+     */
+    worker?: boolean;
+
+    /** Maximum position updates sent from the worker per second. @defaultValue 60 */
+    tickRate?: number;
+};
+
+/** An operation that can request graph data asynchronously. */
+export type GraphLoadOperation = "node" | "neighborhood";
+
+/** Structured information about a failed graph data request. */
+export type GraphLoadError = {
+    /** Stable error category for application-level handling. */
+    code: "data-source-unavailable" | "request-failed";
+    /** Human-readable description of the failure. */
+    message: string;
+    /** Operation that failed. */
+    operation: GraphLoadOperation;
+    /** Node associated with the failed operation. */
+    nodeId: string;
+};
+
+/** A non-visual diagnostic emitted by OrbitGraph. */
+export type GraphDiagnostic = {
+    level: "error";
+    code: GraphLoadError["code"];
+    message: string;
+    operation: GraphLoadOperation;
+    nodeId: string;
+    error: GraphLoadError;
+};
+
+/** Current state of asynchronous graph loading. */
+export type GraphLoadingState = {
+    loading: boolean;
+    operation: GraphLoadOperation | null;
+    nodeId: string | null;
+    /** Most recent loading error. Cleared when a new request begins or succeeds. */
+    error: GraphLoadError | null;
 };

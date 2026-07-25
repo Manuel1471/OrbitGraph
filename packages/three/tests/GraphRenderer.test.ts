@@ -11,7 +11,6 @@ import type {
 
 const createRenderer = () => {
     const group = new THREE.Group();
-
     const nodes: GraphNodeMap = new Map();
     const nodeMeshes: GraphNodeMeshMap = new Map();
     const linkLines: GraphLinkLineMap = new Map();
@@ -39,11 +38,9 @@ describe("GraphRenderer", () => {
         const { renderer, nodeMeshes } = createRenderer();
 
         renderer.addNode({ id: "manuel", x: 1, y: 2, z: 3 });
-
         expect(nodeMeshes.has("manuel")).toBe(true);
 
         renderer.removeNode("manuel");
-
         expect(nodeMeshes.has("manuel")).toBe(false);
     });
 
@@ -52,7 +49,6 @@ describe("GraphRenderer", () => {
 
         renderer.addNode({ id: "api", x: 0, y: 0, z: 0 });
         renderer.addNode({ id: "db", x: 10, y: 0, z: 0 });
-
         renderer.addLink({
             id: "api-db",
             source: "api",
@@ -69,7 +65,6 @@ describe("GraphRenderer", () => {
 
         renderer.addNode({ id: "api", x: 0, y: 0, z: 0 });
         renderer.addNode({ id: "db", x: 10, y: 0, z: 0 });
-
         renderer.addLink({
             id: "api-db",
             source: "api",
@@ -82,5 +77,35 @@ describe("GraphRenderer", () => {
         expect(nodeMeshes.get("api")?.visible).toBe(true);
         expect(nodeMeshes.get("db")?.visible).toBe(false);
         expect(linkLines.get("api-db")?.visible).toBe(false);
+    });
+
+    it("applies and clears transient analytics presentation styles", () => {
+        const { renderer, nodeMeshes } = createRenderer();
+
+        renderer.addNode({
+            id: "hub",
+            x: 0,
+            y: 0,
+            z: 0,
+            color: "#22d3ee",
+        });
+
+        const mesh = nodeMeshes.get("hub");
+
+        if (!mesh) {
+            throw new Error("Expected the hub mesh to be created.");
+        }
+
+        const baseColor = mesh.material.color.getHex();
+
+        renderer.setNodePresentationStyles({
+            hub: { color: "#facc15" },
+        });
+
+        expect(mesh.material.color.getHexString()).toBe("facc15");
+
+        renderer.clearNodePresentationStyles();
+
+        expect(mesh.material.color.getHex()).toBe(baseColor);
     });
 });
