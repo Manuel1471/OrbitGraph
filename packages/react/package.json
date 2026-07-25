@@ -1,6 +1,6 @@
 {
   "name": "@orbitgraph/react",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "React bindings for OrbitGraph.",
   "type": "module",
   "main": "./dist/index.cjs",
