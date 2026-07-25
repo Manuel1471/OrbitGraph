@@ -20,7 +20,7 @@
     "build": "tsup src/index.ts --format esm,cjs --dts --clean"
   },
   "dependencies": {
-    "@orbitgraph/core": "^1.1.0",
+    "@orbitgraph/core": "^1.2.0",
     "d3-force-3d": "^3.0.6"
   },
   "peerDependencies": {

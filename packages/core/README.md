@@ -1,132 +1,122 @@
 # @orbitgraph/core
 
-Renderer-agnostic TypeScript types, graph utilities, analytics, exploration contracts, remote data contracts, and physics configuration for OrbitGraph 1.2.
+Shared TypeScript contracts and graph analysis utilities for OrbitGraph.
 
-## Installation
+This package is renderer-agnostic. Use it to model data, implement remote sources, calculate graph metrics, detect communities, and share OrbitGraph types across an application.
+
+## Install
 
 ```bash
 npm install @orbitgraph/core
 ```
 
-## Graph data
+## Data model
 
 ```ts
 import type { GraphData } from "@orbitgraph/core";
 
 const data: GraphData = {
-  nodes: [
-    {
-      id: "team",
-      label: "Product Team",
-      type: "group",
-      data: {
-        department: "Product",
-        active: true,
-      },
-    },
-    {
-      id: "service",
-      label: "Notification Service",
-      type: "service",
-    },
-  ],
-  links: [
-    {
-      id: "team-owns-service",
-      source: "team",
-      target: "service",
-      type: "owns",
-      weight: 0.9,
-      data: {
-        environment: "production",
-      },
-    },
-  ],
+    nodes: [
+        {
+            id: "team",
+            label: "Product Team",
+            type: "team",
+            data: { department: "Product", active: true },
+        },
+        {
+            id: "api",
+            label: "Public API",
+            type: "service",
+        },
+    ],
+    links: [
+        {
+            id: "team-owns-api",
+            source: "team",
+            target: "api",
+            type: "owns",
+            weight: 0.95,
+        },
+    ],
 };
 ```
 
-## Main types
-
-- `GraphNode`: a graph entity with an `id`, optional visual properties, and JSON-compatible metadata.
-- `GraphLink`: a directed relationship between `source` and `target` nodes.
-- `GraphData`: a collection of nodes and links.
-- `Graph`: an in-memory utility for adding, removing, querying, and serializing graph data.
-- `GraphInitialView`: the initial subset visible in an OrbitGraph renderer.
-- `GraphExpansionOptions`: neighborhood depth, direction, relationship type, and pagination options.
-- `GraphDataSource`: an application-defined contract for progressively loading nodes and neighborhoods.
-- `GraphLoadingState`: the active loading operation and its most recent `error`.
-- `GraphLoadError`: structured information about a failed remote request.
-- `GraphDiagnostic`: an application-facing diagnostic emitted when remote loading fails.
-- `OrbitGraphPhysicsOptions`: worker and tick-rate configuration for renderer physics.
-
-## Graph utility
-
-```ts
-import { Graph } from "@orbitgraph/core";
-
-const graph = new Graph(data);
-
-graph.getNode("team");
-graph.getNeighbors("team");
-graph.getNodeLinks("team");
-
-graph.addNode({ id: "api", label: "Public API" });
-graph.addLink({
-  source: "service",
-  target: "api",
-  type: "uses",
-});
-```
-
-## Remote data contracts
-
-The core package defines a transport-neutral contract. Your application decides whether the backend is REST, GraphQL, a local database, or another service.
-
-```ts
-import type {
-  GraphDataSource,
-  GraphNeighborhoodResult,
-} from "@orbitgraph/core";
-
-const dataSource: GraphDataSource = {
-  async getNode(nodeId) {
-    return fetchNode(nodeId);
-  },
-  async getNeighborhood({ nodeId, limit, offset }) {
-    const result: GraphNeighborhoodResult = await fetchNeighborhood(
-      nodeId,
-      limit,
-      offset,
-    );
-
-    return result;
-  },
-};
-```
-
-The optional GraphQL adapter is exported by `@orbitgraph/three`; this package does not depend on a GraphQL client.
+| Type | Description |
+| --- | --- |
+| `GraphNode` | Entity with a required ID and optional label, type, style, and JSON metadata. |
+| `GraphLink` | Directed relationship between source and target IDs. |
+| `GraphData` | Collection of nodes and relationships. |
+| `JSONValue` | JSON-compatible metadata value. |
+| `GraphDirection` | `incoming`, `outgoing`, or `both`. |
 
 ## Analytics
 
 ```ts
 import {
-  calculateBetweennessCentrality,
-  calculateDegreeMetrics,
-  calculatePageRank,
-  detectCommunities,
+    calculateDegreeMetrics,
+    calculatePageRank,
+    calculateBetweennessCentrality,
 } from "@orbitgraph/core";
 
 const degree = calculateDegreeMetrics(data);
 const pageRank = calculatePageRank(data);
-const betweenness = calculateBetweennessCentrality(data);
-const communities = detectCommunities(data);
+const betweenness = calculateBetweennessCentrality(data, { normalized: true });
 ```
 
-Use `detectCommunitiesAsync()` when running community detection without blocking an interactive application flow.
+- `calculateDegreeMetrics()` returns degree, in-degree, out-degree, and weighted variants.
+- `calculatePageRank()` returns scores and convergence information.
+- `calculateBetweennessCentrality()` identifies bridge nodes.
+
+## Community detection
+
+```ts
+import {
+    detectCommunities,
+    detectCommunitiesAsync,
+} from "@orbitgraph/core";
+
+const result = detectCommunities(data, { weighted: true });
+
+const asynchronousResult = await detectCommunitiesAsync(data, {
+    weighted: true,
+});
+```
+
+Use `detectCommunitiesAsync()` in interactive applications because it yields between propagation passes. It returns communities and a node-to-community mapping.
+
+## Remote data contracts
+
+```ts
+import type { GraphDataSource } from "@orbitgraph/core";
+
+const source: GraphDataSource = {
+    async getNode(nodeId) {
+        return fetch(`/api/nodes/${nodeId}`).then((response) => response.json());
+    },
+    async getNeighborhood({ nodeId, limit, offset, direction }) {
+        return fetch(`/api/nodes/${nodeId}/neighbors`).then(
+            (response) => response.json(),
+        );
+    },
+};
+```
+
+`GraphDataSource` is intentionally transport-neutral. Your application can use REST, GraphQL, tRPC, local files, IndexedDB, or any other source.
+
+## Shared renderer types
+
+`@orbitgraph/core` exports shared types used by renderer packages:
+
+- `OrbitGraphOptions`
+- `GraphInitialView` and `GraphExpansionOptions`
+- `GraphLoadingState`, `GraphLoadError`, and `GraphDiagnostic`
+- `GraphSelection`, click events, hover events, and `VisibleGraphData`
+- Layout, camera, physics, accessibility, labels, mobile-control, and mini-map options
+- JSON export and view-state types
 
 ## Related packages
 
-- [`@orbitgraph/three`](https://www.npmjs.com/package/@orbitgraph/three): Three.js/WebGL renderer and GraphQL adapter.
+- [`@orbitgraph/three`](https://www.npmjs.com/package/@orbitgraph/three): Three.js/WebGL renderer.
 - [`@orbitgraph/react`](https://www.npmjs.com/package/@orbitgraph/react): React bindings.
 
 ## License

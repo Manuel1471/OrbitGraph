@@ -3,67 +3,73 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OrbitGraph Progressive Exploration</title>
+    <title>OrbitGraph Vanilla Explorer</title>
 </head>
 <body>
-<main>
+<main class="app">
     <aside class="panel">
-        <span class="eyebrow">VANILLA JAVASCRIPT</span>
-        <h1>Community Explorer</h1>
+        <span class="eyebrow">VANILLA + REMOTE DATA</span>
+        <h1>City Explorer</h1>
         <p>
-            Start with one node and load relationship pages as you explore.
+            Start from one organization, reveal relationship pages, and turn
+            graph metrics into a visual explanation.
         </p>
 
         <div class="controls">
-            <button id="load-neighborhood" type="button">
-                Load next relationships
-            </button>
-            <button id="reset-exploration" type="button">
-                Reset exploration
-            </button>
-            <button id="show-all" type="button">
-                Show loaded graph
-            </button>
-            <button id="analyze-degree" type="button">
-                Analyze degree centrality
-            </button>
-            <button id="analyze-pagerank" type="button">
-                Analyze PageRank
-            </button>
-            <button id="analyze-betweenness" type="button">
-                Analyze betweenness
-            </button>
-            <button id="detect-communities" type="button">
-                Detect communities
-            </button>
-            <button id="clear-visualization" type="button">
-                Clear visualization
-            </button>
-            <button id="export-json" type="button">
-                Export visible JSON
-            </button>
+            <button id="load-next" type="button">Load next relationships</button>
+            <button id="reset-exploration" type="button">Reset exploration</button>
+            <button id="show-all" type="button">Show loaded graph</button>
+            <button id="export-png" type="button">Export PNG</button>
         </div>
 
-        <section class="status">
-            <span class="status-label">Loading</span>
-            <strong id="loading-state">Idle</strong>
+        <details class="analytics-panel">
+            <summary>
+                <span>Analytics</span>
+                <span class="analytics-hint">Centrality and communities</span>
+            </summary>
+
+            <div class="controls analytics-controls">
+                <button id="analyze-degree" type="button">Analyze degree centrality</button>
+                <button id="analyze-page-rank" type="button">Analyze PageRank</button>
+                <button id="analyze-betweenness" type="button">Analyze betweenness</button>
+                <button id="detect-communities" type="button">Detect communities</button>
+                <button id="clear-visualization" type="button">Clear visualization</button>
+            </div>
+        </details>
+
+        <section class="summary-grid" aria-label="Graph status">
+            <div class="summary-item">
+                <span>Loading</span>
+                <strong id="loading-state">Idle</strong>
+            </div>
+            <div class="summary-item">
+                <span>Visible graph</span>
+                <strong id="visible-summary">1 node · 0 links</strong>
+            </div>
         </section>
 
-        <section class="status">
-            <span class="status-label">Visible data</span>
-            <strong id="visible-data">1 node · 0 relationships</strong>
-        </section>
-
-        <section class="status">
-            <span class="status-label">Analytics</span>
-            <strong id="analytics-state">Choose an analysis</strong>
+        <section class="analytics-card" aria-live="polite">
+            <span class="analytics-label">Analytics insight</span>
+            <strong id="analytics-title">Ready to analyze</strong>
+            <p id="analytics-description">
+                Load relationships, then choose a metric to inspect the visible graph.
+            </p>
             <div id="analytics-legend" class="analytics-legend" hidden></div>
         </section>
 
-        <p id="message" class="message" aria-live="polite"></p>
+        <p id="message" class="message" role="status">
+            Ready to load relationship pages.
+        </p>
     </aside>
 
-    <div id="graph"></div>
+    <aside id="details-panel" class="details-panel" aria-live="polite">
+        <span class="eyebrow">SELECTION</span>
+        <strong id="details-title">Nothing selected</strong>
+        <p id="details-description">Click a node or relationship to inspect it.</p>
+        <pre id="details-data" hidden></pre>
+    </aside>
+
+    <div id="graph" class="graph"></div>
 </main>
 
 <script type="module" src="/src/main.ts"></script>

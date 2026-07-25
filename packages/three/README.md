@@ -2,9 +2,9 @@
 
 Three.js/WebGL renderer for OrbitGraph.
 
-Version 1.2 provides interactive 3D graph rendering, progressive exploration, layouts, filters, Worker-backed force physics, lazy loading, optional GraphQL integration, exports, keyboard navigation, mobile controls, and analytics.
+It provides the imperative graph instance, interaction model, progressive exploration, Worker physics, layouts, analytics controllers, visual presentation, exports, intelligent labels, and mini-map navigation.
 
-## Installation
+## Install
 
 ```bash
 npm install @orbitgraph/core @orbitgraph/three three
@@ -12,145 +12,30 @@ npm install @orbitgraph/core @orbitgraph/three three
 
 ## Quick start
 
-```html
-<div id="graph" style="width: 100vw; height: 100vh"></div>
-```
-
 ```ts
 import { createOrbitGraph } from "@orbitgraph/three";
 import type { GraphData } from "@orbitgraph/core";
 
+const graph = createOrbitGraph(document.querySelector<HTMLElement>("#graph")!, {
+    initialView: { mode: "node", nodeId: "team" },
+    labels: { mode: "important", importantNodeIds: ["team"] },
+    miniMap: { enabled: true, interactive: true },
+    physics: { worker: true },
+});
+
 const data: GraphData = {
-  nodes: [
-    { id: "team", label: "Product Team", type: "group", color: "#22d3ee" },
-    { id: "workspace", label: "Workspace", type: "resource", color: "#a855f7" },
-  ],
-  links: [
-    { source: "team", target: "workspace", type: "manages", weight: 1 },
-  ],
+    nodes: [
+        { id: "team", label: "Product Team", type: "team" },
+        { id: "api", label: "Public API", type: "service" },
+    ],
+    links: [{ id: "team-api", source: "team", target: "api", type: "owns" }],
 };
 
-const container = document.querySelector<HTMLElement>("#graph");
-
-if (!container) {
-  throw new Error("Graph container was not found.");
-}
-
-const graph = createOrbitGraph(container, {
-  backgroundColor: "#050816",
-});
-
 graph.setData(data);
-graph.resetCamera();
+graph.expandNode("team", { direction: "outgoing" });
 ```
 
-## Options
-
-```ts
-createOrbitGraph(container, {
-  backgroundColor: "#050816",
-  nodeColor: "#22d3ee",
-  nodeSize: 1,
-  linkColor: "#6366f1",
-  linkOpacity: 0.55,
-  initialView: { mode: "all" },
-  linkFlow: {
-    enabled: true,
-    maxParticles: 140,
-    particleSize: 0.09,
-    particleSpeed: 0.12,
-  },
-  physics: {
-    worker: true,
-    tickRate: 60,
-  },
-  onSelectionChange: (selection) => console.log(selection),
-  onDiagnostic: (diagnostic) => console.error(diagnostic),
-});
-```
-
-## Progressive exploration
-
-```ts
-const graph = createOrbitGraph(container, {
-  initialView: {
-    mode: "neighborhood",
-    nodeId: "team",
-    depth: 1,
-    direction: "outgoing",
-  },
-});
-
-graph.expandNode("team", {
-  direction: "outgoing",
-  limit: 25,
-  offset: 0,
-});
-
-graph.collapseNode("team");
-graph.resetExploration();
-graph.showAll();
-```
-
-Nodes outside the explored subset are not mounted in the renderer or active physics simulation.
-
-## Remote data and GraphQL
-
-Pass a `dataSource` to load graph records only when users explore them.
-
-```ts
-const graph = createOrbitGraph(container, {
-  dataSource,
-  onLoadingChange: (state) => {
-    if (state.error) {
-      console.error(state.error.message);
-    }
-  },
-  onDiagnostic: (diagnostic) => {
-    logger.error(diagnostic);
-  },
-});
-
-await graph.loadNode("team");
-await graph.loadNeighborhood("team", {
-  direction: "outgoing",
-  limit: 50,
-  offset: 0,
-});
-```
-
-### GraphQL adapter
-
-`createGraphQLDataSource()` maps schema-specific GraphQL responses to OrbitGraph's `GraphDataSource`. It has no GraphQL-client dependency.
-
-```ts
-import { createGraphQLDataSource } from "@orbitgraph/three";
-
-const dataSource = createGraphQLDataSource({
-  endpoint: "/graphql",
-  getNode: {
-    document: "query Person($id: ID!) { person(id: $id) { id label type } }",
-    variables: (id) => ({ id }),
-    select: (data) => data.person ?? undefined,
-  },
-  getNeighborhood: {
-    document: `query Neighborhood($nodeId: ID!, $limit: Int, $offset: Int) {
-      neighborhood(nodeId: $nodeId, limit: $limit, offset: $offset) {
-        nodes { id label type }
-        links { id source target type weight }
-        hasMore
-        nextOffset
-      }
-    }`,
-    variables: ({ nodeId, limit, offset }) => ({ nodeId, limit, offset }),
-    select: (data) => data.neighborhood,
-  },
-});
-```
-
-Failed requests emit `onDiagnostic`, update `getLoadingState().error`, and reject their original promise.
-
-## Instance API
+## Main API
 
 ```ts
 graph.setData(data);
@@ -159,75 +44,104 @@ graph.removeNode(nodeId);
 graph.addLink(link);
 graph.removeLink(linkId);
 
-graph.search("service");
-graph.toggleTypeFilter("service");
-graph.setTypeFilters(["service", "group"]);
-graph.setMinimumLinkWeight(0.7);
-graph.clearFilters();
-
-graph.expandNode("team");
-graph.collapseNode("team");
+graph.expandNode(nodeId, options);
+graph.collapseNode(nodeId);
 graph.resetExploration();
 graph.showAll();
 
-await graph.loadNode("team");
-await graph.loadNeighborhood("team", { limit: 50 });
-graph.getLoadingState();
+graph.search("api");
+graph.setTypeFilters(["team", "service"]);
+graph.setMinimumLinkWeight(0.7);
+graph.clearFilters();
 
-graph.focusNode("service");
+graph.focusNode("api");
 graph.resetCamera();
-graph.unpinNode("service");
-
-await graph.downloadPNG("graph.png");
-graph.downloadJSON({ scope: "visible", fileName: "graph.json" });
-
+graph.unpinNode("api");
 graph.destroy();
 ```
 
-## Analytics
+For the complete API and option definitions, see the [API reference](../../docs/API.md).
+
+## Remote loading
 
 ```ts
-const degree = graph.analytics.degree();
-const pageRank = graph.analytics.pageRank({ scope: "visible" });
-const betweenness = graph.analytics.betweenness();
-const communities = await graph.analytics.detectCommunitiesAsync();
+const graph = createOrbitGraph(container, { dataSource });
+
+await graph.loadNode("team");
+await graph.loadNeighborhood("team", {
+    direction: "outgoing",
+    limit: 25,
+    offset: 0,
+});
+
+const state = graph.getLoadingState();
 ```
 
-## Worker physics
+The loader merges received records, caches repeated neighborhood pages, emits loading state, and sends failures through `onDiagnostic`.
 
-Force-directed physics can run in a module Web Worker so layout work does not block interaction on the main browser thread.
+`createGraphQLDataSource()` is available as an optional GraphQL adapter. OrbitGraph remains independent from any GraphQL client or server.
+
+## Analytics and presentation
+
+```ts
+const pageRank = graph.analytics.pageRank({ scope: "visible" });
+const degree = graph.analytics.degree({ scope: "visible" });
+const bridges = graph.analytics.betweenness({ scope: "visible", normalized: true });
+const communities = await graph.analytics.detectCommunitiesAsync({ scope: "visible" });
+
+graph.presentation.setNodeStyles({
+    "api": { color: "#facc15", scale: 1.6, glow: 0.9 },
+});
+
+graph.presentation.clearNodeStyles();
+```
+
+Analytics are read-only. `presentation` applies temporary visual styles without mutating source graph data.
+
+## Visual and interaction options
 
 ```ts
 const graph = createOrbitGraph(container, {
-  physics: {
-    worker: true,
-    tickRate: 60,
-  },
+    backgroundColor: "#050816",
+    nodeColor: "#22d3ee",
+    nodeSize: 0.75,
+    linkColor: "#6366f1",
+    linkOpacity: 0.5,
+    linkFlow: { enabled: true, maxParticles: 100 },
+    labels: { mode: "important", maxVisible: 20, showNodeType: true },
+    miniMap: { enabled: true, position: "bottom-right", interactive: true },
+    camera: { keyboardNavigation: true, minDistance: 2, maxDistance: 1000 },
+    physics: { worker: true, tickRate: 60 },
 });
 ```
 
-`worker` defaults to `true` when the browser supports Workers. OrbitGraph falls back to the local simulation in SSR, tests, and environments without Worker support. Deterministic `radial`, `grid`, and `hierarchical` layouts stay on the main thread because they do not run an iterative simulation.
-
-## Metadata
-
-Nodes and links can store JSON-compatible information in `data`. Metadata is preserved in events, selections, exports, and loaded data.
+## Events
 
 ```ts
-{
-  id: "service",
-  label: "Notification Service",
-  type: "service",
-  data: {
-    owner: "Platform Team",
-    status: "active"
-  }
-}
+const graph = createOrbitGraph(container, {
+    onNodeClick: ({ node }) => console.log(node),
+    onLinkClick: ({ link }) => console.log(link),
+    onSelectionChange: (selection) => console.log(selection),
+    onVisibleDataChange: ({ nodes, links }) => console.log(nodes.length, links.length),
+    onLoadingChange: (state) => console.log(state),
+    onDiagnostic: (diagnostic) => console.error(diagnostic),
+});
+```
+
+## Export and view state
+
+```ts
+await graph.downloadPNG("architecture.png");
+graph.downloadJSON({ scope: "visible", fileName: "explored-graph.json" });
+
+const viewState = graph.exportViewState();
+graph.importViewState(viewState);
 ```
 
 ## Related packages
 
-- [`@orbitgraph/core`](https://www.npmjs.com/package/@orbitgraph/core): shared types, graph utilities, and analytics.
-- [`@orbitgraph/react`](https://www.npmjs.com/package/@orbitgraph/react): React component bindings.
+- [`@orbitgraph/core`](https://www.npmjs.com/package/@orbitgraph/core): types and graph utilities.
+- [`@orbitgraph/react`](https://www.npmjs.com/package/@orbitgraph/react): React bindings.
 
 ## License
 

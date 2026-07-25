@@ -1,10 +1,10 @@
 # OrbitGraph
 
-> Explore connected data in 3D — start small, follow relationships, and reveal only what matters.
+> Explore connected data in 3D — load only what matters, reveal relationships progressively, and explain the structure visually.
 
 ![OrbitGraph preview](./assets/example.png)
 
-OrbitGraph is a TypeScript library for interactive 3D relationship graphs. Version 1.2 adds background physics workers, graph analytics, GraphQL data loading, and structured diagnostics alongside progressive exploration, React, accessibility, and exports.
+OrbitGraph is a TypeScript library for interactive relationship graphs. It combines Three.js rendering, force-directed layouts, progressive exploration, analytics, remote data loading, and React bindings in a small set of focused packages.
 
 ## Install
 
@@ -21,360 +21,135 @@ npm install @orbitgraph/core @orbitgraph/three @orbitgraph/react three
 
 </details>
 
----
-
-## 1. Create a graph
-
-```html
-<div id="graph" style="width: 100vw; height: 100vh"></div>
-```
+## Start with a useful view
 
 ```ts
 import { createOrbitGraph } from "@orbitgraph/three";
 import type { GraphData } from "@orbitgraph/core";
 
+const data: GraphData = {
+    nodes: [
+        { id: "team", label: "Product Team", type: "team", color: "#22d3ee" },
+        { id: "api", label: "Public API", type: "service", color: "#3b82f6" },
+    ],
+    links: [
+        { id: "team-owns-api", source: "team", target: "api", type: "owns", weight: 0.95 },
+    ],
+};
+
 const container = document.querySelector<HTMLElement>("#graph");
 
 if (!container) {
-  throw new Error("Graph container was not found.");
+    throw new Error("Graph container was not found.");
 }
 
 const graph = createOrbitGraph(container, {
-  backgroundColor: "#050816",
+    initialView: { mode: "node", nodeId: "team" },
+    labels: {
+        mode: "important",
+        importantNodeIds: ["team"],
+        showNodeType: true,
+    },
+    miniMap: {
+        enabled: true,
+        interactive: true,
+    },
 });
-```
-
----
-
-## 2. Add your data
-
-```ts
-const data: GraphData = {
-  nodes: [
-    {
-      id: "design-team",
-      label: "Design Team",
-      type: "team",
-      color: "#22d3ee",
-      data: { region: "North" },
-    },
-    {
-      id: "workspace",
-      label: "Workspace",
-      type: "resource",
-      color: "#a855f7",
-    },
-    {
-      id: "notifications",
-      label: "Notifications",
-      type: "service",
-      color: "#3b82f6",
-    },
-  ],
-  links: [
-    {
-      source: "design-team",
-      target: "workspace",
-      type: "manages",
-      weight: 1,
-    },
-    {
-      source: "workspace",
-      target: "notifications",
-      type: "uses",
-      weight: 0.8,
-    },
-  ],
-};
 
 graph.setData(data);
+graph.expandNode("team", { direction: "outgoing" });
 ```
 
-Each node and relationship can contain JSON-compatible metadata in `data`.
+Hidden nodes are kept out of WebGL and the active physics simulation until exploration reveals them.
 
----
+## What OrbitGraph includes
 
-## 3. Choose where exploration starts
+- 3D force-directed, radial, grid, and hierarchical layouts.
+- Progressive exploration from a node, neighborhood, or node type.
+- Local search, type filters, link-weight filters, history, and path focus.
+- Worker-backed physics with automatic main-thread fallback.
+- Optional remote loading through `GraphDataSource` and a GraphQL adapter.
+- Degree, PageRank, betweenness, and community detection.
+- Visual presentation APIs for analytics: color, scale, glow, and legends you control.
+- Intelligent persistent labels, hover labels, and an interactive mini-map.
+- Desktop keyboard movement, keyboard graph navigation, touch controls, and mobile controls.
+- Node/link events, selection, diagnostics, loading state, PNG export, JSON export, and view-state persistence.
+- Vanilla JavaScript and React support.
 
-Use `initialView` when the complete graph would be too large or too noisy.
+## Packages
 
-| Start with | Configuration |
+| Package | Purpose |
 | --- | --- |
-| Everything | `all` |
-| One known entity | `node` |
-| One entity and its connections | `neighborhood` |
-| A category of entities | `type` |
+| [`@orbitgraph/core`](./packages/core) | Data types, analytics, communities, and data-source contracts. |
+| [`@orbitgraph/three`](./packages/three) | Three.js renderer and imperative graph API. |
+| [`@orbitgraph/react`](./packages/react) | React component and ref-based actions. |
+
+## Explore and analyze
 
 ```ts
-const graph = createOrbitGraph(container, {
-  initialView: {
-    mode: "neighborhood",
-    nodeId: "design-team",
-    depth: 1,
-    direction: "outgoing",
-  },
+const pageRank = graph.analytics.pageRank({ scope: "visible" });
+
+graph.presentation.setNodeStyles({
+    "api": {
+        color: "#facc15",
+        scale: 1.6,
+        glow: 0.9,
+    },
 });
-```
-
-> Nodes hidden by exploration are not mounted in WebGL or the force simulation. This keeps large graphs responsive from the first render.
-
----
-
-## 4. Explore relationships
-
-```ts
-graph.expandNode("design-team", {
-  depth: 1,
-  direction: "outgoing",
-  relationshipTypes: ["manages", "owns"],
-  limit: 25,
-  offset: 0,
-});
-
-graph.collapseNode("design-team");
-graph.resetExploration();
-graph.showAll();
-```
-
-Search and filters refine only the explored subset; they never reveal data that exploration is still hiding.
-
-```ts
-graph.search("workspace");
-graph.toggleTypeFilter("service");
-graph.setMinimumLinkWeight(0.7);
-graph.clearFilters();
-```
-
----
-
-## 5. Load data on demand
-
-`GraphDataSource` allows an application to fetch nodes and relationship pages only when the user needs them.
-
-```ts
-import type { GraphDataSource } from "@orbitgraph/core";
-
-const dataSource: GraphDataSource = {
-  async getNode(nodeId) {
-    const response = await fetch(`/api/nodes/${nodeId}`);
-
-    if (!response.ok) {
-      throw new Error("Unable to load the node.");
-    }
-
-    return response.json();
-  },
-  async getNeighborhood({ nodeId, limit = 50, offset = 0 }) {
-    const response = await fetch(
-      `/api/nodes/${nodeId}/neighborhood?limit=${limit}&offset=${offset}`,
-    );
-
-    if (!response.ok) {
-      throw new Error("Unable to load the neighborhood.");
-    }
-
-    return response.json();
-  },
-};
-
-const graph = createOrbitGraph(container, { dataSource });
-
-await graph.loadNode("design-team");
-await graph.loadNeighborhood("design-team", {
-  direction: "outgoing",
-  limit: 50,
-});
-```
-
-### GraphQL
-
-Use the optional GraphQL adapter when your backend exposes GraphQL. OrbitGraph does not require Apollo, urql, Relay, or another GraphQL client.
-
-```ts
-import {
-  createGraphQLDataSource,
-  createOrbitGraph,
-} from "@orbitgraph/three";
-
-const dataSource = createGraphQLDataSource({
-  endpoint: "/graphql",
-  getNode: {
-    document: `query Person($id: ID!) {
-      person(id: $id) { id label type }
-    }`,
-    variables: (id) => ({ id }),
-    select: (data) => data.person ?? undefined,
-  },
-  getNeighborhood: {
-    document: `query Neighborhood($nodeId: ID!, $limit: Int, $offset: Int) {
-      neighborhood(nodeId: $nodeId, limit: $limit, offset: $offset) {
-        nodes { id label type }
-        links { id source target type weight }
-        hasMore
-        nextOffset
-      }
-    }`,
-    variables: ({ nodeId, limit, offset }) => ({ nodeId, limit, offset }),
-    select: (data) => data.neighborhood,
-  },
-});
-
-const graph = createOrbitGraph(container, { dataSource });
-```
-
-See [Data sources](./docs/data-sources.md) for REST, GraphQL, pagination, and custom-client examples.
-
----
-
-## 6. Handle loading and diagnostics
-
-OrbitGraph exposes loading state for UI and diagnostics for logs or monitoring. It does not render error UI itself.
-
-```ts
-const graph = createOrbitGraph(container, {
-  dataSource,
-  onLoadingChange: (state) => {
-    if (state.loading) {
-      console.log(`Loading ${state.operation}: ${state.nodeId}`);
-    }
-
-    if (state.error) {
-      console.error(state.error.message);
-    }
-  },
-  onDiagnostic: (diagnostic) => {
-    console.error(`[${diagnostic.code}] ${diagnostic.message}`);
-  },
-});
-```
-
-Remote requests also reject normally, so application code can use `try/catch` to implement retries or custom recovery.
-
----
-
-## 7. Add optional relationship flow
-
-```ts
-const graph = createOrbitGraph(container, {
-  linkFlow: {
-    enabled: true,
-    maxParticles: 140,
-    particleSize: 0.09,
-    particleSpeed: 0.12,
-  },
-});
-```
-
-Keep it disabled when rendering the largest graphs.
-
----
-
-## 8. Analytics
-
-Analytics operate on all loaded data by default. Pass `{ scope: "visible" }` to analyze the currently explored and filtered view.
-
-```ts
-const degree = graph.analytics.degree();
-const rank = graph.analytics.pageRank({ scope: "visible" });
-const betweenness = graph.analytics.betweenness();
 
 const communities = await graph.analytics.detectCommunitiesAsync({
-  scope: "visible",
-  weighted: true,
+    scope: "visible",
+    weighted: true,
 });
 ```
 
----
+Analytics calculate data; they never change your graph automatically. Your application decides how results should appear.
 
-## 9. Keep large graphs responsive
-
-OrbitGraph can run force physics in a module Web Worker, keeping the browser UI responsive while large graphs settle.
+## Remote data
 
 ```ts
 const graph = createOrbitGraph(container, {
-  physics: {
-    worker: true,
-    tickRate: 60,
-  },
+    dataSource: {
+        async getNode(nodeId) {
+            return fetch(`/api/nodes/${nodeId}`).then((response) => response.json());
+        },
+        async getNeighborhood({ nodeId, limit = 25, offset = 0 }) {
+            return fetch(`/api/nodes/${nodeId}/neighbors?limit=${limit}&offset=${offset}`)
+                .then((response) => response.json());
+        },
+    },
 });
+
+await graph.loadNeighborhood("team", { limit: 25, offset: 0 });
 ```
-
-The worker is used for force-directed layouts. Deterministic `radial`, `grid`, and `hierarchical` layouts are calculated directly because they do not need continuous simulation.
-
----
-
-## 10. Export and camera
-
-```ts
-await graph.downloadPNG("relationship-map.png");
-graph.downloadJSON({ scope: "visible", fileName: "visible-graph.json" });
-
-graph.focusNode("workspace");
-graph.resetCamera();
-graph.unpinNode("workspace");
-```
-
-Keyboard navigation and mobile touch controls are available by default and can be configured through `accessibility`, `camera`, and `mobile` options.
-
----
-
-## React
-
-```tsx
-import { OrbitGraph } from "@orbitgraph/react";
-
-export function App() {
-  return (
-    <OrbitGraph
-      data={data}
-      style={{ width: "100%", height: "100vh" }}
-      options={{ dataSource }}
-      onLoadingChange={(state) => {
-        if (state.error) {
-          console.error(state.error.message);
-        }
-      }}
-      onDiagnostic={(diagnostic) => {
-        console.error(diagnostic);
-      }}
-    />
-  );
-}
-```
-
----
-
-## Benchmark
-
-OrbitGraph includes an interactive benchmark for generated graphs of 100 to 10,000 nodes.
-
-![OrbitGraph benchmark](./assets/example_benchmark.png)
-
-```bash
-npm install
-npm run build
-npm run dev:benchmark
-```
-
----
 
 ## Documentation
 
-- [API reference](./docs/api/README.md)
-- [Data sources and diagnostics](./docs/guides/data-sources.md)
-- [Performance notes](./docs/guides/performance.md)
-- [Getting started](./docs/guides/getting-started.md)
+- [Complete API reference](./docs/api/API.md)
+- [Core package documentation](./packages/core/README.md)
+- [Three.js package documentation](./packages/three/README.md)
+- [React package documentation](./packages/react/README.md)
+- [Changelog](./CHANGELOG.md)
+- [Contributing](./CONTRIBUTING.md)
+
+## Examples
+
+```bash
+npm install
+npm run dev:vanilla
+npm run dev:react
+npm run dev:benchmark
+```
+
+The Vanilla and React examples demonstrate remote relationship pages, analytics, community visualization, labels, mini-map navigation, selection details, loading states, diagnostics, and exports.
 
 ## Development
 
 ```bash
-npm install
 npm run typecheck
 npm run test:run
 npm run build
 ```
-
-See `examples/vanilla`, `examples/react`, and `examples/benchmark` for working examples.
 
 ## License
 
