@@ -1,141 +1,433 @@
 import { createOrbitGraph } from "@orbitgraph/three";
-import type { GraphData, GraphSelection } from "@orbitgraph/core";
+import type {
+    GraphData,
+    GraphDataSource,
+    GraphLink,
+    GraphNode,
+} from "@orbitgraph/core";
 
 import "./style.css";
 
-const data: GraphData = {
-    nodes: [
-        {
-            id: "northstar",
-            label: "Northstar Organization",
-            type: "organization",
-            color: "#22d3ee",
-            size: 1.35,
-            data: { region: "North", status: "active" },
-        },
-        {
-            id: "product",
-            label: "Product Group",
-            type: "team",
-            color: "#a855f7",
-            data: { members: 12 },
-        },
-        {
-            id: "platform",
-            label: "Platform Group",
-            type: "team",
-            color: "#3b82f6",
-            data: { members: 8 },
-        },
-        {
-            id: "workspace",
-            label: "Shared Workspace",
-            type: "resource",
-            color: "#facc15",
-        },
-        {
-            id: "catalog",
-            label: "Service Catalog",
-            type: "service",
-            color: "#34d399",
-        },
-        {
-            id: "analytics",
-            label: "Analytics Service",
-            type: "service",
-            color: "#fb7185",
-        },
-    ],
-    links: [
-        { source: "northstar", target: "product", type: "contains", weight: 1 },
-        { source: "northstar", target: "platform", type: "contains", weight: 1 },
-        { source: "product", target: "workspace", type: "uses", weight: 0.8 },
-        { source: "platform", target: "catalog", type: "operates", weight: 0.9 },
-        { source: "workspace", target: "analytics", type: "reports-to", weight: 0.6 },
-    ],
+const rootNodeId = "central-library";
+const pageSize = 2;
+
+const nodes: GraphNode[] = [
+    {
+        id: rootNodeId,
+        label: "Central Library",
+        type: "organization",
+        color: "#22d3ee",
+        size: 1.25,
+        data: { city: "Riverton", role: "community hub" },
+    },
+    {
+        id: "reading-club",
+        label: "Reading Club",
+        type: "group",
+        color: "#a855f7",
+        data: { members: 48 },
+    },
+    {
+        id: "science-workshop",
+        label: "Science Workshop",
+        type: "group",
+        color: "#3b82f6",
+        data: { members: 31 },
+    },
+    {
+        id: "public-archive",
+        label: "Public Archive",
+        type: "resource",
+        color: "#f472b6",
+    },
+    {
+        id: "local-history",
+        label: "Local History Team",
+        type: "group",
+        color: "#facc15",
+    },
+    {
+        id: "volunteer-network",
+        label: "Volunteer Network",
+        type: "network",
+        color: "#34d399",
+    },
+];
+
+const links: GraphLink[] = [
+    {
+        id: "library-hosts-reading",
+        source: rootNodeId,
+        target: "reading-club",
+        type: "hosts",
+        weight: 1,
+    },
+    {
+        id: "library-hosts-science",
+        source: rootNodeId,
+        target: "science-workshop",
+        type: "hosts",
+        weight: 0.92,
+    },
+    {
+        id: "library-manages-archive",
+        source: rootNodeId,
+        target: "public-archive",
+        type: "manages",
+        weight: 0.86,
+    },
+    {
+        id: "archive-supports-history",
+        source: "public-archive",
+        target: "local-history",
+        type: "supports",
+        weight: 0.74,
+    },
+    {
+        id: "reading-connects-volunteers",
+        source: "reading-club",
+        target: "volunteer-network",
+        type: "connects",
+        weight: 0.67,
+    },
+];
+
+const dataSource: GraphDataSource = {
+    async getNode(nodeId) {
+        await delay(180);
+
+        return nodes.find((node) => node.id === nodeId);
+    },
+    async getNeighborhood({ nodeId, direction = "both", limit = pageSize, offset = 0 }) {
+        await delay(280);
+
+        const matchingLinks = links.filter((link) => {
+            if (direction === "outgoing") {
+                return link.source === nodeId;
+            }
+
+            if (direction === "incoming") {
+                return link.target === nodeId;
+            }
+
+            return link.source === nodeId || link.target === nodeId;
+        });
+
+        const page = matchingLinks.slice(offset, offset + limit);
+        const nodeIds = new Set<string>([nodeId]);
+
+        for (const link of page) {
+            nodeIds.add(link.source);
+            nodeIds.add(link.target);
+        }
+
+        return {
+            nodes: nodes.filter((node) => nodeIds.has(node.id)),
+            links: page,
+            hasMore: offset + page.length < matchingLinks.length,
+            nextOffset: offset + page.length,
+        };
+    },
+};
+
+const initialData: GraphData = {
+    nodes: [nodes[0]],
+    links: [],
 };
 
 const container = document.querySelector<HTMLElement>("#graph");
-const nodeCount = document.querySelector<HTMLElement>("#node-count");
-const linkCount = document.querySelector<HTMLElement>("#link-count");
-const detailTitle = document.querySelector<HTMLElement>("#detail-title");
-const detailSubtitle = document.querySelector<HTMLElement>("#detail-subtitle");
-const detailData = document.querySelector<HTMLElement>("#detail-data");
+const loadButton = document.querySelector<HTMLButtonElement>("#load-neighborhood");
+const resetButton = document.querySelector<HTMLButtonElement>("#reset-exploration");
+const showAllButton = document.querySelector<HTMLButtonElement>("#show-all");
+const degreeButton = document.querySelector<HTMLButtonElement>("#analyze-degree");
+const pageRankButton = document.querySelector<HTMLButtonElement>("#analyze-pagerank");
+const betweennessButton = document.querySelector<HTMLButtonElement>("#analyze-betweenness");
+const communitiesButton = document.querySelector<HTMLButtonElement>("#detect-communities");
+const clearVisualizationButton = document.querySelector<HTMLButtonElement>("#clear-visualization");
+const exportButton = document.querySelector<HTMLButtonElement>("#export-json");
+const loadingState = document.querySelector<HTMLElement>("#loading-state");
+const visibleData = document.querySelector<HTMLElement>("#visible-data");
+const analyticsState = document.querySelector<HTMLElement>("#analytics-state");
+const analyticsLegend = document.querySelector<HTMLElement>("#analytics-legend");
+const message = document.querySelector<HTMLElement>("#message");
 
 if (!container) {
     throw new Error("Graph container was not found.");
 }
 
-function showSelection(selection: GraphSelection): void {
-    if (!detailTitle || !detailSubtitle || !detailData) {
-        return;
-    }
-
-    if (!selection) {
-        detailTitle.textContent = "Explore the network";
-        detailSubtitle.textContent = "Select a node, use the keyboard, or reveal its relationships.";
-        detailData.textContent = "";
-        return;
-    }
-
-    if (selection.kind === "node") {
-        detailTitle.textContent = selection.node.label ?? selection.node.id;
-        detailSubtitle.textContent = `Node · ${selection.node.type ?? "untyped"}`;
-        detailData.textContent = JSON.stringify(selection.node.data ?? selection.node, null, 2);
-        return;
-    }
-
-    detailTitle.textContent = selection.link.type ?? "Relationship";
-    detailSubtitle.textContent = `${selection.link.source} → ${selection.link.target}`;
-    detailData.textContent = JSON.stringify(selection.link.data ?? selection.link, null, 2);
-}
+let nextOffset = 0;
 
 const graph = createOrbitGraph(container, {
     backgroundColor: "#050816",
-    initialView: { mode: "node", nodeId: "northstar" },
+    initialView: { mode: "node", nodeId: rootNodeId },
+    dataSource,
+    physics: {
+        worker: true,
+        tickRate: 60,
+    },
     linkFlow: {
         enabled: true,
         maxParticles: 80,
         particleSize: 0.07,
         particleSpeed: 0.1,
     },
-    mobileControls: {
-        enabled: "auto",
-        position: "bottom-right",
-    },
-    accessibility: {
-        ariaLabel: "Northstar relationship explorer",
-    },
-    onSelectionChange: showSelection,
-    onKeyboardFocusChange: (node) => {
-        if (node) {
-            detailSubtitle!.textContent = `Keyboard focus · ${node.label ?? node.id}`;
+    onLoadingChange: (state) => {
+        if (loadingState) {
+            loadingState.textContent = state.loading
+                ? `Loading ${state.operation ?? "data"}…`
+                : state.error
+                    ? "Request failed"
+                    : "Idle";
+        }
+
+        if (state.error && message) {
+            message.textContent = state.error.message;
         }
     },
-    onVisibleDataChange: ({ nodes, links }) => {
-        if (nodeCount) nodeCount.textContent = String(nodes.length);
-        if (linkCount) linkCount.textContent = String(links.length);
+    onVisibleDataChange: ({ nodes: visibleNodes, links: visibleLinks }) => {
+        if (visibleData) {
+            visibleData.textContent = `${visibleNodes.length} nodes · ${visibleLinks.length} relationships`;
+        }
+    },
+    onDiagnostic: (diagnostic) => {
+        console.error(diagnostic);
+
+        if (message) {
+            message.textContent = `[${diagnostic.code}] ${diagnostic.message}`;
+        }
     },
 });
 
-document.querySelector("#expand-root")?.addEventListener("click", () => {
-    graph.expandNode("northstar", { depth: 2, direction: "outgoing" });
+graph.setData(initialData);
+graph.resetCamera();
+
+loadButton?.addEventListener("click", async () => {
+    try {
+        const result = await graph.loadNeighborhood(rootNodeId, {
+            direction: "outgoing",
+            limit: pageSize,
+            offset: nextOffset,
+        });
+
+        nextOffset = result?.nextOffset ?? nextOffset;
+
+        if (message) {
+            message.textContent = result?.hasMore
+                ? "Loaded one relationship page. More data is available."
+                : "All direct relationships are loaded.";
+        }
+    } catch {
+        // Diagnostics and loading state already provide UI feedback.
+    }
 });
 
-document.querySelector("#show-all")?.addEventListener("click", () => graph.showAll());
-document.querySelector("#reset-exploration")?.addEventListener("click", () => graph.resetExploration());
-document.querySelector("#focus-root")?.addEventListener("click", () => graph.focusNode("northstar"));
-document.querySelector("#reset-camera")?.addEventListener("click", () => graph.resetCamera());
+resetButton?.addEventListener("click", () => {
+    nextOffset = 0;
+    graph.resetExploration();
+    graph.resetCamera();
 
-document.querySelector("#export-png")?.addEventListener("click", async () => {
-    await graph.downloadPNG("northstar-network.png");
+    if (message) {
+        message.textContent = "Returned to the initial node.";
+    }
 });
 
-document.querySelector("#export-json")?.addEventListener("click", () => {
+showAllButton?.addEventListener("click", () => {
+    graph.showAll();
+    graph.resetCamera();
+});
+
+degreeButton?.addEventListener("click", () => {
+    const degree = graph.analytics.degree({ scope: "visible" });
+    const rankedNodes = Object.entries(degree)
+        .sort(([, left], [, right]) => right.degree - left.degree);
+    const topNode = rankedNodes[0];
+
+    setAnalyticsMessage(
+        topNode
+            ? `Degree: ${getNodeLabel(topNode[0])} has ${topNode[1].degree} visible relationships.`
+            : "Degree: no visible relationships.",
+    );
+
+    applyMetricPresentation(
+        Object.fromEntries(
+            Object.entries(degree).map(([nodeId, metric]) => [
+                nodeId,
+                metric.degree,
+            ]),
+            "#22d3ee",
+            "#8b5cf6",
+        );
+    setLegend([]);
+});
+
+pageRankButton?.addEventListener("click", () => {
+    const result = graph.analytics.pageRank({ scope: "visible" });
+    const topNode = getTopScore(result.scores);
+
+    setAnalyticsMessage(
+        topNode
+            ? `PageRank: ${getNodeLabel(topNode[0])} ranks highest at ${topNode[1].toFixed(3)} (${result.iterations} iterations).`
+            : "PageRank: no visible nodes.",
+    );
+
+    applyMetricPresentation(result.scores, "#38bdf8", "#f8fafc");
+    setLegend([]);
+});
+
+betweennessButton?.addEventListener("click", () => {
+    const scores = graph.analytics.betweenness({
+        scope: "visible",
+        normalized: true,
+    });
+    const topNode = getTopScore(scores);
+
+    setAnalyticsMessage(
+        topNode
+            ? `Betweenness: ${getNodeLabel(topNode[0])} is the strongest visible bridge at ${topNode[1].toFixed(3)}.`
+            : "Betweenness: no visible nodes.",
+    );
+
+    applyMetricPresentation(scores, "#f59e0b", "#fef3c7");
+    setLegend([]);
+});
+
+communitiesButton?.addEventListener("click", async () => {
+    communitiesButton.disabled = true;
+    setAnalyticsMessage("Communities: analyzing the visible graph…");
+
+    try {
+        const result = await graph.analytics.detectCommunitiesAsync({
+            scope: "visible",
+            weighted: true,
+        });
+        const largest = result.communities[0];
+
+        setAnalyticsMessage(
+            largest
+                ? `Communities: found ${result.communities.length}. Largest group has ${largest.size} nodes (${result.iterations} passes).`
+                : "Communities: no visible nodes.",
+        );
+        applyCommunityPresentation(result.communities);
+    } finally {
+        communitiesButton.disabled = false;
+    }
+});
+
+clearVisualizationButton?.addEventListener("click", () => {
+    graph.presentation.clearNodeStyles();
+    setAnalyticsMessage("Visualization cleared. Source colors and sizes restored.");
+    setLegend([]);
+});
+
+exportButton?.addEventListener("click", () => {
     graph.downloadJSON({
         scope: "visible",
-        fileName: "northstar-visible-network.json",
+        fileName: "community-explorer.json",
     });
 });
 
-graph.setData(data);
+function delay(milliseconds: number): Promise<void> {
+    return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+function getTopScore(scores: Record<string, number>): [string, number] | undefined {
+    return Object.entries(scores).sort(([, left], [, right]) => right - left)[0];
+}
+
+function getNodeLabel(nodeId: string): string {
+    return nodes.find((node) => node.id === nodeId)?.label ?? nodeId;
+}
+
+function setAnalyticsMessage(value: string): void {
+    if (analyticsState) {
+        analyticsState.textContent = value;
+    }
+}
+
+function applyMetricPresentation(
+    scores: Record<string, number>,
+    lowColor: string,
+    highColor: string,
+): void {
+    const highestScore = Math.max(...Object.values(scores), 0);
+
+    graph.presentation.setNodeStyles(
+        Object.fromEntries(
+            Object.entries(scores).map(([nodeId, score]) => {
+                const strength = highestScore > 0 ? score / highestScore : 0;
+
+                return [
+                    nodeId,
+                    {
+                        color: interpolateColor(lowColor, highColor, strength),
+                        scale: 0.9 + strength * 0.8,
+                        glow: strength * 0.9,
+                    },
+                ];
+            }),
+        ),
+    );
+}
+
+function applyCommunityPresentation(
+    communities: Array<{ id: string; size: number; nodeIds: string[] }>,
+): void {
+    const palette = ["#22d3ee", "#a855f7", "#f472b6", "#facc15", "#34d399", "#60a5fa"];
+    const styles: Record<string, { color: string; scale: number; glow: number }> = {};
+
+    communities.forEach((community, index) => {
+        const color = palette[index % palette.length];
+
+        for (const nodeId of community.nodeIds) {
+            styles[nodeId] = {
+                color,
+                scale: 1 + Math.min(community.size, 8) * 0.025,
+                glow: 0.35,
+            };
+        }
+    });
+
+    graph.presentation.setNodeStyles(styles);
+    setLegend(
+        communities.map((community, index) => ({
+            color: palette[index % palette.length],
+            label: `Community ${index + 1} · ${community.size} nodes`,
+        })),
+    );
+}
+
+function setLegend(items: Array<{ color: string; label: string }>): void {
+    if (!analyticsLegend) {
+        return;
+    }
+
+    analyticsLegend.replaceChildren(
+        ...items.map((item) => {
+            const row = document.createElement("span");
+            const swatch = document.createElement("i");
+
+            row.className = "legend-item";
+            swatch.className = "legend-swatch";
+            swatch.style.background = item.color;
+            row.append(swatch, item.label);
+
+            return row;
+        }),
+    );
+    analyticsLegend.hidden = items.length === 0;
+}
+
+function interpolateColor(start: string, end: string, amount: number): string {
+    const startColor = parseInt(start.slice(1), 16);
+    const endColor = parseInt(end.slice(1), 16);
+    const mix = (shift: number): number => {
+        const startChannel = (startColor >> shift) & 0xff;
+        const endChannel = (endColor >> shift) & 0xff;
+
+        return Math.round(startChannel + (endChannel - startChannel) * amount);
+    };
+
+    return `#${[mix(16), mix(8), mix(0)]
+        .map((channel) => channel.toString(16).padStart(2, "0"))
+        .join("")}`;
+}

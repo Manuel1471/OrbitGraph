@@ -3,47 +3,64 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OrbitGraph Vanilla Example</title>
+    <title>OrbitGraph Progressive Exploration</title>
 </head>
 <body>
 <main>
-    <aside class="panel controls-panel">
-        <span class="eyebrow">VANILLA EXAMPLE</span>
-        <h1>Relationship Explorer</h1>
+    <aside class="panel">
+        <span class="eyebrow">VANILLA JAVASCRIPT</span>
+        <h1>Community Explorer</h1>
         <p>
-            Starts with one organization. Reveal its connected network only when needed.
+            Start with one node and load relationship pages as you explore.
         </p>
 
-        <div class="actions">
-            <button id="expand-root" type="button">Expand organization</button>
-            <button id="show-all" type="button">Show all</button>
-            <button id="reset-exploration" type="button">Reset exploration</button>
-            <button id="focus-root" type="button">Focus organization</button>
-            <button id="reset-camera" type="button">Reset camera</button>
+        <div class="controls">
+            <button id="load-neighborhood" type="button">
+                Load next relationships
+            </button>
+            <button id="reset-exploration" type="button">
+                Reset exploration
+            </button>
+            <button id="show-all" type="button">
+                Show loaded graph
+            </button>
+            <button id="analyze-degree" type="button">
+                Analyze degree centrality
+            </button>
+            <button id="analyze-pagerank" type="button">
+                Analyze PageRank
+            </button>
+            <button id="analyze-betweenness" type="button">
+                Analyze betweenness
+            </button>
+            <button id="detect-communities" type="button">
+                Detect communities
+            </button>
+            <button id="clear-visualization" type="button">
+                Clear visualization
+            </button>
+            <button id="export-json" type="button">
+                Export visible JSON
+            </button>
         </div>
 
-        <span class="section-title">Export</span>
-        <div class="actions two-columns">
-            <button id="export-png" type="button">Download PNG</button>
-            <button id="export-json" type="button">Visible JSON</button>
-        </div>
+        <section class="status">
+            <span class="status-label">Loading</span>
+            <strong id="loading-state">Idle</strong>
+        </section>
 
-        <p class="hint">
-            Keyboard: arrows navigate, Enter focuses, + expands, − collapses, F focuses the camera, Escape clears selection.
-        </p>
-    </aside>
+        <section class="status">
+            <span class="status-label">Visible data</span>
+            <strong id="visible-data">1 node · 0 relationships</strong>
+        </section>
 
-    <aside class="panel details-panel">
-        <span class="eyebrow">GRAPH STATE</span>
-        <h2 id="detail-title">Explore the network</h2>
-        <p id="detail-subtitle">Select a node, use the keyboard, or reveal its relationships.</p>
+        <section class="status">
+            <span class="status-label">Analytics</span>
+            <strong id="analytics-state">Choose an analysis</strong>
+            <div id="analytics-legend" class="analytics-legend" hidden></div>
+        </section>
 
-        <div class="stats">
-            <span><strong id="node-count">0</strong> visible nodes</span>
-            <span><strong id="link-count">0</strong> visible links</span>
-        </div>
-
-        <pre id="detail-data"></pre>
+        <p id="message" class="message" aria-live="polite"></p>
     </aside>
 
     <div id="graph"></div>

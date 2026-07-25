@@ -52,7 +52,10 @@ vi.mock("../src/GraphRenderer", () => ({
             this.linkIds.push(link.id ?? "unknown");
         }
 
+        setVisibleNodeIds(): void {}
         setKeyboardFocus(): void {}
+        setNodePresentationStyles(): void {}
+        clearNodePresentationStyles(): void {}
 
         clear(): void {
             harness.rendererNodes.push([...this.nodeIds].sort());
@@ -91,7 +94,11 @@ vi.mock("../src/GraphCamera", () => ({
     GraphCamera: class {
         update = vi.fn();
         focusNode = vi.fn();
+        focusPosition = vi.fn();
+        getTarget = vi.fn(() => ({ x: 0, y: 0, z: 0 }));
+        onChange = vi.fn(() => () => {});
         reset = vi.fn();
+        zoomBy = vi.fn();
         dispose = vi.fn();
     },
 }));
@@ -104,9 +111,13 @@ vi.mock("../src/GraphInteraction", () => ({
 
 vi.mock("../src/NodeLabelRenderer", () => ({
     NodeLabelRenderer: class {
+        setOptions(): void {}
+        setVisibleNodes(): void {}
+        setSelectedNode(): void {}
         show(): void {}
         hide(): void {}
         updatePosition(): void {}
+        clear(): void {}
     },
 }));
 

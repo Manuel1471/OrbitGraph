@@ -211,6 +211,78 @@ export type LinkFlowOptions = {
     particleSpeed?: number;
 };
 
+/** Strategy used to decide which node labels remain visible. */
+export type GraphLabelMode =
+    | "hover"
+    | "selected"
+    | "important"
+    | "all";
+
+/**
+ * Configuration for persistent node labels.
+ *
+ * Labels are capped to preserve readability and avoid creating excessive
+ * canvas textures in large graph views.
+ */
+export type GraphLabelsOptions = {
+    /**
+     * - `"hover"`: only the currently hovered node label is shown.
+     * - `"selected"`: the selected node label remains visible.
+     * - `"important"`: prioritizes `importantNodeIds`, then larger nodes.
+     * - `"all"`: shows visible nodes until `maxVisible` is reached.
+     * @defaultValue "hover"
+     */
+    mode?: GraphLabelMode;
+
+    /** Maximum number of persistent labels rendered at once. @defaultValue 80 */
+    maxVisible?: number;
+
+    /** Node ids prioritized in `"important"` label mode. */
+    importantNodeIds?: string[];
+
+    /** Displays a node type beneath its label when available. @defaultValue false */
+    showNodeType?: boolean;
+
+    /** Relative label font size. @defaultValue 1 */
+    fontScale?: number;
+};
+
+/** Screen corner used to place the graph mini-map. */
+export type GraphMiniMapPosition =
+    | "top-left"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-right";
+
+/**
+ * Configuration for the optional overview mini-map.
+ *
+ * The mini-map represents the currently visible graph subset. It is rendered
+ * with Canvas 2D and therefore does not create a second WebGL renderer.
+ */
+export type GraphMiniMapOptions = {
+    /** Enables the mini-map. @defaultValue false */
+    enabled?: boolean;
+
+    /** Screen corner used to position the mini-map. @defaultValue "bottom-right" */
+    position?: GraphMiniMapPosition;
+
+    /** Width in CSS pixels. @defaultValue 180 */
+    width?: number;
+
+    /** Height in CSS pixels. @defaultValue 120 */
+    height?: number;
+
+    /** Lets users click or tap the overview to move the camera target. @defaultValue true */
+    interactive?: boolean;
+
+    /** Draws the current camera target over the overview. @defaultValue true */
+    showViewport?: boolean;
+
+    /** Accessible name announced for the mini-map control. @defaultValue "Graph overview" */
+    ariaLabel?: string;
+};
+
 /**
  * Configuration options for an OrbitGraph instance.
  */
@@ -239,6 +311,12 @@ export type OrbitGraphOptions = {
     /** Configuration for optional animated relationship flow. */
     linkFlow?: LinkFlowOptions;
 
+    /** Configuration for hover and persistent node labels. */
+    labels?: GraphLabelsOptions;
+
+    /** Configuration for the optional graph overview mini-map. */
+    miniMap?: GraphMiniMapOptions;
+
     /** Called after clicking a node. */
     onNodeClick?: (event: NodeClickEvent) => void;
 
@@ -257,8 +335,8 @@ export type OrbitGraphOptions = {
     /** Initial visual arrangement of the active graph. @defaultValue "force" */
     layout?: GraphLayout;
 
-     /** Configuration used by the initial layout. */
-     layoutOptions?: GraphLayoutOptions;
+    /** Configuration used by the initial layout. */
+    layoutOptions?: GraphLayoutOptions;
 
     /** Optional asynchronous source used to load nodes and neighborhoods on demand. */
     dataSource?: GraphDataSource;

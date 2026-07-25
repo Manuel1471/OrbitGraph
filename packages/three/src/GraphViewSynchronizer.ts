@@ -20,11 +20,16 @@ type GraphViewSynchronizerOptions = {
     layout: GraphLayout;
     layoutOptions: GraphLayoutOptions;
     onVisibleDataChange?: (data: VisibleGraphData) => void;
+    /** Called after active node positions or relationships change. */
+    onGraphPositionChange?: (
+        nodes: readonly PhysicsNode[],
+        links: readonly PhysicsLink[],
+    ) => void;
 };
 
 /**
  * Turns the explored and filtered data subset into active Three.js objects
- * and a matching D3 physics simulation.
+ * and a matching physics simulation.
  */
 export class GraphViewSynchronizer {
     private physicsNodes: PhysicsNode[] = [];
@@ -60,6 +65,11 @@ export class GraphViewSynchronizer {
             this.renderer.addNode(node);
         }
 
+        this.renderer.setVisibleNodeIds(
+            new Set(visible.nodes.map((node) => node.id)),
+            this.filter.getMinimumLinkWeight(),
+        );
+
         for (const link of visible.links) {
             this.renderer.addLink(link);
         }
@@ -71,6 +81,7 @@ export class GraphViewSynchronizer {
             graphLink: link,
         }));
 
+        this.labels.setVisibleNodes(visible.nodes);
         this.particles.setLinks(visible.links);
 
         if (this.physicsNodes.length > 0) {
@@ -80,14 +91,17 @@ export class GraphViewSynchronizer {
                 () => {
                     this.renderer.syncPositions();
                     this.labels.updatePosition();
+                    this.emitGraphPositionChange();
                 },
                 this.layout,
                 this.layoutOptions,
             );
 
             this.renderer.syncPositions();
+            this.labels.updatePosition();
         }
 
+        this.emitGraphPositionChange();
         this.options.onVisibleDataChange?.(visible);
 
         return visible;
@@ -99,10 +113,15 @@ export class GraphViewSynchronizer {
         this.physics.setLayout(layout, options);
         this.renderer.syncPositions();
         this.labels.updatePosition();
+        this.emitGraphPositionChange();
     }
 
     getPhysicsNodes(): readonly PhysicsNode[] {
         return this.physicsNodes;
+    }
+
+    getPhysicsLinks(): readonly PhysicsLink[] {
+        return this.physicsLinks;
     }
 
     unpinNode(nodeId: string): void {
@@ -115,10 +134,16 @@ export class GraphViewSynchronizer {
 
     clear(): void {
         this.physics.stop();
+        this.labels.setVisibleNodes([]);
         this.labels.hide();
         this.particles.clear();
         this.renderer.clear();
         this.physicsNodes = [];
         this.physicsLinks = [];
+        this.emitGraphPositionChange();
+    }
+
+    private emitGraphPositionChange(): void {
+        this.options.onGraphPositionChange?.(this.physicsNodes, this.physicsLinks);
     }
 }

@@ -5,8 +5,10 @@ import type { OrbitGraphCameraOptions } from "@orbitgraph/core";
 
 import type { PhysicsNode } from "./PhysicsEngine";
 
+/** Coordinates OrbitControls, keyboard movement, and programmatic camera focus. */
 export class GraphCamera {
     private readonly pressedKeys = new Set<string>();
+    private readonly changeListeners = new Set<() => void>();
     private readonly movementDirection = new THREE.Vector3();
     private readonly horizontalForward = new THREE.Vector3();
     private readonly horizontalRight = new THREE.Vector3();
@@ -15,9 +17,7 @@ export class GraphCamera {
     private readonly movementSpeed: number;
     private readonly boostMultiplier: number;
     private readonly keyboardNavigation: boolean;
-
     private readonly previousTouchAction: string;
-
     private readonly minDistance: number;
     private readonly maxDistance: number;
 
@@ -27,32 +27,23 @@ export class GraphCamera {
         private readonly element: HTMLElement,
         options: OrbitGraphCameraOptions = {},
     ) {
-
         this.movementSpeed = options.movementSpeed ?? 18;
         this.boostMultiplier = options.boostMultiplier ?? 2.5;
         this.keyboardNavigation = options.keyboardNavigation ?? true;
-
         this.previousTouchAction = this.element.style.touchAction;
-
-        this.configureControls(options);
-
         this.minDistance = options.minDistance ?? 2;
         this.maxDistance = options.maxDistance ?? 1000;
 
-        this.controls.minDistance = this.minDistance;
-        this.controls.maxDistance = this.maxDistance;
+        this.configureControls(options);
 
         window.addEventListener("keydown", this.handleKeyDown);
         window.addEventListener("keyup", this.handleKeyUp);
         window.addEventListener("blur", this.clearPressedKeys);
-
         this.element.addEventListener("contextmenu", this.preventContextMenu);
+        this.controls.addEventListener("change", this.emitChange);
     }
 
-    /**
-     * Updates camera damping and optional desktop keyboard movement.
-     * Call this once per animation frame.
-     */
+    /** Updates camera damping and optional desktop keyboard movement. */
     update(deltaSeconds: number): void {
         this.controls.update();
 
@@ -61,7 +52,6 @@ export class GraphCamera {
         }
 
         this.movementDirection.set(0, 0, 0);
-
         this.camera.getWorldDirection(this.horizontalForward);
         this.horizontalForward.y = 0;
 
@@ -73,71 +63,65 @@ export class GraphCamera {
             .crossVectors(this.horizontalForward, this.worldUp)
             .normalize();
 
-        if (this.isPressed("KeyW")) {
-            this.movementDirection.add(this.horizontalForward);
-        }
-
-        if (this.isPressed("KeyS")) {
-            this.movementDirection.sub(this.horizontalForward);
-        }
-
-        if (this.isPressed("KeyD")) {
-            this.movementDirection.add(this.horizontalRight);
-        }
-
-        if (this.isPressed("KeyA")) {
-            this.movementDirection.sub(this.horizontalRight);
-        }
-
-        if (this.isPressed("KeyE")) {
-            this.movementDirection.add(this.worldUp);
-        }
-
-        if (this.isPressed("KeyQ")) {
-            this.movementDirection.sub(this.worldUp);
-        }
+        if (this.isPressed("KeyW")) this.movementDirection.add(this.horizontalForward);
+        if (this.isPressed("KeyS")) this.movementDirection.sub(this.horizontalForward);
+        if (this.isPressed("KeyD")) this.movementDirection.add(this.horizontalRight);
+        if (this.isPressed("KeyA")) this.movementDirection.sub(this.horizontalRight);
+        if (this.isPressed("KeyE")) this.movementDirection.add(this.worldUp);
+        if (this.isPressed("KeyQ")) this.movementDirection.sub(this.worldUp);
 
         if (this.movementDirection.lengthSq() === 0) {
             return;
         }
 
-        const speed =
-            this.movementSpeed *
-            (this.isPressed("ShiftLeft") || this.isPressed("ShiftRight")
+        const speed = this.movementSpeed * (
+            this.isPressed("ShiftLeft") || this.isPressed("ShiftRight")
                 ? this.boostMultiplier
-                : 1);
+                : 1
+        );
 
         this.movementDirection
             .normalize()
             .multiplyScalar(speed * Math.min(deltaSeconds, 0.1));
 
-        /*
-         * Move the camera and its orbit target together so orientation remains
-         * stable while navigating through the graph.
-         */
         this.camera.position.add(this.movementDirection);
         this.controls.target.add(this.movementDirection);
-
         this.controls.update();
+    }
+
+    /** Returns a clone of the current OrbitControls target. */
+    getTarget(): THREE.Vector3 {
+        return this.controls.target.clone();
+    }
+
+    /** Subscribes to camera and control changes. */
+    onChange(listener: () => void): () => void {
+        this.changeListeners.add(listener);
+
+        return () => {
+            this.changeListeners.delete(listener);
+        };
     }
 
     focusNode(node: PhysicsNode): void {
-        const position = new THREE.Vector3(node.x, node.y, node.z);
-
-        const direction = this.camera.position
-            .clone()
-            .sub(this.controls.target)
-            .normalize();
-
-        this.controls.target.copy(position);
-
-        this.camera.position.copy(
-            position.clone().add(direction.multiplyScalar(24)),
-        );
-
-        this.controls.update();
+        this.focusPosition(new THREE.Vector3(node.x, node.y, node.z));
     }
 
+    /**
+     * Moves the orbit target while preserving the current viewing direction
+     * and distance. Used by the mini-map and application navigation.
+     */
+    focusPosition(position: THREE.Vector3): void {
+        const offset = this.camera.position.clone().sub(this.controls.target);
+
+        if (offset.lengthSq() === 0) {
+            offset.set(0.7, 0.55, 1).normalize().multiplyScalar(24);
+        }
+
+        this.controls.target.copy(position);
+        this.camera.position.copy(position).add(offset);
+        this.controls.update();
+    }
 
     /** Moves the camera closer to or farther from its current target. */
     zoomBy(scale: number): void {
@@ -155,7 +139,9 @@ export class GraphCamera {
         );
 
         this.camera.position.copy(
-            this.controls.target.clone().add(offset.normalize().multiplyScalar(distance)),
+            this.controls.target
+                .clone()
+                .add(offset.normalize().multiplyScalar(distance)),
         );
         this.controls.update();
     }
@@ -168,33 +154,22 @@ export class GraphCamera {
         const bounds = new THREE.Box3();
 
         for (const node of nodes) {
-            bounds.expandByPoint(
-                new THREE.Vector3(node.x, node.y, node.z),
-            );
+            bounds.expandByPoint(new THREE.Vector3(node.x, node.y, node.z));
         }
 
         const center = bounds.getCenter(new THREE.Vector3());
-
-        const graphSize = Math.max(
-            bounds.getSize(new THREE.Vector3()).length(),
-            24,
-        );
-
+        const graphSize = Math.max(bounds.getSize(new THREE.Vector3()).length(), 24);
         const distance =
             graphSize /
             (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2))) *
             1.35;
 
         this.controls.target.copy(center);
-
         this.camera.position.copy(
-            center.add(
-                new THREE.Vector3(0.7, 0.55, 1)
-                    .normalize()
-                    .multiplyScalar(distance),
-            ),
+            center
+                .clone()
+                .add(new THREE.Vector3(0.7, 0.55, 1).normalize().multiplyScalar(distance)),
         );
-
         this.controls.update();
     }
 
@@ -202,58 +177,40 @@ export class GraphCamera {
         window.removeEventListener("keydown", this.handleKeyDown);
         window.removeEventListener("keyup", this.handleKeyUp);
         window.removeEventListener("blur", this.clearPressedKeys);
-
-        this.element.removeEventListener(
-            "contextmenu",
-            this.preventContextMenu,
-        );
-
+        this.element.removeEventListener("contextmenu", this.preventContextMenu);
+        this.controls.removeEventListener("change", this.emitChange);
         this.element.style.touchAction = this.previousTouchAction;
+        this.changeListeners.clear();
         this.pressedKeys.clear();
     }
 
     private configureControls(options: OrbitGraphCameraOptions): void {
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.08;
-
         this.controls.enablePan = true;
         this.controls.screenSpacePanning = true;
-
         this.controls.rotateSpeed = 0.65;
         this.controls.panSpeed = 0.9;
         this.controls.zoomSpeed = 0.9;
-
-        this.controls.minDistance = options.minDistance ?? 2;
-        this.controls.maxDistance = options.maxDistance ?? 1_000;
-
-        /*
-         * Desktop:
-         * - Left mouse: orbit
-         * - Right mouse: pan
-         * - Wheel: zoom
-         */
+        this.controls.minDistance = this.minDistance;
+        this.controls.maxDistance = this.maxDistance;
         this.controls.mouseButtons = {
             LEFT: THREE.MOUSE.ROTATE,
             MIDDLE: THREE.MOUSE.DOLLY,
             RIGHT: THREE.MOUSE.PAN,
         };
-
-        /*
-         * Touch:
-         * - One finger: orbit
-         * - Two fingers: pan and pinch-to-zoom
-         */
         this.controls.touches = {
             ONE: THREE.TOUCH.ROTATE,
             TWO: THREE.TOUCH.DOLLY_PAN,
         };
-
-        /*
-         * Prevent browser scroll, browser zoom, and navigation gestures while
-         * the user is interacting with the graph canvas.
-         */
         this.element.style.touchAction = "none";
     }
+
+    private emitChange = (): void => {
+        for (const listener of this.changeListeners) {
+            listener();
+        }
+    };
 
     private handleKeyDown = (event: KeyboardEvent): void => {
         if (!this.keyboardNavigation || this.isEditableElement(event.target)) {
@@ -261,14 +218,7 @@ export class GraphCamera {
         }
 
         const movementKeys = new Set([
-            "KeyW",
-            "KeyA",
-            "KeyS",
-            "KeyD",
-            "KeyQ",
-            "KeyE",
-            "ShiftLeft",
-            "ShiftRight",
+            "KeyW", "KeyA", "KeyS", "KeyD", "KeyQ", "KeyE", "ShiftLeft", "ShiftRight",
         ]);
 
         if (!movementKeys.has(event.code)) {

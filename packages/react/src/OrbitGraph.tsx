@@ -14,6 +14,8 @@ import type {
     GraphInitialView,
     GraphJSONExportOptions,
     GraphLoadingState,
+    GraphNeighborhoodLoadOptions,
+    GraphNeighborhoodResult,
     GraphNode,
     GraphSelection,
     OrbitGraphOptions,
@@ -22,7 +24,9 @@ import type {
 
 import {
     createOrbitGraph,
+    type GraphAnalyticsController,
     type OrbitGraph as OrbitGraphInstance,
+    type GraphPresentationController,
 } from "@orbitgraph/three";
 
 /**
@@ -53,6 +57,21 @@ export type OrbitGraphHandle = {
 
     /** Changes the initial exploration configuration. */
     setInitialView(view: GraphInitialView): void;
+
+    /** Loads one node through the configured remote data source. */
+    loadNode(nodeId: string): Promise<GraphNode | undefined>;
+
+    /** Loads and merges one remote relationship neighborhood page. */
+    loadNeighborhood(
+        nodeId: string,
+        options?: GraphNeighborhoodLoadOptions,
+    ): Promise<GraphNeighborhoodResult | null>;
+
+    /** Provides graph metrics for the complete or visible data scope. */
+    getAnalytics(): GraphAnalyticsController;
+
+    /** Provides temporary visual styles without mutating source graph data. */
+    getPresentation(): GraphPresentationController;
 
     /** Creates a PNG Blob of the current rendered graph view. */
     exportPNG(): Promise<Blob>;
@@ -172,6 +191,41 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
                 showAll: () => graphRef.current?.showAll(),
                 setInitialView: (view) => {
                     graphRef.current?.setInitialView(view);
+                },
+                loadNode: (nodeId) => {
+                    if (!graphRef.current) {
+                        return Promise.reject(
+                            new Error("OrbitGraph is not mounted."),
+                        );
+                    }
+
+                    return graphRef.current.loadNode(nodeId);
+                },
+                loadNeighborhood: (nodeId, loadOptions) => {
+                    if (!graphRef.current) {
+                        return Promise.reject(
+                            new Error("OrbitGraph is not mounted."),
+                        );
+                    }
+
+                    return graphRef.current.loadNeighborhood(
+                        nodeId,
+                        loadOptions,
+                    );
+                },
+                getAnalytics: () => {
+                    if (!graphRef.current) {
+                        throw new Error("OrbitGraph is not mounted.");
+                    }
+
+                    return graphRef.current.analytics;
+                },
+                getPresentation: () => {
+                    if (!graphRef.current) {
+                        throw new Error("OrbitGraph is not mounted.");
+                    }
+
+                    return graphRef.current.presentation;
                 },
                 exportPNG: () => {
                     if (!graphRef.current) {

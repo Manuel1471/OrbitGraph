@@ -12,6 +12,23 @@ import type {
 } from "./graph-types";
 
 const MAX_NODES_WITH_DETAILED_LINKS = 1_000;
+const MAX_PRESENTATION_GLOWS = 250;
+
+/**
+ * A transient visual override. It never mutates the source GraphNode data.
+ * `scale` is a multiplier of the node's configured size and `glow` is clamped
+ * between 0 and 1.
+ */
+export type GraphNodePresentationStyle = {
+    color?: string;
+    scale?: number;
+    glow?: number;
+};
+
+export type GraphNodePresentationStyles = Record<
+    string,
+    GraphNodePresentationStyle
+>;
 
 type StoredLink = GraphLink & {
     id: string;
@@ -58,6 +75,39 @@ export class GraphRenderer {
         this.keyboardFocusGeometry,
         this.keyboardFocusMaterial,
     );
+
+    /*
+     * Instancing keeps analytic halos inexpensive. At most 250 of the most
+     * emphatic visible nodes are drawn, even if a style map covers thousands.
+     */
+    private readonly presentationGlowGeometry = new THREE.SphereGeometry(
+        1.25,
+        12,
+        12,
+    );
+
+    private readonly presentationGlowMaterial = new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0.22,
+        vertexColors: true,
+        depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
+    });
+
+    private readonly presentationGlows = new THREE.InstancedMesh(
+        this.presentationGlowGeometry,
+        this.presentationGlowMaterial,
+        MAX_PRESENTATION_GLOWS,
+    );
+
+    private readonly presentationGlowMatrix = new THREE.Matrix4();
+    private readonly presentationGlowScale = new THREE.Vector3();
+    private readonly presentationGlowColor = new THREE.Color();
+    private readonly presentationStyles = new Map<
+        string,
+        GraphNodePresentationStyle
+    >();
 
     private keyboardFocusedNodeId: string | null = null;
 
@@ -112,20 +162,31 @@ export class GraphRenderer {
          */
         this.keyboardFocusMesh.raycast = () => {};
 
+        this.presentationGlows.count = 0;
+        this.presentationGlows.frustumCulled = false;
+        this.presentationGlows.renderOrder = 1;
+        this.presentationGlows.raycast = () => {};
+
         this.group.add(this.batchedLinks);
+        this.group.add(this.presentationGlows);
         this.group.add(this.keyboardFocusMesh);
     }
 
     addNode(node: PhysicsNode): void {
         this.nodes.set(node.id, node);
 
+        const style = this.presentationStyles.get(node.id);
         const mesh = new THREE.Mesh(
             this.nodeGeometry,
-            this.getNodeMaterial(node.color ?? this.options.nodeColor),
+            this.getNodeMaterial(
+                style?.color ?? node.color ?? this.options.nodeColor,
+            ),
         );
 
         mesh.position.set(node.x, node.y, node.z);
-        mesh.scale.setScalar(node.size ?? this.options.nodeSize);
+        mesh.scale.setScalar(
+            (node.size ?? this.options.nodeSize) * (style?.scale ?? 1),
+        );
         mesh.userData.graphNode = node;
 
         this.nodeMeshes.set(node.id, mesh);
@@ -139,6 +200,7 @@ export class GraphRenderer {
         }
 
         this.syncKeyboardFocus();
+        this.syncPresentationGlows();
     }
 
     updateNode(node: PhysicsNode): void {
@@ -149,11 +211,15 @@ export class GraphRenderer {
             return;
         }
 
+        const style = this.presentationStyles.get(node.id);
+
         mesh.position.set(node.x, node.y, node.z);
-        mesh.scale.setScalar(node.size ?? this.options.nodeSize);
+        mesh.scale.setScalar(
+            (node.size ?? this.options.nodeSize) * (style?.scale ?? 1),
+        );
 
         mesh.material = this.getNodeMaterial(
-            node.color ?? this.options.nodeColor,
+            style?.color ?? node.color ?? this.options.nodeColor,
         );
     }
 
@@ -172,6 +238,7 @@ export class GraphRenderer {
         }
 
         this.syncKeyboardFocus();
+        this.syncPresentationGlows();
     }
 
     addLink(link: GraphLink): void {
@@ -222,6 +289,7 @@ export class GraphRenderer {
             }
 
             this.syncKeyboardFocus();
+            this.syncPresentationGlows();
             return;
         }
 
@@ -250,6 +318,7 @@ export class GraphRenderer {
         }
 
         this.syncKeyboardFocus();
+        this.syncPresentationGlows();
     }
 
     setVisibleNodeIds(nodeIds: Set<string>, minimumWeight: number): void {
@@ -261,6 +330,7 @@ export class GraphRenderer {
         }
 
         this.syncKeyboardFocus();
+        this.syncPresentationGlows();
 
         if (this.useBatchedLinks) {
             this.batchNeedsRebuild = true;
@@ -293,6 +363,42 @@ export class GraphRenderer {
         this.syncKeyboardFocus();
     }
 
+    /** Replaces all transient node overrides used by analytics or application UI. */
+    setNodePresentationStyles(styles: GraphNodePresentationStyles): void {
+        this.presentationStyles.clear();
+
+        for (const [nodeId, style] of Object.entries(styles)) {
+            this.presentationStyles.set(nodeId, {
+                color: style.color,
+                scale: THREE.MathUtils.clamp(style.scale ?? 1, 0.25, 4),
+                glow: THREE.MathUtils.clamp(style.glow ?? 0, 0, 1),
+            });
+        }
+
+        for (const node of this.nodes.values()) {
+            this.updateNode(node);
+        }
+
+        this.syncKeyboardFocus();
+        this.syncPresentationGlows();
+    }
+
+    /** Restores colors and sizes from the underlying GraphNode records. */
+    clearNodePresentationStyles(): void {
+        if (this.presentationStyles.size === 0) {
+            return;
+        }
+
+        this.presentationStyles.clear();
+
+        for (const node of this.nodes.values()) {
+            this.updateNode(node);
+        }
+
+        this.syncKeyboardFocus();
+        this.syncPresentationGlows();
+    }
+
     clear(): void {
         for (const nodeId of [...this.nodeMeshes.keys()]) {
             this.removeNode(nodeId);
@@ -310,6 +416,7 @@ export class GraphRenderer {
          * syncPositions() restores its indicator automatically.
          */
         this.keyboardFocusMesh.visible = false;
+        this.presentationGlows.count = 0;
 
         this.useBatchedLinks = false;
         this.showLinkArrows = true;
@@ -330,11 +437,59 @@ export class GraphRenderer {
             return;
         }
 
-        const nodeSize = node.size ?? this.options.nodeSize;
-
         this.keyboardFocusMesh.position.copy(nodeMesh.position);
-        this.keyboardFocusMesh.scale.setScalar(nodeSize);
+        this.keyboardFocusMesh.scale.setScalar(nodeMesh.scale.x);
         this.keyboardFocusMesh.visible = true;
+    }
+
+    private syncPresentationGlows(): void {
+        const activeStyles = [...this.presentationStyles.entries()]
+            .filter(([nodeId, style]) => {
+                const mesh = this.nodeMeshes.get(nodeId);
+
+                return Boolean(mesh?.visible && (style.glow ?? 0) > 0);
+            })
+            .sort(([, left], [, right]) => (right.glow ?? 0) - (left.glow ?? 0))
+            .slice(0, MAX_PRESENTATION_GLOWS);
+
+        for (let index = 0; index < activeStyles.length; index += 1) {
+            const [nodeId, style] = activeStyles[index];
+            const mesh = this.nodeMeshes.get(nodeId);
+            const node = this.nodes.get(nodeId);
+
+            if (!mesh || !node) {
+                continue;
+            }
+
+            const glow = style.glow ?? 0;
+            const size = mesh.scale.x * (1.25 + glow * 0.65);
+
+            this.presentationGlowScale.setScalar(size);
+            this.presentationGlowMatrix.compose(
+                mesh.position,
+                new THREE.Quaternion(),
+                this.presentationGlowScale,
+            );
+            this.presentationGlows.setMatrixAt(
+                index,
+                this.presentationGlowMatrix,
+            );
+
+            this.presentationGlowColor.set(
+                style.color ?? node.color ?? this.options.nodeColor,
+            );
+            this.presentationGlows.setColorAt(
+                index,
+                this.presentationGlowColor,
+            );
+        }
+
+        this.presentationGlows.count = activeStyles.length;
+        this.presentationGlows.instanceMatrix.needsUpdate = true;
+
+        if (this.presentationGlows.instanceColor) {
+            this.presentationGlows.instanceColor.needsUpdate = true;
+        }
     }
 
     private enableBatchedLinks(): void {
