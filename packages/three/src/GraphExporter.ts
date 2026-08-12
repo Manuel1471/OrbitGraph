@@ -3,6 +3,7 @@ import type {
     GraphJSONExportOptions,
     VisibleGraphData,
 } from "@orbitgraph/core";
+import { jsPDF } from "jspdf";
 
 type GraphExporterOptions = {
     canvas: HTMLCanvasElement;
@@ -60,6 +61,18 @@ export class GraphExporter {
 
         this.downloadBlob(blob, options.fileName ?? "orbitgraph.json");
     }
+
+    /** Wraps the current canvas image in a portable SVG document. */
+    exportSVG(): string {
+        this.options.render();
+        const image = this.options.canvas.toDataURL("image/png");
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="${this.options.canvas.width}" height="${this.options.canvas.height}" viewBox="0 0 ${this.options.canvas.width} ${this.options.canvas.height}"><image href="${image}" width="100%" height="100%"/></svg>`;
+    }
+    downloadSVG(fileName = "orbitgraph.svg"): void { this.downloadBlob(new Blob([this.exportSVG()], { type: "image/svg+xml" }), fileName); }
+    exportPDF(): Blob {
+        this.options.render(); const canvas = this.options.canvas; const pdf = new jsPDF({ orientation: canvas.width >= canvas.height ? "landscape" : "portrait", unit: "px", format: [canvas.width, canvas.height] }); pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, canvas.width, canvas.height); return pdf.output("blob");
+    }
+    downloadPDF(fileName = "orbitgraph.pdf"): void { this.downloadBlob(this.exportPDF(), fileName); }
 
     private cloneData<T extends GraphData | VisibleGraphData>(data: T): T {
         // Node and link metadata are defined as JSON-compatible values.

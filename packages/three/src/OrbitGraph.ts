@@ -9,6 +9,9 @@ import type {
     GraphAnnotation,
     GraphBookmark,
     GraphCluster,
+    GraphDiff,
+    GraphOperation,
+    GraphStyleRule,
     GraphExplorationHistoryState,
     GraphInitialView,
     GraphLayout,
@@ -26,7 +29,8 @@ import type {
     OrbitGraphViewState,
     VisibleGraphData,
 } from "@orbitgraph/core";
-import { GraphCollaborationStore } from "@orbitgraph/core";
+import { GraphCollaborationStore, diffGraphs, findKShortestPaths, findWeightedPath } from "@orbitgraph/core";
+import { GraphHistory } from "./GraphHistory";
 
 import { GraphCamera } from "./GraphCamera";
 import { GraphDataStore } from "./GraphDataStore";
@@ -74,6 +78,10 @@ export class OrbitGraph {
     public readonly presentation: GraphPresentationController;
     /** Serializable annotations and named view bookmarks; persistence is owned by the host app. */
     public readonly collaboration = new GraphCollaborationStore();
+    private readonly history = new GraphHistory();
+    private styleRules: GraphStyleRule[] = [];
+    private multiSelection = new Set<string>();
+    private disconnectStream: (() => void) | null = null;
 
     /** Active objects only; they are replaced after each view refresh. */
     private readonly nodes: GraphNodeMap = new Map();
@@ -328,6 +336,7 @@ export class OrbitGraph {
         });
         this.resizeObserver.observe(container);
         this.runtime.start();
+        this.disconnectStream = options.stream?.connect((message) => this.applyOperations(message.operations)) ?? null;
     }
 
     /** Replaces all graph data and returns exploration to its initial view. */
@@ -335,6 +344,7 @@ export class OrbitGraph {
         this.presentation.clearNodeStyles();
         this.labels.setSelectedNode(null);
         this.dataStore.setData(data);
+        this.history.push(data);
         this.explorer.setData(this.dataStore.getData());
         this.explorer.reset();
         this.lazyLoader.resetCache();
@@ -421,24 +431,28 @@ export class OrbitGraph {
         this.dataStore.addNode(node);
         this.explorer.setData(this.dataStore.getData());
         this.refreshVisibleGraph();
+        this.history.push(this.dataStore.getData());
     }
 
     removeNode(nodeId: string): void {
         this.dataStore.removeNode(nodeId);
         this.explorer.setData(this.dataStore.getData());
         this.refreshVisibleGraph();
+        this.history.push(this.dataStore.getData());
     }
 
     addLink(link: GraphLink): void {
         this.dataStore.addLink(link);
         this.explorer.setData(this.dataStore.getData());
         this.refreshVisibleGraph();
+        this.history.push(this.dataStore.getData());
     }
 
     removeLink(linkId: string): void {
         this.dataStore.removeLink(linkId);
         this.explorer.setData(this.dataStore.getData());
         this.refreshVisibleGraph();
+        this.history.push(this.dataStore.getData());
     }
 
     search(query: string): void {
@@ -601,8 +615,36 @@ export class OrbitGraph {
     ): void {
         this.exporter.downloadJSON(options);
     }
+    exportSVG(): string { return this.exporter.exportSVG(); }
+    downloadSVG(fileName?: string): void { this.exporter.downloadSVG(fileName); }
+    exportPDF(): Blob { return this.exporter.exportPDF(); }
+    downloadPDF(fileName?: string): void { this.exporter.downloadPDF(fileName); }
+
+    /** Applies edit operations and leaves persistence to the host callback/stream. */
+    applyOperations(operations: GraphOperation[]): void {
+        for (const operation of operations) {
+            if (operation.type === "add-node") this.dataStore.addNode(operation.node);
+            else if (operation.type === "remove-node") this.dataStore.removeNode(operation.nodeId);
+            else if (operation.type === "add-link") this.dataStore.addLink(operation.link);
+            else if (operation.type === "remove-link") this.dataStore.removeLink(operation.linkId);
+            else if (operation.type === "update-node") { const node = this.dataStore.getData().nodes.find((item) => item.id === operation.nodeId); if (node) this.dataStore.addNode({ ...node, ...operation.patch, data: { ...node.data, ...operation.patch.data } }); }
+            else { const link = this.dataStore.getData().links.find((item) => item.id === operation.linkId); if (link) { this.dataStore.removeLink(operation.linkId); this.dataStore.addLink({ ...link, ...operation.patch, data: { ...link.data, ...operation.patch.data } }); } }
+        }
+        this.explorer.setData(this.dataStore.getData()); this.history.push(this.dataStore.getData()); this.refreshVisibleGraph();
+    }
+    undo(): boolean { const data = this.history.undo(); if (!data) return false; this.dataStore.setData(data); this.explorer.setData(data); this.refreshVisibleGraph(); return true; }
+    redo(): boolean { const data = this.history.redo(); if (!data) return false; this.dataStore.setData(data); this.explorer.setData(data); this.refreshVisibleGraph(); return true; }
+    compare(data: GraphData): GraphDiff { return diffGraphs(this.dataStore.getData(), data); }
+    findWeightedPath(sourceId: string, targetId: string) { return findWeightedPath(this.visibleData, sourceId, targetId); }
+    findKShortestPaths(sourceId: string, targetId: string, count?: number) { return findKShortestPaths(this.visibleData, sourceId, targetId, count); }
+    selectNodes(nodeIds: Iterable<string>): string[] { this.multiSelection = new Set([...nodeIds].filter((id) => this.visibleData.nodes.some((node) => node.id === id))); return this.getSelectedNodeIds(); }
+    getSelectedNodeIds(): string[] { return [...this.multiSelection]; }
+    clearNodeSelection(): void { this.multiSelection.clear(); }
+    setStyleRules(rules: GraphStyleRule[]): void { this.styleRules = rules; this.applyStyleRules(); }
+    addStyleRule(rule: GraphStyleRule): void { this.setStyleRules([...this.styleRules.filter((item) => item.id !== rule.id), rule]); }
 
     destroy(): void {
+        this.disconnectStream?.();
         this.runtime.stop();
         this.resizeObserver.disconnect();
         this.mobileControls.dispose();
@@ -629,6 +671,15 @@ export class OrbitGraph {
         if (this.options.performance?.levelOfDetail !== false && this.visibleData.nodes.length > 1_000) {
             this.labels.setOptions({ ...(this.options.labels ?? {}), maxVisible: Math.min(this.options.labels?.maxVisible ?? 80, 20) });
         }
+        this.applyStyleRules();
+    }
+
+    private applyStyleRules(): void {
+        if (!this.styleRules.length) return;
+        const degree = this.analytics.degree({ scope: "visible" }); const pageRank = this.analytics.pageRank({ scope: "visible" }).scores;
+        const styles: Record<string, { color?: string; scale?: number; glow?: number }> = {}; const hidden: string[] = [];
+        for (const node of this.visibleData.nodes) for (const rule of this.styleRules) { const matches = (!rule.when.type || node.type === rule.when.type) && (!rule.when.minDegree || (degree[node.id]?.degree ?? 0) >= rule.when.minDegree) && (!rule.when.minPageRank || (pageRank[node.id] ?? 0) >= rule.when.minPageRank); if (matches) { if (rule.style.hidden) hidden.push(node.id); else styles[node.id] = { ...styles[node.id], ...rule.style }; } }
+        this.filter.setHiddenNodeIds(hidden); this.presentation.setNodeStyles(styles);
     }
 
     private setClusterCollapsed(clusterId: string, collapsed: boolean): void {

@@ -1,0 +1,10 @@
+import type { GraphCluster, GraphClusterNode, GraphData, GraphLink } from "./types";
+/** Produces aggregate cluster nodes and consolidated inter-cluster links for collapsed views. */
+export function aggregateClusters(data: GraphData, clusters: GraphCluster[]): GraphData {
+    const membership = new Map(clusters.flatMap((cluster) => cluster.nodeIds.map((id) => [id, cluster]))); const collapsed = new Set(clusters.filter((cluster) => cluster.collapsed).map((cluster) => cluster.id));
+    const nodes = data.nodes.filter((node) => { const cluster = membership.get(node.id); return !cluster || !collapsed.has(cluster.id); });
+    for (const cluster of clusters.filter((item) => collapsed.has(item.id))) { const members = new Set(cluster.nodeIds); const internal = data.links.filter((link) => members.has(link.source) && members.has(link.target)); const external = data.links.filter((link) => members.has(link.source) !== members.has(link.target)); const node: GraphClusterNode = { id: `cluster:${cluster.id}`, clusterId: cluster.id, memberCount: cluster.nodeIds.length, label: `${cluster.label} (${cluster.nodeIds.length})`, type: "cluster", size: Math.max(1, Math.sqrt(cluster.nodeIds.length)), metrics: { internalLinks: internal.length, externalLinks: external.length, totalWeight: internal.reduce((sum, link) => sum + (link.weight ?? 1), 0) } }; nodes.push(node); }
+    const links = new Map<string, GraphLink>(); const endpoint = (id: string) => { const cluster = membership.get(id); return cluster && collapsed.has(cluster.id) ? `cluster:${cluster.id}` : id; };
+    for (const link of data.links) { const source = endpoint(link.source); const target = endpoint(link.target); if (source === target) continue; const id = `${source}__${link.type ?? "related"}__${target}`; const previous = links.get(id); links.set(id, { ...link, id, source, target, weight: (previous?.weight ?? 0) + (link.weight ?? 1), data: { ...link.data, aggregateCount: Number(previous?.data?.aggregateCount ?? 0) + 1 } }); }
+    return { nodes, links: [...links.values()] };
+}

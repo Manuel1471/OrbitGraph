@@ -372,6 +372,13 @@ export type OrbitGraphOptions = {
 
     /** Progressive-detail and telemetry settings for large graphs. */
     performance?: GraphPerformanceOptions;
+
+    /** Starts applying operations from a WebSocket, SSE, or custom stream adapter. */
+    stream?: GraphStreamSource;
+    /** Theme tokens applied to the container and initial renderer colors. */
+    theme?: GraphTheme;
+    /** Use a lightweight Canvas-oriented interaction profile for very large graphs. */
+    renderMode?: "webgl" | "canvas";
 };
 
 /**
@@ -512,6 +519,40 @@ export type GraphCluster = {
     linkIds: string[];
     collapsed: boolean;
 };
+
+/** A synthesized node representing a collapsed community. */
+export type GraphClusterNode = GraphNode & {
+    clusterId: string;
+    memberCount: number;
+    metrics: { internalLinks: number; externalLinks: number; totalWeight: number };
+};
+
+/** A reversible data operation emitted while editing a graph. */
+export type GraphOperation =
+    | { type: "add-node"; node: GraphNode }
+    | { type: "remove-node"; nodeId: string }
+    | { type: "update-node"; nodeId: string; patch: Partial<GraphNode> }
+    | { type: "add-link"; link: GraphLink }
+    | { type: "remove-link"; linkId: string }
+    | { type: "update-link"; linkId: string; patch: Partial<GraphLink> };
+
+/** A declarative visual rule evaluated against each node. */
+export type GraphStyleRule = {
+    id: string;
+    when: { type?: string; data?: GraphAttributeFilter[]; minDegree?: number; minPageRank?: number };
+    style: { color?: string; scale?: number; glow?: number; hidden?: boolean };
+};
+
+/** Added, removed, and changed entity identifiers between graph snapshots. */
+export type GraphDiff = {
+    nodes: { added: GraphNode[]; removed: GraphNode[]; changed: Array<{ before: GraphNode; after: GraphNode }> };
+    links: { added: GraphLink[]; removed: GraphLink[]; changed: Array<{ before: GraphLink; after: GraphLink }> };
+};
+
+export type GraphStreamMessage = { operations: GraphOperation[] };
+export type GraphStreamSource = { connect: (onMessage: (message: GraphStreamMessage) => void, onError?: (error: Error) => void) => () => void };
+export type OrbitGraphPlugin = { name: string; setup?: (api: { addStyleRule(rule: GraphStyleRule): void; addDataSource(name: string, source: GraphDataSource): void }) => void };
+export type GraphTheme = { name?: string; backgroundColor?: string; nodeColor?: string; linkColor?: string; variables?: Record<string, string> };
 
 /** Optional rendering hooks for application-owned HTML UI. */
 export type GraphUIRenderers = {

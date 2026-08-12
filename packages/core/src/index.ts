@@ -4,3 +4,6 @@ export * from "./GraphAnalytics";
 export * from "./CommunityDetection";
 export * from "./GraphImporters";
 export * from "./GraphCollaboration";
+export * from "./GraphDiff";
+export * from "./GraphRouting";
+export * from "./GraphClusterAggregator";
