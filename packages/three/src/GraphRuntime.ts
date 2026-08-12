@@ -7,6 +7,10 @@ import { LinkParticleRenderer } from "./LinkParticleRenderer";
 export class GraphRuntime {
     private frameId: number | null = null;
     private previousFrameTime = performance.now();
+    private frames = 0;
+    private sampleStartedAt = performance.now();
+    private visibleNodes = 0;
+    private visibleLinks = 0;
 
     constructor(
         private readonly renderer: THREE.WebGLRenderer,
@@ -14,7 +18,10 @@ export class GraphRuntime {
         private readonly camera: THREE.PerspectiveCamera,
         private readonly graphCamera: GraphCamera,
         private readonly particles: LinkParticleRenderer,
+        private readonly performanceOptions?: { telemetry?: boolean; onPerformanceSample?: (sample: { fps: number; visibleNodes: number; visibleLinks: number }) => void },
     ) {}
+
+    setVisibleCounts(nodes: number, links: number): void { this.visibleNodes = nodes; this.visibleLinks = links; }
 
     start(): void {
         if (this.frameId !== null) {
@@ -55,5 +62,12 @@ export class GraphRuntime {
         this.graphCamera.update(deltaSeconds);
         this.particles.update(now / 1000);
         this.renderer.render(this.scene, this.camera);
+        this.frames += 1;
+        const elapsed = now - this.sampleStartedAt;
+        if (this.performanceOptions?.telemetry && elapsed >= 1000) {
+            this.performanceOptions.onPerformanceSample?.({ fps: Math.round((this.frames * 1000) / elapsed), visibleNodes: this.visibleNodes, visibleLinks: this.visibleLinks });
+            this.frames = 0;
+            this.sampleStartedAt = now;
+        }
     };
 }

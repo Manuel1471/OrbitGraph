@@ -2,7 +2,7 @@
 
 Three.js/WebGL renderer for OrbitGraph.
 
-It provides the imperative graph instance, interaction model, progressive exploration, Worker physics, layouts, analytics controllers, visual presentation, exports, intelligent labels, and mini-map navigation.
+It provides the imperative graph instance, interaction model, progressive exploration, Worker physics, layouts, analytics controllers, visual presentation, collaboration helpers, exports, intelligent labels, mini-map navigation, and accessibility views.
 
 ## Install
 
@@ -52,6 +52,10 @@ graph.showAll();
 graph.search("api");
 graph.setTypeFilters(["team", "service"]);
 graph.setMinimumLinkWeight(0.7);
+graph.setAdvancedFilters({
+    minimumLinkWeight: 0.4,
+    attributes: [{ field: "environment", operator: "equals", value: "production" }],
+});
 graph.clearFilters();
 
 graph.focusNode("api");
@@ -60,7 +64,7 @@ graph.unpinNode("api");
 graph.destroy();
 ```
 
-For the complete API and option definitions, see the [API reference](../../docs/API.md).
+For the complete API and option definitions, see the [API reference](../../docs/api/API.md).
 
 ## Remote loading
 
@@ -98,6 +102,27 @@ graph.presentation.clearNodeStyles();
 
 Analytics are read-only. `presentation` applies temporary visual styles without mutating source graph data.
 
+## Clusters, collaboration, and shared views
+
+```ts
+const clusters = graph.clusterCommunities();
+graph.collapseCluster(clusters[0].id);
+graph.expandCluster(clusters[0].id);
+
+const sharedView = graph.shareView();
+graph.loadSharedView(sharedView);
+
+graph.addAnnotation({
+    id: "api-review",
+    target: { kind: "node", nodeId: "api" },
+    body: "Review this dependency.",
+    createdAt: new Date().toISOString(),
+});
+graph.saveBookmark("review", "Dependency review");
+```
+
+`clusterCommunities()` uses the visible graph and applies a presentation overlay to distinguish each community. Collapsing a cluster temporarily hides its members; source graph data remains unchanged. Annotations and bookmarks live in `graph.collaboration`; persist `graph.collaboration.export()` in the application when collaboration must survive a page reload.
+
 ## Visual and interaction options
 
 ```ts
@@ -112,8 +137,17 @@ const graph = createOrbitGraph(container, {
     miniMap: { enabled: true, position: "bottom-right", interactive: true },
     camera: { keyboardNavigation: true, minDistance: 2, maxDistance: 1000 },
     physics: { worker: true, tickRate: 60 },
+    accessibility: { semanticView: true },
+    performance: {
+        telemetry: true,
+        onPerformanceSample: ({ fps, visibleNodes }) => console.log(fps, visibleNodes),
+    },
 });
 ```
+
+`ui.renderTooltip` and `ui.renderDetails` may return application-owned `HTMLElement` content for the current selection. The renderer mounts it without imposing a framework. Persistent labels automatically reduce on views larger than 1,000 nodes; set `performance.levelOfDetail` to `false` to opt out.
+
+The layout names `"dag"` and `"sankey"` use directed layers. `"timeline"` reads `data[timeField]`, `"bipartite"` uses `bipartiteTypes`, and `"geographic"` reads longitude and latitude metadata.
 
 ## Events
 

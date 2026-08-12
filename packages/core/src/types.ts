@@ -366,6 +366,12 @@ export type OrbitGraphOptions = {
 
     /** Receives non-visual diagnostics from data loading operations. */
     onDiagnostic?: (diagnostic: GraphDiagnostic) => void;
+
+    /** Application-owned DOM renderers for a tooltip and detail panel. */
+    ui?: GraphUIRenderers;
+
+    /** Progressive-detail and telemetry settings for large graphs. */
+    performance?: GraphPerformanceOptions;
 };
 
 /**
@@ -423,7 +429,16 @@ export type VisibleGraphData = {
 };
 
 /** Visual arrangement used to position active graph nodes. */
-export type GraphLayout = "force" | "radial" | "grid" | "hierarchical";
+export type GraphLayout =
+    | "force"
+    | "radial"
+    | "grid"
+    | "hierarchical"
+    | "dag"
+    | "timeline"
+    | "bipartite"
+    | "geographic"
+    | "sankey";
 
 /** Additional configuration for a graph layout. */
 export type GraphLayoutOptions = {
@@ -435,6 +450,20 @@ export type GraphLayoutOptions = {
 
     /** Distance between layout positions. @defaultValue 12 or 14 depending on layout. */
     spacing?: number;
+    /** Metadata key containing a numeric time value for the timeline layout. */
+    timeField?: string;
+    /** Metadata keys containing longitude and latitude for the geographic layout. */
+    longitudeField?: string;
+    latitudeField?: string;
+    /** Node types used as the two columns in the bipartite layout. */
+    bipartiteTypes?: [string, string];
+};
+
+/** A predicate applied to a JSON-compatible node metadata field. */
+export type GraphAttributeFilter = {
+    field: string;
+    operator: "equals" | "contains" | "exists" | "gt" | "gte" | "lt" | "lte";
+    value?: JSONPrimitive;
 };
 
 export type GraphFilterState = {
@@ -444,6 +473,59 @@ export type GraphFilterState = {
     selectedTypes: string[];
     /** Lowest visible relationship weight. */
     minimumLinkWeight: number;
+    /** Highest visible relationship weight. Omit to include all larger weights. */
+    maximumLinkWeight?: number;
+    /** Metadata predicates combined with AND semantics. */
+    attributes?: GraphAttributeFilter[];
+};
+
+/** A named, serializable search and filter preset. */
+export type GraphSavedQuery = {
+    id: string;
+    name: string;
+    filters: GraphFilterState;
+};
+
+/** A user-authored note attached to a graph entity or a saved camera view. */
+export type GraphAnnotation = {
+    id: string;
+    target: { kind: "node"; nodeId: string } | { kind: "link"; linkId: string } | { kind: "view" };
+    body: string;
+    author?: string;
+    createdAt: string;
+    updatedAt?: string;
+};
+
+/** A named, shareable graph state. */
+export type GraphBookmark = {
+    id: string;
+    name: string;
+    view: OrbitGraphViewState;
+    createdAt: string;
+};
+
+/** Aggregate visual cluster returned by community clustering. */
+export type GraphCluster = {
+    id: string;
+    label: string;
+    nodeIds: string[];
+    linkIds: string[];
+    collapsed: boolean;
+};
+
+/** Optional rendering hooks for application-owned HTML UI. */
+export type GraphUIRenderers = {
+    renderTooltip?: (selection: GraphSelection) => HTMLElement | null;
+    renderDetails?: (selection: GraphSelection) => HTMLElement | null;
+};
+
+/** Enables semantic and visual performance helpers. */
+export type GraphPerformanceOptions = {
+    /** Enables automatic label/detail reduction as visible node count grows. @defaultValue true */
+    levelOfDetail?: boolean;
+    /** Calls `onPerformanceSample` roughly once per second. */
+    telemetry?: boolean;
+    onPerformanceSample?: (sample: { fps: number; visibleNodes: number; visibleLinks: number }) => void;
 };
 
 /**
@@ -579,6 +661,9 @@ export type GraphAccessibilityOptions = {
      * @defaultValue "Interactive relationship graph"
      */
     ariaLabel?: string;
+
+    /** Renders a synchronized, screen-reader-friendly list beside the WebGL canvas. @defaultValue false */
+    semanticView?: boolean;
 };
 
 /** Selects which graph data is included in a JSON export. */

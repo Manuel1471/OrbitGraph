@@ -9,6 +9,10 @@ import {
 
 import type {
     GraphData,
+    GraphAnnotation,
+    GraphBookmark,
+    GraphAttributeFilter,
+    GraphCluster,
     GraphDiagnostic,
     GraphExpansionOptions,
     GraphInitialView,
@@ -89,6 +93,19 @@ export type OrbitGraphHandle = {
 
     /** Returns the current lazy-loading operation, when configured. */
     getLoadingState(): GraphLoadingState;
+
+    /** Applies relationship-weight and metadata predicates. */
+    setAdvancedFilters(options: { minimumLinkWeight?: number; maximumLinkWeight?: number; attributes?: GraphAttributeFilter[] }): void;
+    /** Serializes the current exploration, filters, and layout for a URL. */
+    shareView(): string;
+    loadSharedView(encodedState: string): void;
+    addAnnotation(annotation: GraphAnnotation): void;
+    getAnnotations(): GraphAnnotation[];
+    saveBookmark(id: string, name: string): GraphBookmark | undefined;
+    restoreBookmark(id: string): boolean;
+    clusterCommunities(): GraphCluster[];
+    collapseCluster(clusterId: string): void;
+    expandCluster(clusterId: string): void;
 };
 
 export type OrbitGraphProps = Omit<
@@ -263,6 +280,16 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
                         error: null,
                     };
                 },
+                setAdvancedFilters: (filterOptions) => graphRef.current?.setAdvancedFilters(filterOptions),
+                shareView: () => graphRef.current?.shareView() ?? "",
+                loadSharedView: (encodedState) => graphRef.current?.loadSharedView(encodedState),
+                addAnnotation: (annotation) => graphRef.current?.addAnnotation(annotation),
+                getAnnotations: () => graphRef.current?.getAnnotations() ?? [],
+                saveBookmark: (id, name) => graphRef.current?.saveBookmark(id, name),
+                restoreBookmark: (id) => graphRef.current?.restoreBookmark(id) ?? false,
+                clusterCommunities: () => graphRef.current?.clusterCommunities() ?? [],
+                collapseCluster: (id) => graphRef.current?.collapseCluster(id),
+                expandCluster: (id) => graphRef.current?.expandCluster(id),
             }),
             [],
         );

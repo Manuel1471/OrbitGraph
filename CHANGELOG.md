@@ -4,6 +4,19 @@ All notable changes to OrbitGraph are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - Unreleased
+
+### Added
+
+- Community clustering API with visual community colors and collapsible cluster membership.
+- Combined metadata predicates and inclusive link-weight range filtering.
+- Serializable shared-view URLs, application-managed annotations, and named bookmarks.
+- Framework-neutral tooltip and detail-panel render hooks.
+- CSV, Cytoscape, JSON-LD, and Neo4j graph import helpers.
+- Timeline, bipartite, geographic, DAG, and Sankey layout modes.
+- Optional FPS/visible-count telemetry, adaptive label level of detail, and an accessible synchronized semantic node list.
+- React ref bindings for advanced filters, shared views, annotations, and bookmarks.
+
 ## [1.2.0]
 
 ### Added

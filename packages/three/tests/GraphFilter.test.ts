@@ -70,4 +70,25 @@ describe("GraphFilter", () => {
 
         expect(filter.getVisibleData(data)).toEqual(data);
     });
+
+    it("combines an inclusive weight range and metadata predicates", () => {
+        const filter = new GraphFilter();
+        filter.setLinkWeightRange(0.3, 0.5);
+        filter.setAttributeFilters([{ field: "environment", operator: "equals", value: "production" }]);
+        const result = filter.getVisibleData({
+            nodes: [
+                { id: "api", data: { environment: "production", replicas: 3 } },
+                { id: "worker", data: { environment: "staging", replicas: 8 } },
+            ],
+            links: [{ id: "api-worker", source: "api", target: "worker", weight: 0.4 }],
+        });
+        expect(result).toEqual({ nodes: [{ id: "api", data: { environment: "production", replicas: 3 } }], links: [] });
+    });
+
+    it("can hide a collapsed cluster without changing source data", () => {
+        const filter = new GraphFilter();
+        filter.setHiddenNodeIds(["api"]);
+        expect(filter.getVisibleData(data).nodes.map((node) => node.id)).toEqual(["manuel", "postgres"]);
+        expect(data.nodes).toHaveLength(3);
+    });
 });
