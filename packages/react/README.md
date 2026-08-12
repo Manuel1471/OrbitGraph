@@ -99,6 +99,18 @@ type OrbitGraphHandle = {
 
     getAnalytics(): GraphAnalyticsController;
     getPresentation(): GraphPresentationController;
+
+    setAdvancedFilters(options: { minimumLinkWeight?: number; maximumLinkWeight?: number; attributes?: GraphAttributeFilter[] }): void;
+    shareView(): string;
+    loadSharedView(encodedState: string): void;
+    addAnnotation(annotation: GraphAnnotation): void;
+    getAnnotations(): GraphAnnotation[];
+    saveBookmark(id: string, name: string): GraphBookmark | undefined;
+    restoreBookmark(id: string): boolean;
+
+    clusterCommunities(): GraphCluster[];
+    collapseCluster(clusterId: string): void;
+    expandCluster(clusterId: string): void;
 };
 ```
 
@@ -137,6 +149,19 @@ graph?.getPresentation().setNodeStyles({
 ```
 
 Use `getAnalytics()` for degree, PageRank, betweenness, and communities. Use `getPresentation()` to turn results into temporary color, size, and glow styles.
+
+## Advanced exploration
+
+```tsx
+<button onClick={() => {
+    const clusters = graphRef.current?.clusterCommunities() ?? [];
+    if (clusters[0]) graphRef.current?.collapseCluster(clusters[0].id);
+}}>
+    Collapse first community
+</button>
+```
+
+The ref also exposes `setAdvancedFilters()`, shared-view serialization, annotations, and bookmarks. Configure tooltip/detail renderers, semantic accessibility, and telemetry through the component's `options` prop exactly as in `@orbitgraph/three`.
 
 ## Related packages
 

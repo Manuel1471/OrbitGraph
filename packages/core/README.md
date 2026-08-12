@@ -2,7 +2,7 @@
 
 Shared TypeScript contracts and graph analysis utilities for OrbitGraph.
 
-This package is renderer-agnostic. Use it to model data, implement remote sources, calculate graph metrics, detect communities, and share OrbitGraph types across an application.
+This package is renderer-agnostic. Use it to model data, import common graph formats, implement remote sources, calculate graph metrics, manage serializable collaboration state, detect communities, and share OrbitGraph types across an application.
 
 ## Install
 
@@ -84,6 +84,41 @@ const asynchronousResult = await detectCommunitiesAsync(data, {
 
 Use `detectCommunitiesAsync()` in interactive applications because it yields between propagation passes. It returns communities and a node-to-community mapping.
 
+## Importing data
+
+```ts
+import {
+    importCSVNodes,
+    importCSVLinks,
+    importCytoscape,
+    importJSONLD,
+    importNeo4j,
+} from "@orbitgraph/core";
+
+const nodes = importCSVNodes("id,label,team\napi,Public API,platform");
+const links = importCSVLinks("source,target,weight\nteam,api,0.95");
+```
+
+The package also exports `importJSON()` for node-link data. CSV preserves unrecognised columns in `data`; Cytoscape accepts its `{ elements }` structure; JSON-LD turns IRI-valued properties into links; and `importNeo4j()` accepts a plain-object projection of Neo4j driver records.
+
+## Collaboration state
+
+```ts
+import { GraphCollaborationStore } from "@orbitgraph/core";
+
+const collaboration = new GraphCollaborationStore();
+collaboration.upsertAnnotation({
+    id: "review-api",
+    target: { kind: "node", nodeId: "api" },
+    body: "Confirm ownership.",
+    createdAt: new Date().toISOString(),
+});
+
+const persisted = collaboration.export();
+```
+
+`GraphCollaborationStore` holds annotations and named view bookmarks in memory. Its `export()` and `import()` methods make persistence and real-time synchronization the responsibility of the host application.
+
 ## Remote data contracts
 
 ```ts
@@ -113,6 +148,7 @@ const source: GraphDataSource = {
 - `GraphSelection`, click events, hover events, and `VisibleGraphData`
 - Layout, camera, physics, accessibility, labels, mobile-control, and mini-map options
 - JSON export and view-state types
+- `GraphAttributeFilter`, `GraphCluster`, `GraphAnnotation`, `GraphBookmark`, UI-renderer, and performance types
 
 ## Related packages
 

@@ -15,6 +15,8 @@ This reference covers the public APIs provided by the `@orbitgraph/core`, `@orbi
 - [Instance API](#instance-api)
 - [Exploration](#exploration)
 - [Search and filters](#search-and-filters)
+- [Clustering, collaboration, and UI hooks](#clustering-collaboration-and-ui-hooks)
+- [Importing data](#importing-data)
 - [Remote and GraphQL data](#remote-and-graphql-data)
 - [Layouts and physics](#layouts-and-physics)
 - [Camera, touch, and keyboard controls](#camera-touch-and-keyboard-controls)
@@ -166,6 +168,8 @@ type OrbitGraphOptions = {
     onLoadingChange?: (state: GraphLoadingState) => void;
     onDiagnostic?: (diagnostic: GraphDiagnostic) => void;
     onKeyboardFocusChange?: (node: GraphNode | null) => void;
+    ui?: GraphUIRenderers;
+    performance?: GraphPerformanceOptions;
 };
 ```
 
@@ -207,6 +211,32 @@ linkFlow: {
 ```
 
 Animated flow is optional. Disable it for the lowest rendering cost on large graphs.
+
+## Clustering, collaboration, and UI hooks
+
+`graph.clusterCommunities()` detects communities in the visible graph, applies a stable color overlay, and returns `GraphCluster[]`. Call `collapseCluster(id)` to temporarily hide its members and `expandCluster(id)` to restore them. `getClusters()` returns the current state.
+
+```ts
+graph.setAdvancedFilters({
+  minimumLinkWeight: 0.4,
+  maximumLinkWeight: 0.9,
+  attributes: [{ field: "region", operator: "contains", value: "north" }],
+});
+
+const shared = graph.shareView();
+graph.loadSharedView(shared);
+graph.saveBookmark("review", "Review graph");
+```
+
+`addAnnotation`, `getAnnotations`, `removeAnnotation`, `saveBookmark`, `getBookmarks`, and `restoreBookmark` operate through the serializable in-memory collaboration store. Persist `graph.collaboration.export()` in the host application to synchronize it with a server or collaboration provider.
+
+`ui.renderTooltip` and `ui.renderDetails` receive the current `GraphSelection` and return an `HTMLElement` (or `null`). OrbitGraph mounts that element but leaves framework integration and styling to the application. Set `accessibility.semanticView` to render an updated semantic list of visible nodes.
+
+`performance.telemetry` enables approximately one-second samples through `onPerformanceSample({ fps, visibleNodes, visibleLinks })`. `levelOfDetail` is enabled by default and limits persistent labels for views over 1,000 nodes.
+
+## Importing data
+
+`@orbitgraph/core` exports `importCSVNodes`, `importCSVLinks`, `importJSON`, `importCytoscape`, `importJSONLD`, and `importNeo4j`. The CSV helpers recognize standard graph fields and place other columns in `data`; the Neo4j helper accepts a plain-object projection of driver records.
 
 ## Instance API
 
@@ -349,7 +379,7 @@ graph.setLayout("hierarchical", {
 });
 ```
 
-Supported layouts are `"force"`, `"radial"`, `"grid"`, and `"hierarchical"`.
+Supported layouts are `"force"`, `"radial"`, `"grid"`, `"hierarchical"`, `"dag"`, `"sankey"`, `"timeline"`, `"bipartite"`, and `"geographic"`. DAG and Sankey reuse the directed hierarchical layering; timeline reads `layoutOptions.timeField` (default `"time"`), bipartite uses `bipartiteTypes`, and geographic reads longitude/latitude metadata fields (default `"longitude"` / `"latitude"`).
 
 ### Worker physics
 

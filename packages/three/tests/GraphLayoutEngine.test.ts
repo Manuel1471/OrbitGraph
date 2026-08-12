@@ -57,4 +57,14 @@ describe("GraphLayoutEngine", () => {
     it("returns no target positions for the force layout", () => {
         expect(engine.getPositions(nodes, links, "force")).toEqual(new Map());
     });
+
+    it("supports timeline, bipartite, and geographic metadata layouts", () => {
+        const metadataNodes: PhysicsNode[] = [
+            { id: "early", type: "left", x: 0, y: 0, z: 0, data: { time: 10, longitude: -100, latitude: 20 } },
+            { id: "late", type: "right", x: 0, y: 0, z: 0, data: { time: 20, longitude: -90, latitude: 30 } },
+        ];
+        expect(engine.getPositions(metadataNodes, [], "timeline").get("early")!.x).toBeLessThan(engine.getPositions(metadataNodes, [], "timeline").get("late")!.x);
+        expect(engine.getPositions(metadataNodes, [], "bipartite", { bipartiteTypes: ["left", "right"] }).get("early")!.x).toBeLessThan(0);
+        expect(engine.getPositions(metadataNodes, [], "geographic").get("late")).toMatchObject({ x: -45, y: 15, z: 0 });
+    });
 });

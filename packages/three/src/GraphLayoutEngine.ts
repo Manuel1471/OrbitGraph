@@ -28,10 +28,59 @@ export class GraphLayoutEngine {
                 return this.getGridPositions(nodes, options);
             case "hierarchical":
                 return this.getHierarchicalPositions(nodes, links, options);
+            case "dag":
+            case "sankey":
+                return this.getHierarchicalPositions(nodes, links, options);
+            case "timeline":
+                return this.getTimelinePositions(nodes, options);
+            case "bipartite":
+                return this.getBipartitePositions(nodes, options);
+            case "geographic":
+                return this.getGeographicPositions(nodes, options);
             case "force":
             default:
                 return new Map();
         }
+    }
+
+    private getTimelinePositions(nodes: PhysicsNode[], options: GraphLayoutOptions): Map<string, LayoutPosition> {
+        const spacing = options.spacing ?? 12;
+        const field = options.timeField ?? "time";
+        const values = nodes.map((node, index) => {
+            const candidate = Number(node.data?.[field]);
+            return { node, value: Number.isFinite(candidate) ? candidate : index };
+        });
+        const min = Math.min(...values.map(({ value }) => value));
+        const max = Math.max(...values.map(({ value }) => value));
+        return new Map(values.map(({ node, value }, index) => [node.id, {
+            x: max === min ? 0 : ((value - min) / (max - min) - 0.5) * Math.max(spacing * nodes.length, spacing),
+            y: ((index % 3) - 1) * spacing * 0.35,
+            z: 0,
+        }]));
+    }
+
+    private getBipartitePositions(nodes: PhysicsNode[], options: GraphLayoutOptions): Map<string, LayoutPosition> {
+        const spacing = options.spacing ?? 12;
+        const [leftType] = options.bipartiteTypes ?? [nodes[0]?.type ?? ""];
+        const columns = [nodes.filter((node) => node.type === leftType), nodes.filter((node) => node.type !== leftType)];
+        const positions = new Map<string, LayoutPosition>();
+        columns.forEach((column, columnIndex) => column.forEach((node, index) => positions.set(node.id, {
+            x: (columnIndex === 0 ? -1 : 1) * spacing * 3,
+            y: (index - (column.length - 1) / 2) * spacing,
+            z: 0,
+        })));
+        return positions;
+    }
+
+    private getGeographicPositions(nodes: PhysicsNode[], options: GraphLayoutOptions): Map<string, LayoutPosition> {
+        const longitude = options.longitudeField ?? "longitude";
+        const latitude = options.latitudeField ?? "latitude";
+        const spacing = options.spacing ?? 0.5;
+        return new Map(nodes.map((node) => [node.id, {
+            x: Number(node.data?.[longitude] ?? 0) * spacing,
+            y: Number(node.data?.[latitude] ?? 0) * spacing,
+            z: 0,
+        }]));
     }
 
     private getRadialPositions(
