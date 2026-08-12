@@ -28,7 +28,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Optional FPS/visible-count telemetry, adaptive label level of detail, and an accessible synchronized semantic node list.
 - React ref bindings for advanced filters, shared views, annotations, and bookmarks.
 
-
 ## [1.2.0]
 
 ### Added
