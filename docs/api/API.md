@@ -16,6 +16,7 @@ This reference covers the public APIs provided by the `@orbitgraph/core`, `@orbi
 - [Exploration](#exploration)
 - [Search and filters](#search-and-filters)
 - [Clustering, collaboration, and UI hooks](#clustering-collaboration-and-ui-hooks)
+- [Editing, routes, streaming, and comparison](#editing-routes-streaming-and-comparison)
 - [Importing data](#importing-data)
 - [Remote and GraphQL data](#remote-and-graphql-data)
 - [Layouts and physics](#layouts-and-physics)
@@ -237,6 +238,16 @@ graph.saveBookmark("review", "Review graph");
 ## Importing data
 
 `@orbitgraph/core` exports `importCSVNodes`, `importCSVLinks`, `importJSON`, `importCytoscape`, `importJSONLD`, and `importNeo4j`. The CSV helpers recognize standard graph fields and place other columns in `data`; the Neo4j helper accepts a plain-object projection of driver records.
+
+## Editing, routes, streaming, and comparison
+
+Use `applyOperations()` with `GraphOperation` records to add, remove, or update nodes and links. `undo()` and `redo()` restore bounded data snapshots. `stream` accepts a host-owned adapter with `connect(onMessage, onError)` and applies incoming operation batches without a full page reload.
+
+`findWeightedPath(sourceId, targetId)` uses link weights as inverse traversal cost; `findKShortestPaths(sourceId, targetId, count)` returns edge-disjoint alternatives. `compare(snapshot)` returns added, removed, and changed nodes and links. `setStyleRules()` applies declarative styles by type, metadata, degree, or PageRank. `selectNodes()` and `getSelectedNodeIds()` provide framework-neutral multi-selection state.
+
+### Renderer extensions and exports
+
+`CanvasGraphRenderer` is a real 2D canvas renderer for low-power embedding; supply a canvas and the active physics nodes/links. `MapLibreGraphLayer` writes nodes with longitude/latitude metadata to a MapLibre GeoJSON source. `GraphPluginRegistry` runs application-installed plugins and makes their data sources and style rules available at runtime. `exportSVG()` / `downloadSVG()` and `exportPDF()` / `downloadPDF()` capture the current rendered view for reports.
 
 ## Instance API
 

@@ -47,6 +47,13 @@ function createGraph(): OrbitGraph {
             if (nodeCountElement) nodeCountElement.textContent = String(nodes.length);
             if (linkCountElement) linkCountElement.textContent = String(links.length);
         },
+        performance: {
+            telemetry: true,
+            onPerformanceSample: ({ fps, visibleNodes, visibleLinks }) => {
+                if (fpsElement) fpsElement.textContent = String(fps);
+                if (summaryElement) summaryElement.title = `${fps} FPS · ${visibleNodes} nodes · ${visibleLinks} relationships`;
+            },
+        },
     });
 }
 
@@ -90,6 +97,7 @@ function loadBenchmark(regenerate = true): void {
     if (regenerate) currentData = createData(currentSize);
 
     graph.setData(currentData);
+    graph.setStyleRules([{ id: "hubs", when: { minDegree: 5 }, style: { glow: 0.7, scale: 1.25 } }]);
     graph.resetCamera();
     updateSizeButtons();
 

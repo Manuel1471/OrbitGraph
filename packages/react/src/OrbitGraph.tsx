@@ -13,6 +13,8 @@ import type {
     GraphBookmark,
     GraphAttributeFilter,
     GraphCluster,
+    GraphOperation,
+    GraphStyleRule,
     GraphDiagnostic,
     GraphExpansionOptions,
     GraphInitialView,
@@ -106,6 +108,11 @@ export type OrbitGraphHandle = {
     clusterCommunities(): GraphCluster[];
     collapseCluster(clusterId: string): void;
     expandCluster(clusterId: string): void;
+    applyOperations(operations: GraphOperation[]): void;
+    undo(): boolean;
+    redo(): boolean;
+    setStyleRules(rules: GraphStyleRule[]): void;
+    selectNodes(nodeIds: Iterable<string>): string[];
 };
 
 export type OrbitGraphProps = Omit<
@@ -290,6 +297,11 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
                 clusterCommunities: () => graphRef.current?.clusterCommunities() ?? [],
                 collapseCluster: (id) => graphRef.current?.collapseCluster(id),
                 expandCluster: (id) => graphRef.current?.expandCluster(id),
+                applyOperations: (operations) => graphRef.current?.applyOperations(operations),
+                undo: () => graphRef.current?.undo() ?? false,
+                redo: () => graphRef.current?.redo() ?? false,
+                setStyleRules: (rules) => graphRef.current?.setStyleRules(rules),
+                selectNodes: (ids) => graphRef.current?.selectNodes(ids) ?? [],
             }),
             [],
         );

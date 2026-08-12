@@ -78,6 +78,7 @@ Hidden nodes are kept out of WebGL and the active physics simulation until explo
 - Bookmarks and serializable annotations for application-managed collaboration.
 - CSV, Cytoscape, JSON-LD, and Neo4j import helpers, plus timeline, bipartite, geographic, DAG, and Sankey layouts.
 - Application-owned tooltip/detail renderers, semantic node list, adaptive label detail, and optional FPS telemetry.
+- Canvas 2D fallback, MapLibre geographic layer, runtime plugin registry, plus SVG and PDF exports.
 - Vanilla JavaScript and React support.
 
 ## Packages
@@ -132,6 +133,18 @@ graph.saveBookmark("launch-review", "Launch review");
 ```
 
 Use `accessibility: { semanticView: true }` to render a synchronized semantic node list. `performance: { telemetry: true, onPerformanceSample }` reports FPS and visible graph counts; labels automatically reduce to 20 items above 1,000 visible nodes unless `levelOfDetail: false` is set.
+
+## Editing, routes, and graph changes
+
+```ts
+graph.applyOperations([{ type: "update-node", nodeId: "api", patch: { data: { status: "production" } } }]);
+graph.undo();
+graph.redo();
+
+graph.setStyleRules([{ id: "important", when: { minPageRank: 0.1 }, style: { color: "#facc15", scale: 1.5 } }]);
+const route = graph.findWeightedPath("team", "api");
+const comparison = graph.compare(previousSnapshot);
+```
 
 ## Remote data
 

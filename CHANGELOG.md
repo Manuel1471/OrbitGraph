@@ -4,7 +4,18 @@ All notable changes to OrbitGraph are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/).
 
-## [1.3.0] - Unreleased
+## [1.4.0]
+
+### Added
+
+- Graph snapshot comparison, weighted shortest paths, and edge-disjoint route alternatives.
+- Operation-based editing API, custom streaming adapter contract, and bounded undo/redo history.
+- Declarative node style rules based on type, degree, PageRank, and metadata predicates.
+- Multi-node selection API and v1.4 core contracts for cluster summary nodes, themes, streams, and plugins.
+- Canvas 2D renderer, MapLibre GeoJSON layer, runtime plugin registry, and SVG/PDF export APIs.
+- Aggregate cluster-data generator for rendering collapsed communities as summary nodes and consolidated links.
+
+## [1.3.0]
 
 ### Added
 
@@ -16,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Timeline, bipartite, geographic, DAG, and Sankey layout modes.
 - Optional FPS/visible-count telemetry, adaptive label level of detail, and an accessible synchronized semantic node list.
 - React ref bindings for advanced filters, shared views, annotations, and bookmarks.
+
 
 ## [1.2.0]
 
