@@ -18,6 +18,11 @@ import type {
 
 const MAX_NODES_WITH_COLLISION = 1_000;
 
+/** Prevents a dense force graph from expanding its camera bounds quadratically. */
+function getChargeStrength(nodeCount: number): number {
+    return -80 / Math.max(1, Math.sqrt(nodeCount / 100));
+}
+
 export type PhysicsNode = GraphNode & {
     x: number;
     y: number;
@@ -289,14 +294,14 @@ export class PhysicsEngine {
                     .distance(
                         (link: PhysicsLink) =>
                             10 +
-                            (1 - (link.graphLink.weight ?? 0.5)) * 26,
+                            (1 - Math.max(0, Math.min(1, link.graphLink.weight ?? 0.5))) * 26,
                     )
                     .strength(
                         (link: PhysicsLink) =>
-                            0.25 + (link.graphLink.weight ?? 0.5) * 0.55,
+                            0.25 + Math.max(0, Math.min(1, link.graphLink.weight ?? 0.5)) * 0.55,
                     ),
             )
-            .force("charge", d3.forceManyBody().strength(-80))
+            .force("charge", d3.forceManyBody().strength(getChargeStrength(this.nodes.length)))
             .force("center", d3.forceCenter(0, 0, 0))
             .alpha(1)
             .alphaDecay(0.025)

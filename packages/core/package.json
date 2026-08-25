@@ -1,6 +1,6 @@
 {
   "name": "@orbitgraph/core",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Core data structures and graph utilities for OrbitGraph.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -33,5 +33,9 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.32"
   }
 }

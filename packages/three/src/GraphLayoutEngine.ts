@@ -4,6 +4,8 @@ import type {
     GraphLayoutOptions,
     GraphLink,
 } from "@orbitgraph/core";
+import dagre from "dagre";
+import { sankey, sankeyCenter } from "d3-sankey";
 
 import type { PhysicsNode } from "./PhysicsEngine";
 
@@ -29,19 +31,45 @@ export class GraphLayoutEngine {
             case "hierarchical":
                 return this.getHierarchicalPositions(nodes, links, options);
             case "dag":
+                return this.getDagrePositions(nodes, links, options);
             case "sankey":
-                return this.getHierarchicalPositions(nodes, links, options);
+                return this.getSankeyPositions(nodes, links, options);
             case "timeline":
                 return this.getTimelinePositions(nodes, options);
             case "bipartite":
                 return this.getBipartitePositions(nodes, options);
             case "geographic":
                 return this.getGeographicPositions(nodes, options);
+            case "concentric":
+                return this.getConcentricPositions(nodes, links, options);
+            case "sphere":
+                return this.getSpherePositions(nodes, options);
+            case "arc":
+                return this.getArcPositions(nodes, options);
             case "force":
             default:
                 return new Map();
         }
     }
+
+    private getDagrePositions(nodes: PhysicsNode[], links: GraphLink[], options: GraphLayoutOptions): Map<string, LayoutPosition> {
+        const graph = new dagre.graphlib.Graph({ multigraph: true }); graph.setGraph({ rankdir: options.rankDirection ?? "LR", nodesep: options.spacing ?? 30, ranksep: (options.spacing ?? 30) * 2 }); graph.setDefaultEdgeLabel(() => ({}));
+        nodes.forEach((node) => graph.setNode(node.id, { width: 24, height: 24 })); links.forEach((link, index) => { if (graph.hasNode(link.source) && graph.hasNode(link.target)) graph.setEdge(link.source, link.target, {}, `${link.id ?? index}`); }); dagre.layout(graph);
+        const positions = new Map<string, LayoutPosition>(); nodes.forEach((node) => { const value = graph.node(node.id) as { x: number; y: number }; positions.set(node.id, { x: value.x - (graph.graph().width ?? 0) / 2, y: -(value.y - (graph.graph().height ?? 0) / 2), z: 0 }); }); return positions;
+    }
+
+    private getSankeyPositions(nodes: PhysicsNode[], links: GraphLink[], options: GraphLayoutOptions): Map<string, LayoutPosition> {
+        const knownIds = new Set(nodes.map((node) => node.id)); const input = { nodes: nodes.map((node) => ({ id: node.id })), links: links.flatMap((link) => knownIds.has(link.source) && knownIds.has(link.target) ? [{ source: link.source, target: link.target, value: Math.max(link.weight ?? 1, .001) }] : []) };
+        const width = Math.max(240, nodes.length * (options.spacing ?? 10)); const height = Math.max(160, Math.sqrt(nodes.length) * (options.spacing ?? 10) * 5); const result = sankey<{ id: string }, { source: string; target: string; value: number }>().nodeId((node) => node.id).nodeAlign(sankeyCenter).nodeWidth(16).nodePadding(10).extent([[0, 0], [width, height]])(input as any);
+        return new Map(result.nodes.map((node: any) => [node.id, { x: (node.x0 + node.x1) / 2 - width / 2, y: -((node.y0 + node.y1) / 2 - height / 2), z: 0 }]));
+    }
+
+    private getConcentricPositions(nodes: PhysicsNode[], links: GraphLink[], options: GraphLayoutOptions): Map<string, LayoutPosition> {
+        const degree = new Map(nodes.map((node) => [node.id, 0])); links.forEach((link) => { degree.set(link.source, (degree.get(link.source) ?? 0) + 1); degree.set(link.target, (degree.get(link.target) ?? 0) + 1); }); const groups = new Map<number, PhysicsNode[]>(); nodes.forEach((node) => { const value = degree.get(node.id) ?? 0; const list = groups.get(value) ?? []; list.push(node); groups.set(value, list); }); const spacing = options.spacing ?? 12; const positions = new Map<string, LayoutPosition>(); [...groups.entries()].sort(([a], [b]) => b - a).forEach(([, group], ring) => group.forEach((node, index) => { const radius = Math.max(spacing, (ring + 1) * spacing * 2); const angle = index / group.length * Math.PI * 2; positions.set(node.id, { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, z: 0 }); })); return positions;
+    }
+
+    private getSpherePositions(nodes: PhysicsNode[], options: GraphLayoutOptions): Map<string, LayoutPosition> { const radius = Math.max(options.spacing ?? 12, Math.cbrt(nodes.length) * (options.spacing ?? 12)); return new Map(nodes.map((node, index) => { const phi = Math.acos(1 - 2 * (index + .5) / nodes.length); const theta = Math.PI * (1 + Math.sqrt(5)) * index; return [node.id, { x: radius * Math.cos(theta) * Math.sin(phi), y: radius * Math.sin(theta) * Math.sin(phi), z: radius * Math.cos(phi) }]; })); }
+    private getArcPositions(nodes: PhysicsNode[], options: GraphLayoutOptions): Map<string, LayoutPosition> { const spacing = options.spacing ?? 12; return new Map(nodes.map((node, index) => { const x = (index - (nodes.length - 1) / 2) * spacing; return [node.id, { x, y: Math.pow(x / Math.max(spacing, 1), 2) * spacing * .08, z: 0 }]; })); }
 
     private getTimelinePositions(nodes: PhysicsNode[], options: GraphLayoutOptions): Map<string, LayoutPosition> {
         const spacing = options.spacing ?? 12;

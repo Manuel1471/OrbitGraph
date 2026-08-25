@@ -26,6 +26,20 @@ const graph = vi.hoisted(() => {
         downloadPNG: vi.fn(() => Promise.resolve()),
         exportJSON: vi.fn(() => '{"nodes":[],"links":[]}'),
         downloadJSON: vi.fn(),
+        exportSVG: vi.fn(() => "<svg />"),
+        exportPDF: vi.fn(() => Promise.resolve(new Blob(["pdf"]))),
+        downloadPDF: vi.fn(() => Promise.resolve()),
+        setLayout: vi.fn(),
+        clusterCommunities: vi.fn(() => [{ id: "community", nodeIds: [], linkIds: [], collapsed: false }]),
+        collapseCluster: vi.fn(),
+        expandCluster: vi.fn(),
+        enableClusterLevelOfDetail: vi.fn(() => true),
+        disableClusterLevelOfDetail: vi.fn(),
+        isClusterLevelOfDetailEnabled: vi.fn(() => true),
+        computeInWorker: vi.fn(() => Promise.resolve({ nodeIds: [], linkIds: [], positions: new Float32Array(), edges: new Uint32Array(), weights: new Float32Array(), types: new Uint32Array(), typeNames: [], clusters: new Uint32Array() })),
+        connectYjs: vi.fn(() => ({ destroy: vi.fn() })),
+        setCameraMovementSpeed: vi.fn(),
+        getCameraMovementSpeed: vi.fn(() => 42),
         getLoadingState: vi.fn(() => ({
             loading: false,
             operation: null,
@@ -82,5 +96,22 @@ describe("OrbitGraph React ref", () => {
 
         act(() => root.unmount());
         expect(graph.destroy).toHaveBeenCalledOnce();
+    });
+
+    it("exposes export, clustering, and camera actions added to the public ref", async () => {
+        const host = document.createElement("div"); const root = createRoot(host); const ref = createRef<OrbitGraphHandle>();
+        await act(async () => { root.render(<OrbitGraph ref={ref} data={{ nodes: [{ id: "node" }], links: [] }} />); });
+        expect(ref.current?.exportSVG()).toBe("<svg />");
+        await expect(ref.current?.exportPDF()).resolves.toBeInstanceOf(Blob);
+        expect(ref.current?.clusterCommunities()).toHaveLength(1);
+        act(() => { ref.current?.collapseCluster("community"); ref.current?.expandCluster("community"); ref.current?.setCameraMovementSpeed(120); ref.current?.setLayout("radial"); ref.current?.enableClusterLevelOfDetail(120); });
+        expect(graph.collapseCluster).toHaveBeenCalledWith("community");
+        expect(graph.expandCluster).toHaveBeenCalledWith("community");
+        expect(graph.setCameraMovementSpeed).toHaveBeenCalledWith(120);
+        expect(graph.setLayout).toHaveBeenCalledWith("radial", undefined);
+        expect(graph.enableClusterLevelOfDetail).toHaveBeenCalledWith(120);
+        expect(ref.current?.isClusterLevelOfDetailEnabled()).toBe(true);
+        expect(ref.current?.getCameraMovementSpeed()).toBe(42);
+        act(() => root.unmount());
     });
 });

@@ -168,5 +168,5 @@ export function App() {
 ## Next steps
 
 - Read the API reference for every public method and option.
-- See the Vanilla, React, and benchmark examples in the OrbitGraph repository.
+- See the Vanilla Graph Studio, React Graph Dashboard, and Graph Scale Lab examples in the OrbitGraph repository. Start the scale lab with `npm run dev:benchmark` to compare renderers and layouts from 100 to 50,000 nodes.
 - Read [Relationship Exploration](./relationship-exploration.md) to learn how to work with directed relationship data.

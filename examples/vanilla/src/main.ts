@@ -8,6 +8,7 @@ import type {
     GraphSelection,
     VisibleGraphData,
 } from "@orbitgraph/core";
+import { graphThemes } from "@orbitgraph/core";
 
 import "./style.css";
 
@@ -76,11 +77,16 @@ const analyticsLegend = requiredElement<HTMLElement>("#analytics-legend");
 const detailsTitle = requiredElement<HTMLElement>("#details-title");
 const detailsDescription = requiredElement<HTMLElement>("#details-description");
 const detailsData = requiredElement<HTMLPreElement>("#details-data");
+const renderModeInput = requiredElement<HTMLSelectElement>("#render-mode");
+const themeInput = requiredElement<HTMLSelectElement>("#theme");
 
 let nextOffset = 0;
 let visibleData: VisibleGraphData = initialData;
 
-const graph = createOrbitGraph(container, {
+let graph = createGraph();
+
+function createGraph() {
+    return createOrbitGraph(container, {
     backgroundColor: "#050816",
     initialView: { mode: "node", nodeId: rootNodeId },
     dataSource: source,
@@ -97,13 +103,25 @@ const graph = createOrbitGraph(container, {
     },
     physics: { worker: true, tickRate: 60 },
     linkFlow: { enabled: true, maxParticles: 80, particleSize: 0.07, particleSpeed: 0.1 },
+    renderMode: renderModeInput.value as "webgl" | "canvas",
+    theme: graphThemes[themeInput.value as keyof typeof graphThemes],
     onLoadingChange: updateLoadingState,
     onVisibleDataChange: updateVisibleData,
     onDiagnostic: handleDiagnostic,
     onSelectionChange: updateSelection,
-});
+    });
+}
 
 graph.setData(initialData);
+renderModeInput.addEventListener("change", recreateGraph);
+themeInput.addEventListener("change", recreateGraph);
+
+function recreateGraph(): void {
+    graph.destroy();
+    graph = createGraph();
+    graph.setData(visibleData);
+    setMessage(`Switched to ${renderModeInput.value === "canvas" ? "Canvas 2D" : "WebGL 3D"} using the ${themeInput.value} theme.`);
+}
 
 loadNextButton.addEventListener("click", async () => {
     try {
@@ -133,6 +151,9 @@ resetButton.addEventListener("click", () => {
 
 showAllButton.addEventListener("click", () => graph.showAll());
 exportButton.addEventListener("click", () => void graph.downloadPNG("city-explorer.png"));
+requiredElement<HTMLButtonElement>("#export-svg").addEventListener("click", () => graph.downloadSVG("city-explorer.svg"));
+requiredElement<HTMLButtonElement>("#export-pdf").addEventListener("click", () => graph.downloadPDF("city-explorer-report.pdf", { title: "City Explorer report" }));
+requiredElement<HTMLButtonElement>("#load-scale-demo").addEventListener("click", () => { const data = createScaleData(750); graph.setData(data); graph.setCameraMovementSpeed(95); graph.setStyleRules([{ id: "hubs", when: { minDegree: 5 }, style: { color: "#facc15", scale: 1.4, glow: .75 } }]); graph.resetCamera(); setMessage("Loaded 750 nodes with hub styling and faster WASD navigation."); });
 
 requiredElement<HTMLButtonElement>("#analyze-degree").addEventListener("click", analyzeDegree);
 requiredElement<HTMLButtonElement>("#analyze-page-rank").addEventListener("click", analyzePageRank);
@@ -143,6 +164,13 @@ requiredElement<HTMLButtonElement>("#clear-visualization").addEventListener("cli
     setAnalytics("Visualization cleared", "Source colors and sizes have been restored.");
     renderLegend([]);
 });
+requiredElement<HTMLButtonElement>("#cluster-communities").addEventListener("click", () => { const clusters = graph.clusterCommunities(); setMessage(`${clusters.length} communities are now color-coded.`); });
+requiredElement<HTMLButtonElement>("#collapse-first-cluster").addEventListener("click", () => { const cluster = graph.getClusters()[0]; if (cluster) { graph.collapseCluster(cluster.id); setMessage(`Collapsed ${cluster.label} into a summary node.`); } });
+requiredElement<HTMLButtonElement>("#find-route").addEventListener("click", () => { const route = graph.findWeightedPath(rootNodeId, "research-network"); setMessage(route ? `Weighted route: ${route.nodeIds.join(" → ")} (cost ${route.cost.toFixed(2)})` : "Load more relationships to find a route."); });
+requiredElement<HTMLButtonElement>("#add-draft-node").addEventListener("click", () => { const id = `draft-${Date.now()}`; graph.applyOperations([{ type: "add-node", node: { id, label: "Editable draft", type: "draft", color: "#facc15", data: { status: "unsaved" } }, }, { type: "add-link", link: { id: `${rootNodeId}-${id}`, source: rootNodeId, target: id, type: "draft-link", weight: .5 } }]); setMessage("Added a validated operation batch. Use undo/redo to inspect history."); });
+requiredElement<HTMLButtonElement>("#undo-change").addEventListener("click", () => setMessage(graph.undo() ? "Undid last graph change." : "Nothing to undo."));
+requiredElement<HTMLButtonElement>("#redo-change").addEventListener("click", () => setMessage(graph.redo() ? "Redid graph change." : "Nothing to redo."));
+requiredElement<HTMLInputElement>("#camera-speed").addEventListener("input", (event) => graph.setCameraMovementSpeed(Number((event.target as HTMLInputElement).value)));
 
 function analyzeDegree(): void {
     const result = graph.analytics.degree({ scope: "visible" });
@@ -323,6 +351,11 @@ function interpolateColor(start: string, end: string, amount: number): string {
 
 function delay(milliseconds: number): Promise<void> {
     return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+function createScaleData(count: number): GraphData {
+    const nodes = Array.from({ length: count }, (_, index) => ({ id: `scale-${index}`, label: `Scale entity ${index + 1}`, type: index % 8 === 0 ? "hub" : "entity", size: index % 8 === 0 ? 1.2 : .6, color: index % 8 === 0 ? "#a78bfa" : "#22d3ee" }));
+    return { nodes, links: nodes.slice(1).map((node, index) => ({ id: `scale-link-${index}`, source: node.id, target: `scale-${Math.floor(index / 2)}`, weight: .3 + (index % 7) / 10, type: "related" })) };
 }
 
 function requiredElement<T extends HTMLElement>(selector: string): T {

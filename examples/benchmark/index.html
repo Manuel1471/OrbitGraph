@@ -1,75 +1,10 @@
 <!doctype html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OrbitGraph Benchmark</title>
-</head>
-<body>
-<main>
-    <aside class="panel">
-        <span class="eyebrow">PERFORMANCE</span>
-        <h1>OrbitGraph Benchmark</h1>
-        <p>Compare full graph rendering with progressive exploration.</p>
-
-        <div class="controls">
-            <button type="button" data-size="100">100 nodes</button>
-            <button type="button" data-size="500">500 nodes</button>
-            <button type="button" data-size="1000">1,000 nodes</button>
-            <button type="button" data-size="5000">5,000 nodes</button>
-            <button type="button" data-size="10000">10,000 nodes</button>
-        </div>
-
-        <label for="custom-size">Custom node count</label>
-
-        <div class="custom-size">
-            <input
-                    id="custom-size"
-                    type="number"
-                    min="1"
-                    max="50000"
-                    step="100"
-                    value="10000"
-            />
-
-            <button id="load-custom-size" type="button">
-                Load
-            </button>
-        </div>
-
-        <label for="initial-view">Initial view</label>
-        <select id="initial-view">
-            <option value="all">Full graph</option>
-            <option value="neighborhood">Node neighborhood</option>
-        </select>
-
-        <label for="layout">Layout</label>
-        <select id="layout">
-            <option value="force">Force</option>
-            <option value="radial">Radial</option>
-            <option value="grid">Grid</option>
-            <option value="hierarchical">Hierarchical</option>
-        </select>
-
-        <button id="regenerate" class="secondary" type="button">Regenerate data</button>
-
-        <label class="flow-control">
-            <input id="link-flow" type="checkbox" />
-            Enable relationship flow
-        </label>
-
-        <div class="stats">
-            <div><span>FPS</span><strong id="fps">0</strong></div>
-            <div><span>Visible nodes</span><strong id="node-count">0</strong></div>
-            <div><span>Visible links</span><strong id="link-count">0</strong></div>
-        </div>
-
-        <p class="hint" id="dataset-summary"></p>
-    </aside>
-
-    <div id="graph"></div>
-</main>
-
-<script type="module" src="/src/main.ts"></script>
-</body>
-</html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>OrbitGraph Performance Lab</title></head>
+<body><main><aside class="panel"><span class="eyebrow">PERFORMANCE LAB</span><h1>Graph Scale Lab</h1><p>Measure rendering, exploration, clustering, and exports using repeatable generated graph scenarios.</p>
+<section class="preset-grid" aria-label="Dataset presets"><button data-size="100">100<small>smoke</small></button><button data-size="1000">1K<small>standard</small></button><button data-size="5000">5K<small>stress</small></button><button data-size="10000">10K<small>large</small></button></section>
+<div class="settings"><label>Renderer<select id="render-mode"><option value="webgl">WebGL 3D</option><option value="canvas">Canvas 2D</option></select></label><label>Initial view<select id="initial-view"><option value="all">Full graph</option><option value="neighborhood">Progressive neighborhood</option></select></label><label>Layout<select id="layout"><option value="force">Force</option><option value="radial">Radial</option><option value="grid">Grid</option><option value="hierarchical">Hierarchy</option><option value="dag">DAG (Dagre)</option><option value="sankey">Sankey (weighted)</option><option value="timeline">Timeline</option><option value="concentric">Concentric</option><option value="sphere">Sphere 3D</option><option value="arc">Arc</option></select></label><label>Nodes<input id="custom-size" type="number" min="10" max="50000" step="100" value="1000"/></label></div>
+<div class="actions"><button id="load-custom">Run scenario</button><button id="cancel-scenario" disabled>Cancel loading</button><button id="regenerate">Regenerate seed</button><button id="cluster">Enable semantic zoom</button><button id="style-hubs">Style hubs</button><button id="export-json">Export visible JSON</button></div>
+<label class="flow"><input id="link-flow" type="checkbox"/> Enable relationship flow</label>
+<div class="progress" id="progress" hidden><span id="progress-label">Preparing scenario</span><strong id="progress-value">0%</strong><div><i id="progress-bar"></i></div></div>
+<section class="stats"><div><span>FPS</span><strong id="fps">--</strong></div><div><span>Nodes</span><strong id="node-count">0</strong></div><div><span>Links</span><strong id="link-count">0</strong></div><div><span>Load</span><strong id="load-ms">--</strong></div></section>
+<section class="results"><strong>Scenario result</strong><p id="summary">Choose a preset to begin.</p></section></aside><div id="graph"></div></main><script type="module" src="/src/main.ts"></script></body></html>

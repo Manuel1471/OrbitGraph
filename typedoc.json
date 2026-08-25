@@ -6,6 +6,7 @@
     "packages/react/src/index.ts"
   ],
   "out": "docs/api",
+  "cleanOutputDir": false,
   "tsconfig": "tsconfig.json",
   "includeVersion": true,
   "excludeInternal": true,

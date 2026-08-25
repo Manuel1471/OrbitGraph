@@ -72,4 +72,12 @@ describe("PhysicsEngine", () => {
             physics.removeLink("source-target");
         }).not.toThrow();
     });
+
+    it("keeps aggregate relationship weights finite in the force simulation", () => {
+        physics = new PhysicsEngine({ worker: false });
+        const source = node("source"), target = node("target");
+        const link: PhysicsLink = { id: "aggregate", source: "source", target: "target", graphLink: { id: "aggregate", source: "source", target: "target", weight: 10_000 } };
+        physics.start([source, target], [link], vi.fn());
+        expect(Number.isFinite(source.x) && Number.isFinite(target.x)).toBe(true);
+    });
 });

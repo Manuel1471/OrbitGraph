@@ -37,6 +37,12 @@ export class GraphDataStore {
         this.data.nodes.push({ ...node });
     }
 
+    updateNode(nodeId: string, patch: Partial<GraphNode>): void {
+        const index = this.data.nodes.findIndex((node) => node.id === nodeId);
+        if (index < 0) throw new Error(`Node "${nodeId}" does not exist.`);
+        const node = this.data.nodes[index]; this.data.nodes[index] = { ...node, ...patch, id: nodeId, data: { ...node.data, ...patch.data } };
+    }
+
     removeNode(nodeId: string): void {
         this.data.nodes = this.data.nodes.filter((node) => node.id !== nodeId);
         this.data.links = this.data.links.filter(
@@ -64,6 +70,12 @@ export class GraphDataStore {
 
     removeLink(linkId: string): void {
         this.data.links = this.data.links.filter((link) => link.id !== linkId);
+    }
+
+    updateLink(linkId: string, patch: Partial<GraphLink>): void {
+        const index = this.data.links.findIndex((link) => link.id === linkId);
+        if (index < 0) throw new Error(`Link "${linkId}" does not exist.`);
+        const link = this.data.links[index]; this.data.links[index] = this.normalizeLink({ ...link, ...patch, id: linkId, data: { ...link.data, ...patch.data } });
     }
 
     getNode(nodeId: string): GraphNode | undefined {

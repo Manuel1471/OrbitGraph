@@ -69,6 +69,11 @@ button:focus-visible, summary:focus-visible { outline: 2px solid #22d3ee; outlin
 .analytics-panel[open] summary::after { content: "−"; }
 .analytics-hint { color: #94a3b8; font-size: 11px; font-weight: 500; }
 .analytics-controls { padding: 0 14px 14px; margin-top: 0; }
+.speed-control { display:grid; gap:8px; padding: 0 14px 14px; color:#cbd5e1; font-size:12px; }
+.renderer-controls { display:grid; gap:10px; padding:0 14px 14px; color:#cbd5e1; font-size:12px; }
+.renderer-controls label { display:grid; gap:6px; }
+.renderer-controls select { border:1px solid rgba(148,163,184,.25); border-radius:7px; background:#020617; color:#e2e8f0; padding:8px; }
+.speed-control input { accent-color:#22d3ee; width:100%; }
 
 .summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
 .summary-item { display: grid; gap: 5px; padding: 10px; border: 1px solid rgba(148, 163, 184, .12); border-radius: 10px; background: rgba(2, 6, 23, .48); }

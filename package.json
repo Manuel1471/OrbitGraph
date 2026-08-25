@@ -9,14 +9,18 @@
   ],
   "scripts": {
     "dev": "vite playground --host",
+    "dev:benchmark": "vite examples/benchmark --host",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
     "build:core": "npm run build --workspace=@orbitgraph/core",
     "build:three": "npm run build --workspace=@orbitgraph/three",
     "build:react": "npm run build --workspace=@orbitgraph/react",
-    "build": "npm run build:core && npm run build:three && npm run build:react",
-    "dev:benchmark": "vite examples/benchmark --host",
+    "build:vue": "npm run build --workspace=@orbitgraph/vue",
+    "build:svelte": "npm run build --workspace=@orbitgraph/svelte",
+    "build:headless": "npm run build --workspace=@orbitgraph/headless",
+    "build": "npm run build:core && npm run build:three && npm run build:react && npm run build:vue && npm run build:svelte && npm run build:headless",
+    "test:e2e": "playwright test",
     "dev:vanilla": "vite examples/vanilla --host",
     "dev:react": "vite examples/react --host",
     "docs": "typedoc"
@@ -41,6 +45,7 @@
   },
   "homepage": "https://github.com/Manuel1471/OrbitGraph#readme",
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^26.1.1",
@@ -51,11 +56,13 @@
     "jsdom": "^29.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "svelte": "^5.56.10",
     "tsup": "^8.5.1",
     "typedoc": "^0.28.20",
     "typescript": "^5.7.3",
     "vite": "^8.1.5",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "vue": "^3.5.41"
   },
   "allowScripts": {
     "esbuild@0.27.7": true,

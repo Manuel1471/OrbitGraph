@@ -6,3 +6,4 @@ export * from "./GraphMiniMap";
 export * from "./CanvasGraphRenderer";
 export * from "./GraphPluginRegistry";
 export * from "./MapLibreGraphLayer";
+export * from "./GraphComputePipeline";

@@ -13,6 +13,7 @@ import type {
     GraphSelection,
     VisibleGraphData,
 } from "@orbitgraph/core";
+import { graphThemes } from "@orbitgraph/core";
 
 const rootNodeId = "city-lab";
 const pageSize = 2;
@@ -83,9 +84,10 @@ const sourceData: GraphData = {
     ],
 };
 
+/* Seed a meaningful first frame. Remaining relationships are still loaded remotely. */
 const initialData: GraphData = {
-    nodes: [sourceData.nodes[0]],
-    links: [],
+    nodes: sourceData.nodes.slice(0, 3),
+    links: sourceData.links.slice(0, 2),
 };
 
 const dataSource: GraphDataSource = {
@@ -148,13 +150,15 @@ export function App() {
     const [loadingState, setLoadingState] = useState(initialLoadingState);
     const [visibleData, setVisibleData] = useState<VisibleGraphData>(initialData);
     const [message, setMessage] = useState("Ready to load relationship pages.");
-    const [nextOffset, setNextOffset] = useState(0);
+    const [nextOffset, setNextOffset] = useState(2);
     const [analytics, setAnalytics] = useState<AnalyticsInsight>({
         title: "Ready to analyze",
         description: "Load relationships, then choose a metric to inspect the visible graph.",
     });
     const [analyticsLegend, setAnalyticsLegend] = useState<AnalyticsLegendItem[]>([]);
     const [selection, setSelection] = useState<GraphSelection>(null);
+    const [renderMode, setRenderMode] = useState<"webgl" | "canvas">("webgl");
+    const [themeName, setThemeName] = useState<keyof typeof graphThemes>("midnight");
 
     async function loadNextRelationships(): Promise<void> {
         try {
@@ -180,7 +184,7 @@ export function App() {
     }
 
     function resetExploration(): void {
-        setNextOffset(0);
+        setNextOffset(2);
         graphRef.current?.resetExploration();
         graphRef.current?.resetCamera();
         setMessage("Returned to the initial node.");
@@ -338,30 +342,52 @@ export function App() {
                 <span className="eyebrow">REACT + REMOTE DATA</span>
                 <h1>City Explorer</h1>
                 <p>
-                    The graph begins with one node. Controls load more data through
-                    an application-defined data source.
+                    The graph starts with a useful neighborhood. Controls load the
+                    remaining relationship pages through an application-defined data source.
                 </p>
 
-                <div className="controls primary-controls">
-                    <button type="button" onClick={loadNextRelationships}>
-                        Load next relationships
-                    </button>
-                    <button type="button" onClick={resetExploration}>
-                        Reset exploration
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => graphRef.current?.showAll()}
-                    >
-                        Show loaded graph
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => graphRef.current?.downloadPNG("city-explorer.png")}
-                    >
-                        Export PNG
-                    </button>
+                <div className="settings-grid primary-controls">
+                    <label className="example-select">Renderer
+                        <select value={renderMode} onChange={(event) => setRenderMode(event.target.value as "webgl" | "canvas")}><option value="webgl">WebGL 3D</option><option value="canvas">Canvas 2D</option></select>
+                    </label>
+                    <label className="example-select">Theme
+                        <select value={themeName} onChange={(event) => setThemeName(event.target.value as keyof typeof graphThemes)}><option value="midnight">Midnight</option><option value="dark">Dark</option><option value="light">Light</option></select>
+                    </label>
                 </div>
+
+                <details className="analytics-panel" open>
+                    <summary><span>Explore</span><span className="analytics-hint">Loading, camera, paths</span></summary>
+                    <div className="controls analytics-controls">
+                        <button type="button" onClick={loadNextRelationships}>Load next relationship page</button>
+                        <button type="button" onClick={() => graphRef.current?.showAll()}>Show all loaded data</button>
+                        <button type="button" onClick={resetExploration}>Reset exploration and camera</button>
+                        <button type="button" onClick={() => { const route = graphRef.current?.findWeightedPath(rootNodeId, "research-network"); setMessage(route ? `Best route: ${route.nodeIds.join(" → ")}` : "Load the next page to complete the route."); }}>Find weighted route</button>
+                        <button type="button" onClick={() => { graphRef.current?.setCameraMovementSpeed(120); setMessage("WASD/QE movement speed set to 120."); }}>Accelerate WASD camera</button>
+                    </div>
+                </details>
+
+                <details className="analytics-panel">
+                    <summary><span>Studio</span><span className="analytics-hint">Clusters, edit, selection</span></summary>
+                    <div className="controls analytics-controls">
+                        <button type="button" onClick={() => { const clusters = graphRef.current?.clusterCommunities() ?? []; if (clusters[0]) graphRef.current?.collapseCluster(clusters[0].id); setMessage(clusters[0] ? "Collapsed a community into an aggregate node." : "Load graph data first."); }}>Collapse a community</button>
+                        <button type="button" onClick={() => { graphRef.current?.applyOperations([{ type: "add-node", node: { id: `draft-${Date.now()}`, label: "React draft", type: "draft", color: "#facc15" } }]); setMessage("Added a validated draft node. Undo it to inspect history."); }}>Add draft node</button>
+                        <button type="button" onClick={() => setMessage(graphRef.current?.undo() ? "Undid the latest graph operation." : "Nothing to undo.")}>Undo edit</button>
+                        <button type="button" onClick={() => setMessage(graphRef.current?.redo() ? "Redid the graph operation." : "Nothing to redo.")}>Redo edit</button>
+                        <button type="button" onClick={() => setMessage(`Selected ${graphRef.current?.selectNodes(visibleData.nodes.map((node) => node.id)).length ?? 0} visible nodes.`)}>Select all visible nodes</button>
+                        <button type="button" onClick={() => { graphRef.current?.setStyleRules([{ id: "important", when: { minDegree: 2 }, style: { color: "#facc15", scale: 1.4, glow: .8 } }]); setMessage("Applied a declarative degree-based style rule."); }}>Highlight hubs</button>
+                    </div>
+                </details>
+
+                <details className="analytics-panel">
+                    <summary><span>Share & export</span><span className="analytics-hint">Reports and state</span></summary>
+                    <div className="controls analytics-controls">
+                        <button type="button" onClick={() => graphRef.current?.downloadPNG("city-explorer.png")}>Export PNG</button>
+                        <button type="button" onClick={() => graphRef.current?.downloadSVG("city-explorer.svg")}>Export vector SVG</button>
+                        <button type="button" onClick={() => graphRef.current?.downloadPDF("city-explorer-report.pdf", { title: "React City Explorer" })}>Export PDF report</button>
+                        <button type="button" onClick={() => { const shared = graphRef.current?.shareView(); if (shared) void navigator.clipboard?.writeText(shared); setMessage("Copied a shareable view state to the clipboard."); }}>Copy shareable view</button>
+                        <button type="button" onClick={() => { graphRef.current?.saveBookmark("react-demo", "React dashboard"); graphRef.current?.addAnnotation({ id: `note-${Date.now()}`, target: { kind: "view" }, body: "Saved from the React demo.", createdAt: new Date().toISOString() }); setMessage("Saved bookmark and collaboration annotation."); }}>Save bookmark & note</button>
+                    </div>
+                </details>
 
                 <details className="analytics-panel">
                     <summary>
@@ -489,12 +515,15 @@ export function App() {
             )}
 
             <OrbitGraph
+                key={`${renderMode}-${themeName}`}
                 ref={graphRef}
                 data={initialData}
                 className="graph"
                 options={{
-                    backgroundColor: "#050816",
-                    initialView: { mode: "node", nodeId: rootNodeId },
+                    theme: graphThemes[themeName],
+                    renderMode,
+                    camera: { movementSpeed: 72, boostMultiplier: 3 },
+                    initialView: { mode: "neighborhood", nodeId: rootNodeId, depth: 1, direction: "outgoing" },
                     dataSource,
                     labels: {
                         mode: "important",

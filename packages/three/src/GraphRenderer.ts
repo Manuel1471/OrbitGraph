@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import type { GraphLink } from "@orbitgraph/core";
+import type { GraphLink, GraphNode } from "@orbitgraph/core";
 
 import type { PhysicsNode } from "./PhysicsEngine";
 import type {
@@ -13,6 +13,7 @@ import type {
 
 const MAX_NODES_WITH_DETAILED_LINKS = 1_000;
 const MAX_PRESENTATION_GLOWS = 250;
+const MAX_INSTANCED_NODES = 200_000;
 
 /**
  * A transient visual override. It never mutates the source GraphNode data.
@@ -48,6 +49,18 @@ export class GraphRenderer {
     private readonly direction = new THREE.Vector3();
     private readonly arrowUp = new THREE.Vector3(0, 1, 0);
     private readonly linkColor = new THREE.Color();
+    private readonly cullingFrustum = new THREE.Frustum();
+    private readonly cullingMatrix = new THREE.Matrix4();
+    private readonly cullingSphere = new THREE.Sphere();
+    private readonly cullingPosition = new THREE.Vector3();
+    private readonly nodeInstanceMaterial = new THREE.MeshBasicMaterial({ vertexColors: true });
+    private readonly nodeInstances = new THREE.InstancedMesh(this.nodeGeometry, this.nodeInstanceMaterial, MAX_INSTANCED_NODES);
+    private readonly nodeInstanceMatrix = new THREE.Matrix4();
+    private readonly nodeInstanceScale = new THREE.Vector3();
+    private readonly nodeInstanceColor = new THREE.Color();
+    private readonly nodeInstanceQuaternion = new THREE.Quaternion();
+    private readonly nodeInstanceById = new Map<string, number>();
+    private readonly nodeIdByInstance: string[] = [];
 
     private readonly batchedLinkGeometry: THREE.BufferGeometry;
     private readonly batchedLinkMaterial: THREE.LineBasicMaterial;
@@ -112,6 +125,7 @@ export class GraphRenderer {
     private keyboardFocusedNodeId: string | null = null;
 
     private visibleNodeIds = new Set<string>();
+    private readonly frustumVisibleNodeIds = new Set<string>();
     private minimumLinkWeight = 0;
     private batchedVisibleLinks: StoredLink[] = [];
     private batchNeedsRebuild = true;
@@ -168,29 +182,23 @@ export class GraphRenderer {
         this.presentationGlows.raycast = () => {};
 
         this.group.add(this.batchedLinks);
+        this.nodeInstances.count = 0;
+        this.nodeInstances.frustumCulled = false;
+        this.nodeInstances.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        this.nodeInstances.userData.orbitGraphNodeInstances = true;
+        this.group.add(this.nodeInstances);
         this.group.add(this.presentationGlows);
         this.group.add(this.keyboardFocusMesh);
     }
 
     addNode(node: PhysicsNode): void {
         this.nodes.set(node.id, node);
-
-        const style = this.presentationStyles.get(node.id);
-        const mesh = new THREE.Mesh(
-            this.nodeGeometry,
-            this.getNodeMaterial(
-                style?.color ?? node.color ?? this.options.nodeColor,
-            ),
-        );
-
-        mesh.position.set(node.x, node.y, node.z);
-        mesh.scale.setScalar(
-            (node.size ?? this.options.nodeSize) * (style?.scale ?? 1),
-        );
-        mesh.userData.graphNode = node;
-
-        this.nodeMeshes.set(node.id, mesh);
-        this.group.add(mesh);
+        if (this.nodeInstanceById.size >= MAX_INSTANCED_NODES) throw new Error(`OrbitGraph supports at most ${MAX_INSTANCED_NODES.toLocaleString()} active node instances.`);
+        const index = this.nodeIdByInstance.length;
+        this.nodeInstanceById.set(node.id, index);
+        this.nodeIdByInstance.push(node.id);
+        this.nodeInstances.count = this.nodeIdByInstance.length;
+        this.updateNodeInstance(node);
 
         if (
             !this.useBatchedLinks &&
@@ -204,34 +212,18 @@ export class GraphRenderer {
     }
 
     updateNode(node: PhysicsNode): void {
-        const mesh = this.nodeMeshes.get(node.id);
-
-        if (!mesh) {
-            this.addNode(node);
+        if (!this.nodeInstanceById.has(node.id)) {
+            if (this.isNodeInstanceVisible(node.id)) this.rebuildNodeInstances();
             return;
         }
-
-        const style = this.presentationStyles.get(node.id);
-
-        mesh.position.set(node.x, node.y, node.z);
-        mesh.scale.setScalar(
-            (node.size ?? this.options.nodeSize) * (style?.scale ?? 1),
-        );
-
-        mesh.material = this.getNodeMaterial(
-            style?.color ?? node.color ?? this.options.nodeColor,
-        );
+        this.updateNodeInstance(node);
     }
 
     removeNode(nodeId: string): void {
-        const mesh = this.nodeMeshes.get(nodeId);
-
-        if (mesh) {
-            this.group.remove(mesh);
-        }
-
+        this.nodeInstanceById.delete(nodeId);
         this.nodeMeshes.delete(nodeId);
         this.nodes.delete(nodeId);
+        this.rebuildNodeInstances();
 
         if (this.useBatchedLinks) {
             this.batchNeedsRebuild = true;
@@ -325,9 +317,7 @@ export class GraphRenderer {
         this.visibleNodeIds = new Set(nodeIds);
         this.minimumLinkWeight = minimumWeight;
 
-        for (const [nodeId, mesh] of this.nodeMeshes) {
-            mesh.visible = nodeIds.has(nodeId);
-        }
+        this.rebuildNodeInstances();
 
         this.syncKeyboardFocus();
         this.syncPresentationGlows();
@@ -356,11 +346,48 @@ export class GraphRenderer {
     }
 
     /**
+     * Performs explicit camera culling for nodes and links. A link remains
+     * visible when either endpoint is in (or near) the viewport, preserving
+     * useful context at the screen boundary.
+     */
+    updateFrustumCulling(camera: THREE.Camera, margin = 1.2): void {
+        camera.updateMatrixWorld();
+        const frustum = this.cullingFrustum.setFromProjectionMatrix(
+            this.cullingMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse),
+        );
+        const nextVisible = new Set<string>();
+        for (const [id, node] of this.nodes) {
+            const radius = Math.max((node.size ?? this.options.nodeSize) * margin, 0.8);
+            this.cullingPosition.set(node.x, node.y, node.z);
+            this.cullingSphere.set(this.cullingPosition, radius);
+            if (frustum.intersectsSphere(this.cullingSphere)) nextVisible.add(id);
+        }
+        const changed = nextVisible.size !== this.frustumVisibleNodeIds.size || [...nextVisible].some((id) => !this.frustumVisibleNodeIds.has(id));
+        if (!changed) return;
+        this.frustumVisibleNodeIds.clear(); nextVisible.forEach((id) => this.frustumVisibleNodeIds.add(id));
+        this.rebuildNodeInstances();
+        if (this.useBatchedLinks) { this.batchNeedsRebuild = true; this.rebuildBatchedLinks(); }
+        else for (const [id, line] of this.linkLines) {
+            const link = line.userData.graphLink as StoredLink;
+            const visible = this.isLinkVisible(link) && (nextVisible.has(link.source) || nextVisible.has(link.target));
+            line.visible = visible;
+            const arrow = this.linkArrows.get(id); if (arrow) arrow.visible = visible && this.showLinkArrows;
+        }
+    }
+
+    /**
      * Displays a visual focus ring around a node selected through the keyboard.
      */
     setKeyboardFocus(nodeId: string | null): void {
         this.keyboardFocusedNodeId = nodeId;
         this.syncKeyboardFocus();
+    }
+
+    /** Resolves an InstancedMesh raycast back to the public graph node. */
+    resolveNodeHit(hit: THREE.Intersection<THREE.Object3D>): { node: GraphNode; position: THREE.Vector3 } | null {
+        if (hit.object !== this.nodeInstances || hit.instanceId === undefined) return null;
+        const id = this.nodeIdByInstance[hit.instanceId], node = id ? this.nodes.get(id) : undefined;
+        return node ? { node, position: new THREE.Vector3(node.x, node.y, node.z) } : null;
     }
 
     /** Replaces all transient node overrides used by analytics or application UI. */
@@ -400,9 +427,9 @@ export class GraphRenderer {
     }
 
     clear(): void {
-        for (const nodeId of [...this.nodeMeshes.keys()]) {
-            this.removeNode(nodeId);
-        }
+        this.nodeInstanceById.clear(); this.nodeIdByInstance.length = 0; this.nodeInstances.count = 0;
+        this.nodeInstances.instanceMatrix.needsUpdate = true;
+        this.nodeMeshes.clear(); this.nodes.clear();
 
         this.removeAllDetailedLinkVisuals();
 
@@ -430,43 +457,37 @@ export class GraphRenderer {
         }
 
         const node = this.nodes.get(this.keyboardFocusedNodeId);
-        const nodeMesh = this.nodeMeshes.get(this.keyboardFocusedNodeId);
-
-        if (!node || !nodeMesh || !nodeMesh.visible) {
+        if (!node || !this.isNodeInstanceVisible(node.id)) {
             this.keyboardFocusMesh.visible = false;
             return;
         }
 
-        this.keyboardFocusMesh.position.copy(nodeMesh.position);
-        this.keyboardFocusMesh.scale.setScalar(nodeMesh.scale.x);
+        this.keyboardFocusMesh.position.set(node.x, node.y, node.z);
+        this.keyboardFocusMesh.scale.setScalar((node.size ?? this.options.nodeSize) * (this.presentationStyles.get(node.id)?.scale ?? 1));
         this.keyboardFocusMesh.visible = true;
     }
 
     private syncPresentationGlows(): void {
         const activeStyles = [...this.presentationStyles.entries()]
             .filter(([nodeId, style]) => {
-                const mesh = this.nodeMeshes.get(nodeId);
-
-                return Boolean(mesh?.visible && (style.glow ?? 0) > 0);
+                return this.isNodeInstanceVisible(nodeId) && (style.glow ?? 0) > 0;
             })
             .sort(([, left], [, right]) => (right.glow ?? 0) - (left.glow ?? 0))
             .slice(0, MAX_PRESENTATION_GLOWS);
 
         for (let index = 0; index < activeStyles.length; index += 1) {
             const [nodeId, style] = activeStyles[index];
-            const mesh = this.nodeMeshes.get(nodeId);
             const node = this.nodes.get(nodeId);
-
-            if (!mesh || !node) {
+            if (!node) {
                 continue;
             }
 
             const glow = style.glow ?? 0;
-            const size = mesh.scale.x * (1.25 + glow * 0.65);
+            const size = (node.size ?? this.options.nodeSize) * (style.scale ?? 1) * (1.25 + glow * 0.65);
 
             this.presentationGlowScale.setScalar(size);
             this.presentationGlowMatrix.compose(
-                mesh.position,
+                this.cullingPosition.set(node.x, node.y, node.z),
                 new THREE.Quaternion(),
                 this.presentationGlowScale,
             );
@@ -574,7 +595,7 @@ export class GraphRenderer {
         }
 
         this.batchedVisibleLinks = [...this.storedLinks.values()].filter(
-            (link) => this.isLinkVisible(link),
+            (link) => this.isLinkVisible(link) && (this.frustumVisibleNodeIds.size === 0 || this.frustumVisibleNodeIds.has(link.source) || this.frustumVisibleNodeIds.has(link.target)),
         );
 
         const vertexCount = this.batchedVisibleLinks.length * 2;
@@ -706,6 +727,43 @@ export class GraphRenderer {
         );
 
         arrow.quaternion.setFromUnitVectors(this.arrowUp, this.direction);
+    }
+
+    private isNodeInstanceVisible(nodeId: string): boolean {
+        return (this.visibleNodeIds.size === 0 || this.visibleNodeIds.has(nodeId)) &&
+            (this.frustumVisibleNodeIds.size === 0 || this.frustumVisibleNodeIds.has(nodeId));
+    }
+
+    private updateNodeInstance(node: PhysicsNode): void {
+        const index = this.nodeInstanceById.get(node.id);
+        if (index === undefined) return;
+        const style = this.presentationStyles.get(node.id);
+        const size = this.isNodeInstanceVisible(node.id)
+            ? (node.size ?? this.options.nodeSize) * (style?.scale ?? 1)
+            : 0;
+        this.nodeInstanceScale.setScalar(size);
+        this.cullingPosition.set(node.x, node.y, node.z);
+        this.nodeInstanceMatrix.compose(this.cullingPosition, this.nodeInstanceQuaternion, this.nodeInstanceScale);
+        this.nodeInstances.setMatrixAt(index, this.nodeInstanceMatrix);
+        this.nodeInstanceColor.set(style?.color ?? node.color ?? this.options.nodeColor);
+        this.nodeInstances.setColorAt(index, this.nodeInstanceColor);
+        this.nodeInstances.instanceMatrix.needsUpdate = true;
+        if (this.nodeInstances.instanceColor) this.nodeInstances.instanceColor.needsUpdate = true;
+    }
+
+    /** Compacts active instances so culled nodes are not included in the GPU draw call. */
+    private rebuildNodeInstances(): void {
+        this.nodeInstanceById.clear(); this.nodeIdByInstance.length = 0;
+        for (const node of this.nodes.values()) {
+            if (!this.isNodeInstanceVisible(node.id)) continue;
+            const index = this.nodeIdByInstance.length;
+            if (index >= MAX_INSTANCED_NODES) break;
+            this.nodeInstanceById.set(node.id, index); this.nodeIdByInstance.push(node.id);
+        }
+        this.nodeInstances.count = this.nodeIdByInstance.length;
+        for (const id of this.nodeIdByInstance) { const node = this.nodes.get(id); if (node) this.updateNodeInstance(node); }
+        this.nodeInstances.instanceMatrix.needsUpdate = true;
+        if (this.nodeInstances.instanceColor) this.nodeInstances.instanceColor.needsUpdate = true;
     }
 
     private getNodeMaterial(color: string): THREE.MeshBasicMaterial {

@@ -14,12 +14,13 @@ export class GraphCamera {
     private readonly horizontalRight = new THREE.Vector3();
     private readonly worldUp = new THREE.Vector3(0, 1, 0);
 
-    private readonly movementSpeed: number;
+    private movementSpeed: number;
     private readonly boostMultiplier: number;
     private readonly keyboardNavigation: boolean;
     private readonly previousTouchAction: string;
     private readonly minDistance: number;
     private readonly maxDistance: number;
+    private fitAnimation: number | null = null;
 
     constructor(
         private readonly camera: THREE.PerspectiveCamera,
@@ -32,7 +33,10 @@ export class GraphCamera {
         this.keyboardNavigation = options.keyboardNavigation ?? true;
         this.previousTouchAction = this.element.style.touchAction;
         this.minDistance = options.minDistance ?? 2;
-        this.maxDistance = options.maxDistance ?? 1000;
+        // Large deterministic layouts (especially radial and Sankey) can span
+        // many thousands of world units. Keep the default camera range wide
+        // enough for automatic framing instead of clipping the whole graph.
+        this.maxDistance = options.maxDistance ?? 100_000;
 
         this.configureControls(options);
 
@@ -40,6 +44,8 @@ export class GraphCamera {
         window.addEventListener("keyup", this.handleKeyUp);
         window.addEventListener("blur", this.clearPressedKeys);
         this.element.addEventListener("contextmenu", this.preventContextMenu);
+        this.element.addEventListener("pointerdown", this.cancelFit);
+        this.element.addEventListener("wheel", this.cancelFit, { passive: true });
         this.controls.addEventListener("change", this.emitChange);
     }
 
@@ -94,6 +100,11 @@ export class GraphCamera {
         return this.controls.target.clone();
     }
 
+    /** Current orbit distance, used by level-of-detail policies. */
+    getDistance(): number {
+        return this.camera.position.distanceTo(this.controls.target);
+    }
+
     /** Subscribes to camera and control changes. */
     onChange(listener: () => void): () => void {
         this.changeListeners.add(listener);
@@ -102,6 +113,16 @@ export class GraphCamera {
             this.changeListeners.delete(listener);
         };
     }
+
+    /** Updates WASD/QE movement speed at runtime. Useful for very large graph spaces. */
+    setMovementSpeed(speed: number): void {
+        if (!Number.isFinite(speed) || speed <= 0) {
+            throw new Error("Camera movement speed must be a positive finite number.");
+        }
+        this.movementSpeed = speed;
+    }
+
+    getMovementSpeed(): number { return this.movementSpeed; }
 
     focusNode(node: PhysicsNode): void {
         this.focusPosition(new THREE.Vector3(node.x, node.y, node.z));
@@ -112,6 +133,7 @@ export class GraphCamera {
      * and distance. Used by the mini-map and application navigation.
      */
     focusPosition(position: THREE.Vector3): void {
+        this.cancelFit();
         const offset = this.camera.position.clone().sub(this.controls.target);
 
         if (offset.lengthSq() === 0) {
@@ -125,6 +147,7 @@ export class GraphCamera {
 
     /** Moves the camera closer to or farther from its current target. */
     zoomBy(scale: number): void {
+        this.cancelFit();
         const offset = this.camera.position.clone().sub(this.controls.target);
         const currentDistance = offset.length();
 
@@ -164,25 +187,39 @@ export class GraphCamera {
             (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2))) *
             1.35;
 
-        this.controls.target.copy(center);
-        this.camera.position.copy(
-            center
-                .clone()
-                .add(new THREE.Vector3(0.7, 0.55, 1).normalize().multiplyScalar(distance)),
-        );
-        this.controls.update();
+        const targetPosition = center.clone().add(new THREE.Vector3(0.7, 0.55, 1).normalize().multiplyScalar(distance));
+        this.animateFit(center, targetPosition);
     }
 
     dispose(): void {
+        if (this.fitAnimation !== null) cancelAnimationFrame(this.fitAnimation);
         window.removeEventListener("keydown", this.handleKeyDown);
         window.removeEventListener("keyup", this.handleKeyUp);
         window.removeEventListener("blur", this.clearPressedKeys);
         this.element.removeEventListener("contextmenu", this.preventContextMenu);
+        this.element.removeEventListener("pointerdown", this.cancelFit);
+        this.element.removeEventListener("wheel", this.cancelFit);
         this.controls.removeEventListener("change", this.emitChange);
         this.element.style.touchAction = this.previousTouchAction;
         this.changeListeners.clear();
         this.pressedKeys.clear();
     }
+
+    private animateFit(target: THREE.Vector3, position: THREE.Vector3): void {
+        if (this.fitAnimation !== null) cancelAnimationFrame(this.fitAnimation);
+        const startTarget = this.controls.target.clone(), startPosition = this.camera.position.clone(), startedAt = performance.now(), duration = 280;
+        const step = (now: number) => {
+            const progress = Math.min(1, (now - startedAt) / duration), eased = 1 - Math.pow(1 - progress, 3);
+            this.controls.target.lerpVectors(startTarget, target, eased); this.camera.position.lerpVectors(startPosition, position, eased); this.controls.update();
+            this.fitAnimation = progress < 1 ? requestAnimationFrame(step) : null;
+        };
+        this.fitAnimation = requestAnimationFrame(step);
+    }
+
+    private cancelFit = (): void => {
+        if (this.fitAnimation !== null) cancelAnimationFrame(this.fitAnimation);
+        this.fitAnimation = null;
+    };
 
     private configureControls(options: OrbitGraphCameraOptions): void {
         this.controls.enableDamping = true;
@@ -225,6 +262,7 @@ export class GraphCamera {
             return;
         }
 
+        this.cancelFit();
         event.preventDefault();
         this.pressedKeys.add(event.code);
     };

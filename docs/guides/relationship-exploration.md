@@ -157,7 +157,7 @@ For large networks, preserve the information needed to explore the graph and avo
 - Set relationship `weight` values to support relevance filters.
 - Keep animated link flow disabled unless it adds useful meaning.
 - Show metadata in a regular HTML panel instead of rendering every label permanently.
-- Use the benchmark example to measure your own data shape, not only node count.
+- Use Graph Scale Lab (`npm run dev:benchmark`) to measure your own data shape, not only node count.
 
 ## Trees and graphs
 

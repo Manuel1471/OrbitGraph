@@ -4,13 +4,24 @@
 
 ![OrbitGraph preview](./assets/example.png)
 
-OrbitGraph is a TypeScript library for interactive relationship graphs. It combines Three.js rendering, force-directed layouts, progressive exploration, analytics, remote data loading, and React bindings in a small set of focused packages.
+OrbitGraph is a TypeScript library for interactive relationship graphs. It combines Three.js and Canvas rendering, progressive exploration, analytics, remote data loading, first-class React/Vue/Svelte bindings, and a headless server runtime in focused packages.
 
 ## Install
 
 ```bash
 npm install @orbitgraph/core @orbitgraph/three three
 ```
+
+Framework and server packages:
+
+```bash
+npm install @orbitgraph/react react react-dom
+npm install @orbitgraph/vue vue
+npm install @orbitgraph/svelte svelte
+npm install @orbitgraph/headless
+```
+
+React, Vue, and Svelte expose the same runtime and event capabilities. The headless package mirrors data-oriented features—editing, history, selection, routing, diff, analytics, layouts and vector reports—without importing DOM/WebGL code.
 
 <details>
 <summary><strong>Using React?</strong></summary>
@@ -64,7 +75,7 @@ Hidden nodes are kept out of WebGL and the active physics simulation until explo
 
 ## What OrbitGraph includes
 
-- 3D force-directed, radial, grid, and hierarchical layouts.
+- 3D force-directed, radial, grid, hierarchical, Dagre-powered DAG, weighted Sankey, timeline, bipartite, geographic, concentric, sphere, and arc layouts.
 - Progressive exploration from a node, neighborhood, or node type.
 - Local search, type filters, link-weight filters, history, and path focus.
 - Worker-backed physics with automatic main-thread fallback.
@@ -146,6 +157,23 @@ const route = graph.findWeightedPath("team", "api");
 const comparison = graph.compare(previousSnapshot);
 ```
 
+## v1.5 runtime modes and scale controls
+
+```ts
+import { graphThemes } from "@orbitgraph/core";
+
+const graph = createOrbitGraph(container, {
+    camera: { movementSpeed: 80, boostMultiplier: 3 },
+    renderMode: "canvas", // lightweight 2D presentation while preserving the public graph API
+    theme: graphThemes.midnight,
+});
+
+graph.setCameraMovementSpeed(140); // tune WASD/QE navigation for a large graph
+graph.collapseCluster(graph.clusterCommunities()[0].id); // renders a summary cluster node
+```
+
+v1.5 also provides `CanvasGraphRenderer`, `MapLibreGraphLayer`, `GraphPluginRegistry`, graph themes, connected components, k-core numbers, neighborhood similarity, and degree anomaly detection through `@orbitgraph/core`.
+
 ## Remote data
 
 ```ts
@@ -182,13 +210,18 @@ npm run dev:react
 npm run dev:benchmark
 ```
 
-The Vanilla and React examples demonstrate remote relationship pages, analytics, community visualization, labels, mini-map navigation, selection details, loading states, diagnostics, and exports.
+The three complete examples are intentionally complementary: **Vanilla Graph Studio** covers imperative APIs, Canvas/WebGL switching, editing history, clusters, routes, themes and exports; **React Graph Dashboard** demonstrates the declarative integration, selection UI, analytics, renderer switching, themes and report exports; **Graph Scale Lab** is a focused 100–50,000-node benchmark with renderer, layout, flow, clustering, FPS and loading-time controls.
+
+Graph Scale Lab generates deterministic data in a Worker with progress, cancellation, stale-job protection, and separate renderer/framing stages. Graphs of 5,000+ nodes begin in aggregate LOD; semantic zoom expands the cluster nearest the camera target while keeping the rest aggregated.
+
+Canvas mode is WebGL-independent. WebGL mode uses one instanced node draw surface and compacts the active instance range after frustum culling. `GraphComputePipeline` provides transferable Worker computation, `GraphYjsCollaboration` provides CRDT presence/operations, and the headless package runs analytics, layouts and reports without DOM or WebGL.
 
 ## Development
 
 ```bash
 npm run typecheck
 npm run test:run
+npm run test:e2e
 npm run build
 ```
 

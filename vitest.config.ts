@@ -6,6 +6,8 @@ export default defineConfig({
         include: [
             "packages/**/tests/**/*.test.ts",
             "packages/**/tests/**/*.test.tsx",
+            "examples/**/src/**/*.test.ts",
+            "examples/**/src/**/*.test.tsx",
         ],
         setupFiles: ["./tests/setup.ts"],
     },
