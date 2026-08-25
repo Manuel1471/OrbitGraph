@@ -445,7 +445,10 @@ export type GraphLayout =
     | "timeline"
     | "bipartite"
     | "geographic"
-    | "sankey";
+    | "sankey"
+    | "concentric"
+    | "sphere"
+    | "arc";
 
 /** Additional configuration for a graph layout. */
 export type GraphLayoutOptions = {
@@ -464,6 +467,8 @@ export type GraphLayoutOptions = {
     latitudeField?: string;
     /** Node types used as the two columns in the bipartite layout. */
     bipartiteTypes?: [string, string];
+    /** Rank direction used by Dagre layouts. @defaultValue "LR" */
+    rankDirection?: "TB" | "BT" | "LR" | "RL";
 };
 
 /** A predicate applied to a JSON-compatible node metadata field. */
@@ -551,7 +556,8 @@ export type GraphDiff = {
 
 export type GraphStreamMessage = { operations: GraphOperation[] };
 export type GraphStreamSource = { connect: (onMessage: (message: GraphStreamMessage) => void, onError?: (error: Error) => void) => () => void };
-export type OrbitGraphPlugin = { name: string; setup?: (api: { addStyleRule(rule: GraphStyleRule): void; addDataSource(name: string, source: GraphDataSource): void }) => void };
+export type OrbitGraphPlugin = { name: string; version?: string; setup?: (api: { addStyleRule(rule: GraphStyleRule): void; addDataSource(name: string, source: GraphDataSource): void }) => void | (() => void) };
+export type OrbitGraphPluginManifest = { name: string; version: string; entry: string; description?: string; capabilities?: Array<"data-source" | "style-rule" | "panel" | "layout"> };
 export type GraphTheme = { name?: string; backgroundColor?: string; nodeColor?: string; linkColor?: string; variables?: Record<string, string> };
 
 /** Optional rendering hooks for application-owned HTML UI. */
@@ -683,7 +689,7 @@ export type OrbitGraphCameraOptions = {
     /** Minimum distance between the camera and its target. @defaultValue 2 */
     minDistance?: number;
 
-    /** Maximum distance between the camera and its target. @defaultValue 1000 */
+    /** Maximum distance between the camera and its target. @defaultValue 100000 */
     maxDistance?: number;
 };
 

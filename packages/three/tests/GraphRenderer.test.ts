@@ -30,18 +30,21 @@ const createRenderer = () => {
         },
     );
 
-    return { renderer, nodes, nodeMeshes, linkLines, linkArrows };
+    return { renderer, group, nodes, nodeMeshes, linkLines, linkArrows };
 };
 
+const instances = (group: THREE.Group) => group.children.find((child) => child instanceof THREE.InstancedMesh) as THREE.InstancedMesh;
+const instanceScale = (mesh: THREE.InstancedMesh, index: number) => { const matrix = new THREE.Matrix4(); mesh.getMatrixAt(index, matrix); return new THREE.Vector3().setFromMatrixScale(matrix); };
+
 describe("GraphRenderer", () => {
-    it("creates and removes a node mesh", () => {
-        const { renderer, nodeMeshes } = createRenderer();
+    it("creates and removes an instanced node", () => {
+        const { renderer, group } = createRenderer();
 
         renderer.addNode({ id: "manuel", x: 1, y: 2, z: 3 });
-        expect(nodeMeshes.has("manuel")).toBe(true);
+        expect(instances(group).count).toBe(1);
 
         renderer.removeNode("manuel");
-        expect(nodeMeshes.has("manuel")).toBe(false);
+        expect(instances(group).count).toBe(0);
     });
 
     it("creates a line and an arrow for a relation", () => {
@@ -61,7 +64,7 @@ describe("GraphRenderer", () => {
     });
 
     it("hides nodes and links outside visible IDs", () => {
-        const { renderer, nodeMeshes, linkLines } = createRenderer();
+        const { renderer, group, linkLines } = createRenderer();
 
         renderer.addNode({ id: "api", x: 0, y: 0, z: 0 });
         renderer.addNode({ id: "db", x: 10, y: 0, z: 0 });
@@ -74,13 +77,13 @@ describe("GraphRenderer", () => {
 
         renderer.setVisibleNodeIds(new Set(["api"]), 0);
 
-        expect(nodeMeshes.get("api")?.visible).toBe(true);
-        expect(nodeMeshes.get("db")?.visible).toBe(false);
+        expect(instanceScale(instances(group), 0).length()).toBeGreaterThan(0);
+        expect(instances(group).count).toBe(1);
         expect(linkLines.get("api-db")?.visible).toBe(false);
     });
 
     it("applies and clears transient analytics presentation styles", () => {
-        const { renderer, nodeMeshes } = createRenderer();
+        const { renderer, group } = createRenderer();
 
         renderer.addNode({
             id: "hub",
@@ -90,22 +93,16 @@ describe("GraphRenderer", () => {
             color: "#22d3ee",
         });
 
-        const mesh = nodeMeshes.get("hub");
-
-        if (!mesh) {
-            throw new Error("Expected the hub mesh to be created.");
-        }
-
-        const baseColor = mesh.material.color.getHex();
+        const mesh = instances(group), color = new THREE.Color(); mesh.getColorAt(0, color); const baseColor = color.getHex();
 
         renderer.setNodePresentationStyles({
             hub: { color: "#facc15" },
         });
 
-        expect(mesh.material.color.getHexString()).toBe("facc15");
+        mesh.getColorAt(0, color); expect(color.getHexString()).toBe("facc15");
 
         renderer.clearNodePresentationStyles();
 
-        expect(mesh.material.color.getHex()).toBe(baseColor);
+        mesh.getColorAt(0, color); expect(color.getHex()).toBe(baseColor);
     });
 });

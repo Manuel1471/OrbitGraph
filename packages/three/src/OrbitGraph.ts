@@ -29,7 +29,7 @@ import type {
     OrbitGraphViewState,
     VisibleGraphData,
 } from "@orbitgraph/core";
-import { GraphCollaborationStore, diffGraphs, findKShortestPaths, findWeightedPath } from "@orbitgraph/core";
+import { aggregateClusters, GraphCollaborationStore, GraphYjsCollaboration, diffGraphs, findKShortestPaths, findWeightedPath, validateGraphOperations, type GraphYjsProvider } from "@orbitgraph/core";
 import { GraphHistory } from "./GraphHistory";
 
 import { GraphCamera } from "./GraphCamera";
@@ -51,12 +51,16 @@ import { PhysicsEngine } from "./PhysicsEngine";
 import { GraphAnalyticsController } from "./GraphAnalyticsController";
 import { GraphPresentationController } from "./GraphPresentationController";
 import { GraphUIController } from "./GraphUIController";
+import { CanvasGraphRenderer } from "./CanvasGraphRenderer";
+import { GraphComputePipeline, type GraphComputeResult } from "./GraphComputePipeline";
 import type {
     GraphLinkArrowMap,
     GraphLinkLineMap,
     GraphNodeMap,
     GraphNodeMeshMap,
 } from "./graph-types";
+
+const LARGE_GRAPH_LOD_THRESHOLD = 5_000;
 
 /**
  * Public OrbitGraph facade. It coordinates data, exploration, interaction,
@@ -66,7 +70,8 @@ export class OrbitGraph {
     private readonly scene = new THREE.Scene();
     private readonly group = new THREE.Group();
     private readonly camera: THREE.PerspectiveCamera;
-    private readonly renderer: THREE.WebGLRenderer;
+    private readonly renderer: THREE.WebGLRenderer | null;
+    private readonly renderElement: HTMLCanvasElement;
     private readonly controls: OrbitControls;
     private readonly resizeObserver: ResizeObserver;
 
@@ -82,6 +87,8 @@ export class OrbitGraph {
     private styleRules: GraphStyleRule[] = [];
     private multiSelection = new Set<string>();
     private disconnectStream: (() => void) | null = null;
+    private readonly computePipeline = new GraphComputePipeline();
+    private readonly yjsSessions = new Set<GraphYjsCollaboration>();
 
     /** Active objects only; they are replaced after each view refresh. */
     private readonly nodes: GraphNodeMap = new Map();
@@ -102,16 +109,28 @@ export class OrbitGraph {
     private readonly mobileControls: GraphMobileControls;
     private readonly miniMap: GraphMiniMap;
     private readonly ui: GraphUIController;
+    private readonly canvasFallback: CanvasGraphRenderer | null;
 
     private layout: GraphLayout;
     private layoutOptions: GraphLayoutOptions;
     private visibleData: VisibleGraphData = { nodes: [], links: [] };
     private clusters: GraphCluster[] = [];
+    private autoFitTimers: number[] = [];
+    private clusterLodEnabled = false;
+    private clusterLodCollapsed = false;
+    private clusterLodDistance = 0;
+    private clusterLodActiveClusterId: string | null = null;
+    private suppressAutoFitOnce = false;
+    private removeClusterLodListener: (() => void) | null = null;
 
     constructor(
         private readonly container: HTMLElement,
         private readonly options: OrbitGraphOptions = {},
     ) {
+
+        for (const [name, value] of Object.entries(options.theme?.variables ?? {})) {
+            this.container.style.setProperty(`--orbitgraph-${name}`, value);
+        }
 
         const width = container.clientWidth || window.innerWidth;
         const height = container.clientHeight || window.innerHeight;
@@ -122,23 +141,35 @@ export class OrbitGraph {
         this.layoutOptions = options.layoutOptions ?? {};
 
         this.scene.background = new THREE.Color(
-            options.backgroundColor ?? "#050816",
+            options.theme?.backgroundColor ?? options.backgroundColor ?? "#050816",
         );
 
-        this.camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 2000);
+        // The far plane must accommodate auto-framed large graph layouts.
+        this.camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 200_000);
         this.camera.position.set(0, 0, 90);
 
-        this.renderer = new THREE.WebGLRenderer({
-            antialias: true,
-            powerPreference: "high-performance",
-        });
-        this.renderer.setSize(width, height);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(this.renderer.domElement);
+        if (options.renderMode === "canvas") {
+            const canvas = document.createElement("canvas");
+            canvas.width = width * Math.min(window.devicePixelRatio, 2);
+            canvas.height = height * Math.min(window.devicePixelRatio, 2);
+            canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;z-index:1;touch-action:none";
+            container.style.position ||= "relative";
+            container.appendChild(canvas);
+            this.canvasFallback = new CanvasGraphRenderer(canvas);
+            this.renderer = null;
+            this.renderElement = canvas;
+        } else {
+            this.canvasFallback = null;
+            this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            this.renderer.setSize(width, height);
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(this.renderer.domElement);
+            this.renderElement = this.renderer.domElement;
+        }
 
         this.controls = new OrbitControls(
             this.camera,
-            this.renderer.domElement,
+            this.renderElement,
         );
 
         this.scene.add(this.group);
@@ -151,9 +182,9 @@ export class OrbitGraph {
             this.linkArrows,
             this.nodes,
             {
-                nodeColor: options.nodeColor ?? "#22d3ee",
+                nodeColor: options.theme?.nodeColor ?? options.nodeColor ?? "#22d3ee",
                 nodeSize: options.nodeSize ?? 0.65,
-                linkColor: options.linkColor ?? "#6366f1",
+                linkColor: options.theme?.linkColor ?? options.linkColor ?? "#6366f1",
                 linkOpacity: options.linkOpacity ?? 0.55,
             },
         );
@@ -165,9 +196,13 @@ export class OrbitGraph {
         this.graphCamera = new GraphCamera(
             this.camera,
             this.controls,
-            this.renderer.domElement,
+            this.renderElement,
             options.camera,
         );
+        this.removeClusterLodListener = this.graphCamera.onChange?.(() => {
+            this.graphRenderer.updateFrustumCulling?.(this.camera);
+            this.updateClusterLevelOfDetail();
+        }) ?? null;
         this.labels = new NodeLabelRenderer(this.scene, this.nodes);
         this.labels.setOptions(options.labels);
         this.particles = new LinkParticleRenderer(
@@ -196,6 +231,7 @@ export class OrbitGraph {
                 onVisibleDataChange: options.onVisibleDataChange,
                 onGraphPositionChange: (nodes, links) => {
                     this.miniMap.update(nodes, links);
+                    this.canvasFallback?.render(nodes, links.map((item) => item.graphLink));
                 },
             },
         );
@@ -223,17 +259,19 @@ export class OrbitGraph {
             this.graphCamera,
             this.particles,
             options.performance,
+            () => this.canvasFallback?.render(this.views.getPhysicsNodes(), this.visibleData.links),
         );
 
         this.exporter = new GraphExporter({
-            canvas: this.renderer.domElement,
-            render: () => this.renderer.render(this.scene, this.camera),
+            canvas: this.renderElement,
+            render: () => this.renderer ? this.renderer.render(this.scene, this.camera) : this.canvasFallback?.render(this.views.getPhysicsNodes(), this.visibleData.links),
             getData: () => this.dataStore.getData(),
             getVisibleData: () => this.visibleData,
+            getNodePositions: () => [...this.views.getPhysicsNodes()],
         });
 
         this.interaction = new GraphInteraction(
-            this.renderer.domElement,
+            this.renderElement,
             this.camera,
             () => this.group.children,
             {
@@ -290,10 +328,11 @@ export class OrbitGraph {
                     }
                 },
             },
+            (hit) => this.graphRenderer.resolveNodeHit(hit),
         );
 
         this.keyboardNavigation = new GraphKeyboardNavigation(
-            this.renderer.domElement,
+            this.renderElement,
             () => [...this.nodes.values()],
             {
                 onFocusChange: (node) => {
@@ -333,6 +372,7 @@ export class OrbitGraph {
 
         this.resizeObserver = new ResizeObserver(() => {
             this.runtime.resize(this.container);
+            this.canvasFallback?.resize(this.container.clientWidth, this.container.clientHeight, Math.min(window.devicePixelRatio, 2));
         });
         this.resizeObserver.observe(container);
         this.runtime.start();
@@ -349,6 +389,7 @@ export class OrbitGraph {
         this.explorer.reset();
         this.lazyLoader.resetCache();
         this.graphRenderer.setKeyboardFocus(null);
+        this.prepareLargeGraphLod(data);
         this.refreshVisibleGraph();
     }
 
@@ -361,6 +402,19 @@ export class OrbitGraph {
         this.layout = layout;
         this.layoutOptions = { ...options };
         this.views.setLayout(this.layout, this.layoutOptions);
+        this.fitVisibleGraph();
+    }
+
+    /** Runs transferable layout and clustering preparation outside the UI thread. */
+    computeInWorker(layout: GraphLayout = this.layout, signal?: AbortSignal): Promise<GraphComputeResult> {
+        return this.computePipeline.compute(this.dataStore.getData(), layout, signal);
+    }
+
+    /** Connects graph operations and user awareness through a Yjs CRDT provider. */
+    connectYjs(provider: GraphYjsProvider): GraphYjsCollaboration {
+        const session = new GraphYjsCollaboration((operations) => this.applyOperations(operations), provider);
+        this.yjsSessions.add(session);
+        return session;
     }
 
     exportViewState(): OrbitGraphViewState {
@@ -508,7 +562,14 @@ export class OrbitGraph {
     clusterCommunities(): GraphCluster[] {
         const result = this.analytics.detectCommunities({ scope: "visible" });
         const palette = ["#22d3ee", "#a78bfa", "#f59e0b", "#34d399", "#fb7185", "#60a5fa"];
-        this.clusters = result.communities.map((community, index) => ({
+        const communities = result.communities.length > 1
+            ? result.communities
+            : [...this.visibleData.nodes.reduce((groups, node) => {
+                const key = node.type ?? "untyped";
+                const group = groups.get(key) ?? [];
+                group.push(node.id); groups.set(key, group); return groups;
+            }, new Map<string, string[]>())].map(([id, nodeIds]) => ({ id: `type:${id}`, nodeIds, size: nodeIds.length }));
+        this.clusters = communities.map((community, index) => ({
             id: community.id,
             label: `Community ${index + 1}`,
             nodeIds: community.nodeIds,
@@ -521,9 +582,36 @@ export class OrbitGraph {
 
     getClusters(): GraphCluster[] { return this.clusters.map((cluster) => ({ ...cluster, nodeIds: [...cluster.nodeIds], linkIds: [...cluster.linkIds] })); }
 
-    /** Hides a community's members until `expandCluster` restores them. */
+    /** Replaces a community's members with an aggregate node and consolidated links. */
     collapseCluster(clusterId: string): void { this.setClusterCollapsed(clusterId, true); }
     expandCluster(clusterId: string): void { this.setClusterCollapsed(clusterId, false); }
+
+    /** Zoom out for aggregate community nodes and bundled inter-community links; zoom in for full detail. */
+    enableClusterLevelOfDetail(zoomOutDistance?: number): boolean {
+        if (this.clusters.length === 0) this.clusterCommunities();
+        if (this.clusters.length < 2) return false;
+        this.clusterLodEnabled = true;
+        // Start large full-graph views at the aggregate level immediately;
+        // users reveal detail by zooming in past the hysteresis threshold.
+        this.clusterLodDistance = zoomOutDistance ?? Math.min(
+            this.getVisibleGraphDiameter() * 1.15,
+            this.graphCamera.getDistance() * 0.9,
+        );
+        this.updateClusterLevelOfDetail();
+        return true;
+    }
+
+    disableClusterLevelOfDetail(): void {
+        this.clusterLodEnabled = false;
+        this.clusterLodCollapsed = false;
+        this.clusterLodActiveClusterId = null;
+        if (!this.clusters.some((cluster) => cluster.collapsed)) return;
+        this.clusters.forEach((cluster) => { cluster.collapsed = false; });
+        this.suppressAutoFitOnce = true;
+        this.refreshVisibleGraph();
+    }
+
+    isClusterLevelOfDetailEnabled(): boolean { return this.clusterLodEnabled; }
 
     clearFilters(): void {
         this.filter.clear();
@@ -535,6 +623,10 @@ export class OrbitGraph {
         this.labels.hide();
         this.emitSelection(null);
     }
+
+    /** Changes the WASD/QE camera movement speed without recreating the graph. */
+    setCameraMovementSpeed(speed: number): void { this.graphCamera.setMovementSpeed(speed); }
+    getCameraMovementSpeed(): number { return this.graphCamera.getMovementSpeed(); }
 
     focusNode(nodeId: string): void {
         const node = this.nodes.get(nodeId);
@@ -617,18 +709,20 @@ export class OrbitGraph {
     }
     exportSVG(): string { return this.exporter.exportSVG(); }
     downloadSVG(fileName?: string): void { this.exporter.downloadSVG(fileName); }
-    exportPDF(): Blob { return this.exporter.exportPDF(); }
-    downloadPDF(fileName?: string): void { this.exporter.downloadPDF(fileName); }
+    exportPDF(options?: { title?: string; summary?: string }): Promise<Blob> { return this.exporter.exportPDF(options); }
+    downloadPDF(fileName?: string, options?: { title?: string; summary?: string }): Promise<void> { return this.exporter.downloadPDF(fileName, options); }
 
     /** Applies edit operations and leaves persistence to the host callback/stream. */
     applyOperations(operations: GraphOperation[]): void {
+        const validation = validateGraphOperations(this.dataStore.getData(), operations);
+        if (!validation.valid) throw new Error(validation.errors.join(" "));
         for (const operation of operations) {
             if (operation.type === "add-node") this.dataStore.addNode(operation.node);
             else if (operation.type === "remove-node") this.dataStore.removeNode(operation.nodeId);
             else if (operation.type === "add-link") this.dataStore.addLink(operation.link);
             else if (operation.type === "remove-link") this.dataStore.removeLink(operation.linkId);
-            else if (operation.type === "update-node") { const node = this.dataStore.getData().nodes.find((item) => item.id === operation.nodeId); if (node) this.dataStore.addNode({ ...node, ...operation.patch, data: { ...node.data, ...operation.patch.data } }); }
-            else { const link = this.dataStore.getData().links.find((item) => item.id === operation.linkId); if (link) { this.dataStore.removeLink(operation.linkId); this.dataStore.addLink({ ...link, ...operation.patch, data: { ...link.data, ...operation.patch.data } }); } }
+            else if (operation.type === "update-node") this.dataStore.updateNode(operation.nodeId, operation.patch);
+            else this.dataStore.updateLink(operation.linkId, operation.patch);
         }
         this.explorer.setData(this.dataStore.getData()); this.history.push(this.dataStore.getData()); this.refreshVisibleGraph();
     }
@@ -645,6 +739,9 @@ export class OrbitGraph {
 
     destroy(): void {
         this.disconnectStream?.();
+        this.computePipeline.dispose();
+        this.yjsSessions.forEach((session) => session.destroy());
+        this.yjsSessions.clear();
         this.runtime.stop();
         this.resizeObserver.disconnect();
         this.mobileControls.dispose();
@@ -657,21 +754,146 @@ export class OrbitGraph {
         this.physics.dispose();
         this.particles.dispose();
         this.controls.dispose();
-        this.renderer.dispose();
+        this.renderer?.dispose();
+        // Repeated benchmark scenarios otherwise leave WebGL contexts queued
+        // for browser garbage collection and can exhaust the per-process limit.
+        (this.renderer as (THREE.WebGLRenderer & { forceContextLoss?: () => void }) | null)?.forceContextLoss?.();
 
-        if (this.container.contains(this.renderer.domElement)) {
-            this.container.removeChild(this.renderer.domElement);
+        this.canvasFallback?.canvas.remove();
+        this.removeClusterLodListener?.();
+        this.autoFitTimers.forEach((timer) => window.clearTimeout(timer));
+        this.autoFitTimers = [];
+
+        if (this.container.contains(this.renderElement)) {
+            this.container.removeChild(this.renderElement);
         }
     }
 
     private refreshVisibleGraph(): void {
-        this.visibleData = this.views.refresh();
+        const explored = this.explorer.getVisibleData();
+        const filtered = this.filter.getVisibleData(explored);
+        const hasCollapsedClusters = this.clusters.some((cluster) => cluster.collapsed);
+        this.visibleData = this.views.refresh(hasCollapsedClusters ? aggregateClusters(filtered, this.clusters) : filtered);
         this.runtime.setVisibleCounts(this.visibleData.nodes.length, this.visibleData.links.length);
         this.ui.setSemanticNodes(this.visibleData.nodes);
         if (this.options.performance?.levelOfDetail !== false && this.visibleData.nodes.length > 1_000) {
             this.labels.setOptions({ ...(this.options.labels ?? {}), maxVisible: Math.min(this.options.labels?.maxVisible ?? 80, 20) });
         }
         this.applyStyleRules();
+        this.graphRenderer.updateFrustumCulling?.(this.camera);
+        if (this.suppressAutoFitOnce) this.suppressAutoFitOnce = false;
+        else this.fitVisibleGraph();
+    }
+
+    /** Frames every newly visible graph state, including large deterministic layouts. */
+    private fitVisibleGraph(): void {
+        const nodes = this.views.getPhysicsNodes();
+        if (nodes.length === 0) return;
+
+        this.autoFitTimers.forEach((timer) => window.clearTimeout(timer));
+        this.autoFitTimers = [];
+        this.graphCamera.reset([...nodes]);
+
+    }
+
+    private updateClusterLevelOfDetail(): void {
+        if (!this.clusterLodEnabled || this.clusterLodDistance <= 0 || this.clusters.length < 2) return;
+        const distance = this.graphCamera.getDistance();
+        const shouldCollapse = this.clusterLodCollapsed
+            ? distance > this.clusterLodDistance * 0.68
+            : distance >= this.clusterLodDistance;
+        const activeClusterId = shouldCollapse ? null : this.findClosestClusterToCameraTarget();
+        if (shouldCollapse === this.clusterLodCollapsed && activeClusterId === this.clusterLodActiveClusterId) return;
+        this.clusterLodCollapsed = shouldCollapse;
+        this.clusterLodActiveClusterId = activeClusterId;
+        // At detail level materialize only the cluster nearest the camera target.
+        // This prevents a single zoom gesture from creating tens of thousands of meshes.
+        this.clusters.forEach((cluster) => { cluster.collapsed = shouldCollapse || cluster.id !== activeClusterId; });
+        this.suppressAutoFitOnce = true;
+        this.refreshVisibleGraph();
+    }
+
+    private findClosestClusterToCameraTarget(): string | null {
+        const target = this.graphCamera.getTarget();
+        let closest: string | null = null, closestDistance = Number.POSITIVE_INFINITY;
+        for (const cluster of this.clusters) {
+            const node = this.nodes.get(`cluster:${cluster.id}`);
+            if (!node) continue;
+            const dx = node.x - target.x, dy = node.y - target.y, dz = node.z - target.z;
+            const distance = dx * dx + dy * dy + dz * dz;
+            if (distance < closestDistance) { closestDistance = distance; closest = cluster.id; }
+        }
+        return closest ?? this.clusters[0]?.id ?? null;
+    }
+
+    private getVisibleGraphDiameter(): number {
+        const activeNodes = this.views.getPhysicsNodes();
+        if (activeNodes.length < 2) return 120;
+        const bounds = new THREE.Box3();
+        activeNodes.forEach((node) => bounds.expandByPoint(new THREE.Vector3(node.x, node.y, node.z)));
+        return Math.max(80, bounds.getSize(new THREE.Vector3()).length());
+    }
+
+    /** Large initial views should be legible before users discover the LOD control. */
+    private prepareLargeGraphLod(data: GraphData): void {
+        this.clusters = [];
+        this.clusterLodEnabled = false;
+        this.clusterLodCollapsed = false;
+        this.clusterLodActiveClusterId = null;
+        if (this.options.performance?.levelOfDetail === false || data.nodes.length < LARGE_GRAPH_LOD_THRESHOLD) return;
+        let byType = this.createTypeClusters(data);
+        // Massive untyped/single-type graphs still need a safe aggregate view.
+        // Deterministic segments avoid running community detection on the main thread.
+        if (byType.length < 2) byType = this.createSegmentClusters(data);
+        if (byType.length < 2) return;
+        this.clusters = byType.map((cluster) => ({ ...cluster, collapsed: true }));
+        this.clusterLodEnabled = true;
+        this.clusterLodCollapsed = true;
+        // The full graph has not been mounted, so use a stable semantic-zoom
+        // threshold instead of deriving it from temporary node positions.
+        this.clusterLodDistance = 90;
+    }
+
+    /** Grouping by a declared type is O(n), unlike community detection on a 50K graph. */
+    private createTypeClusters(data: GraphData = this.visibleData): GraphCluster[] {
+        const groups = new Map<string, string[]>();
+        for (const node of data.nodes) {
+            const key = node.type ?? "untyped";
+            const group = groups.get(key) ?? []; group.push(node.id); groups.set(key, group);
+        }
+        const clusters: GraphCluster[] = [];
+        for (const [type, nodeIds] of groups) {
+            for (let offset = 0; offset < nodeIds.length; offset += 1_000) {
+                const segment = Math.floor(offset / 1_000);
+                clusters.push({
+                    id: `type:${type}:${segment}`,
+                    label: nodeIds.length > 1_000 ? `${type} ${segment + 1}` : (type === "untyped" ? "Untyped" : type),
+                    nodeIds: nodeIds.slice(offset, offset + 1_000), linkIds: [], collapsed: false,
+                });
+            }
+        }
+        this.populateClusterLinkIds(data, clusters);
+        return clusters;
+    }
+
+    private createSegmentClusters(data: GraphData): GraphCluster[] {
+        const segmentSize = 1_000;
+        const clusters: GraphCluster[] = [];
+        for (let index = 0; index < data.nodes.length; index += segmentSize) {
+            const segment = Math.floor(index / segmentSize);
+            clusters.push({ id: `segment:${segment}`, label: `Segment ${segment + 1}`, nodeIds: data.nodes.slice(index, index + segmentSize).map((node) => node.id), linkIds: [], collapsed: false });
+        }
+        this.populateClusterLinkIds(data, clusters);
+        return clusters;
+    }
+
+    private populateClusterLinkIds(data: GraphData, clusters: GraphCluster[]): void {
+        const membership = new Map<string, GraphCluster>();
+        for (const cluster of clusters) for (const nodeId of cluster.nodeIds) membership.set(nodeId, cluster);
+        for (const link of data.links) {
+            const source = membership.get(link.source), target = membership.get(link.target);
+            if (source && source === target && link.id) source.linkIds.push(link.id);
+        }
     }
 
     private applyStyleRules(): void {
@@ -686,7 +908,6 @@ export class OrbitGraph {
         const cluster = this.clusters.find((item) => item.id === clusterId);
         if (!cluster) return;
         cluster.collapsed = collapsed;
-        this.filter.setHiddenNodeIds(this.clusters.filter((item) => item.collapsed).flatMap((item) => item.nodeIds));
         this.refreshVisibleGraph();
     }
 

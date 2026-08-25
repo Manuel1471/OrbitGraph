@@ -9,6 +9,11 @@ import type {
 
 const MAX_NODES_WITH_COLLISION = 1_000;
 
+/** Mirrors the main-thread scale-aware force configuration. */
+function getChargeStrength(nodeCount: number): number {
+    return -80 / Math.max(1, Math.sqrt(nodeCount / 100));
+}
+
 let simulation: any = null;
 let nodes: WorkerPhysicsNode[] = [];
 let links: WorkerPhysicsLink[] = [];
@@ -60,13 +65,13 @@ function createSimulation(): void {
                 .forceLink(links)
                 .id((node: WorkerPhysicsNode) => node.id)
                 .distance((link: { weight?: number }) => {
-                    return 10 + (1 - (link.weight ?? 0.5)) * 26;
+                    return 10 + (1 - Math.max(0, Math.min(1, link.weight ?? 0.5))) * 26;
                 })
                 .strength((link: { weight?: number }) => {
-                    return 0.25 + (link.weight ?? 0.5) * 0.55;
+                    return 0.25 + Math.max(0, Math.min(1, link.weight ?? 0.5)) * 0.55;
                 }),
         )
-        .force("charge", d3.forceManyBody().strength(-80))
+        .force("charge", d3.forceManyBody().strength(getChargeStrength(nodes.length)))
         .force("center", d3.forceCenter(0, 0, 0))
         .alpha(1)
         .alphaDecay(0.025)

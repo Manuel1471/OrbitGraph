@@ -7,3 +7,8 @@ export * from "./GraphCollaboration";
 export * from "./GraphDiff";
 export * from "./GraphRouting";
 export * from "./GraphClusterAggregator";
+export * from "./GraphAdvancedAnalytics";
+export * from "./GraphThemes";
+export * from "./GraphCollaborationSession";
+export * from "./GraphEditor";
+export * from "./GraphYjsCollaboration";

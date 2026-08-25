@@ -15,11 +15,17 @@ import type {
     GraphCluster,
     GraphOperation,
     GraphStyleRule,
+    GraphYjsProvider,
+    GraphYjsCollaboration,
+    GraphDiff,
+    GraphRoute,
     GraphDiagnostic,
     GraphExpansionOptions,
     GraphInitialView,
     GraphJSONExportOptions,
     GraphLoadingState,
+    GraphLayout,
+    GraphLayoutOptions,
     GraphNeighborhoodLoadOptions,
     GraphNeighborhoodResult,
     GraphNode,
@@ -33,6 +39,7 @@ import {
     type GraphAnalyticsController,
     type OrbitGraph as OrbitGraphInstance,
     type GraphPresentationController,
+    type GraphComputeResult,
 } from "@orbitgraph/three";
 
 /**
@@ -92,6 +99,16 @@ export type OrbitGraphHandle = {
     downloadJSON(
         options?: GraphJSONExportOptions & { fileName?: string },
     ): void;
+    exportSVG(): string;
+    downloadSVG(fileName?: string): void;
+    exportPDF(options?: { title?: string; summary?: string }): Promise<Blob>;
+    downloadPDF(fileName?: string, options?: { title?: string; summary?: string }): Promise<void>;
+    setLayout(layout: GraphLayout, options?: GraphLayoutOptions): void;
+    enableClusterLevelOfDetail(zoomOutDistance?: number): boolean;
+    disableClusterLevelOfDetail(): void;
+    isClusterLevelOfDetailEnabled(): boolean;
+    computeInWorker(layout?: GraphLayout, signal?: AbortSignal): Promise<GraphComputeResult>;
+    connectYjs(provider: GraphYjsProvider): GraphYjsCollaboration;
 
     /** Returns the current lazy-loading operation, when configured. */
     getLoadingState(): GraphLoadingState;
@@ -113,6 +130,13 @@ export type OrbitGraphHandle = {
     redo(): boolean;
     setStyleRules(rules: GraphStyleRule[]): void;
     selectNodes(nodeIds: Iterable<string>): string[];
+    getSelectedNodeIds(): string[];
+    clearNodeSelection(): void;
+    compare(data: GraphData): GraphDiff;
+    findWeightedPath(sourceId: string, targetId: string): GraphRoute | null;
+    findKShortestPaths(sourceId: string, targetId: string, count?: number): GraphRoute[];
+    setCameraMovementSpeed(speed: number): void;
+    getCameraMovementSpeed(): number;
 };
 
 export type OrbitGraphProps = Omit<
@@ -279,6 +303,22 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
                 downloadJSON: (exportOptions) => {
                     graphRef.current?.downloadJSON(exportOptions);
                 },
+                exportSVG: () => graphRef.current?.exportSVG() ?? "",
+                downloadSVG: (fileName) => graphRef.current?.downloadSVG(fileName),
+                exportPDF: (options) => Promise.resolve(graphRef.current?.exportPDF(options) ?? new Blob()),
+                downloadPDF: (fileName, options) => Promise.resolve(graphRef.current?.downloadPDF(fileName, options)),
+                setLayout: (nextLayout, layoutOptions) => graphRef.current?.setLayout(nextLayout, layoutOptions),
+                enableClusterLevelOfDetail: (distance) => graphRef.current?.enableClusterLevelOfDetail(distance) ?? false,
+                disableClusterLevelOfDetail: () => graphRef.current?.disableClusterLevelOfDetail(),
+                isClusterLevelOfDetailEnabled: () => graphRef.current?.isClusterLevelOfDetailEnabled() ?? false,
+                computeInWorker: (nextLayout, signal) => {
+                    if (!graphRef.current) return Promise.reject(new Error("OrbitGraph is not mounted."));
+                    return graphRef.current.computeInWorker(nextLayout, signal);
+                },
+                connectYjs: (provider) => {
+                    if (!graphRef.current) throw new Error("OrbitGraph is not mounted.");
+                    return graphRef.current.connectYjs(provider);
+                },
                 getLoadingState: () => {
                     return graphRef.current?.getLoadingState() ?? {
                         loading: false,
@@ -302,6 +342,13 @@ export const OrbitGraph = forwardRef<OrbitGraphHandle, OrbitGraphProps>(
                 redo: () => graphRef.current?.redo() ?? false,
                 setStyleRules: (rules) => graphRef.current?.setStyleRules(rules),
                 selectNodes: (ids) => graphRef.current?.selectNodes(ids) ?? [],
+                getSelectedNodeIds: () => graphRef.current?.getSelectedNodeIds() ?? [],
+                clearNodeSelection: () => graphRef.current?.clearNodeSelection(),
+                compare: (data) => graphRef.current?.compare(data) ?? { nodes: { added: [], removed: [], changed: [] }, links: { added: [], removed: [], changed: [] } },
+                findWeightedPath: (source, target) => graphRef.current?.findWeightedPath(source, target) ?? null,
+                findKShortestPaths: (source, target, count) => graphRef.current?.findKShortestPaths(source, target, count) ?? [],
+                setCameraMovementSpeed: (speed) => graphRef.current?.setCameraMovementSpeed(speed),
+                getCameraMovementSpeed: () => graphRef.current?.getCameraMovementSpeed() ?? 18,
             }),
             [],
         );

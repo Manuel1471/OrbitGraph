@@ -3,6 +3,31 @@ import { describe, expect, it, vi } from "vitest";
 import { GraphViewSynchronizer } from "../src/GraphViewSynchronizer";
 
 describe("GraphViewSynchronizer visual modules", () => {
+    it("consolidates only parallel links while retaining every distinct relationship", () => {
+        const nodes = Array.from({ length: 1_001 }, (_, index) => ({ id: `node-${index}`, label: `Node ${index}` }));
+        const links = [
+            ...Array.from({ length: 1_000 }, (_, index) => ({ id: `link-${index}`, source: `node-${index}`, target: `node-${(index + 1) % 1_000}`, weight: 1 })),
+            { id: "parallel-a", source: "node-0", target: "node-1", weight: 0.5 },
+            { id: "parallel-b", source: "node-0", target: "node-1", weight: 0.75 },
+        ];
+        const visible = { nodes, links };
+        const synchronizer = new GraphViewSynchronizer(
+            { getOrCreatePhysicsNode: vi.fn((node: typeof nodes[number]) => ({ ...node, x: 0, y: 0, z: 0 })) } as never,
+            { getVisibleData: vi.fn(() => visible) } as never,
+            { getVisibleData: vi.fn(() => visible), getMinimumLinkWeight: vi.fn(() => 0) } as never,
+            { start: vi.fn(), stop: vi.fn(), setLayout: vi.fn(), unpin: vi.fn() } as never,
+            { addNode: vi.fn(), addLink: vi.fn(), setVisibleNodeIds: vi.fn(), clear: vi.fn(), syncPositions: vi.fn() } as never,
+            { setVisibleNodes: vi.fn(), hide: vi.fn(), updatePosition: vi.fn() } as never,
+            { setLinks: vi.fn(), clear: vi.fn() } as never,
+            { layout: "force", layoutOptions: {} },
+        );
+
+        const returned = synchronizer.refresh();
+        expect(returned.links).toHaveLength(1_002);
+        expect(synchronizer.getPhysicsLinks()).toHaveLength(1_000);
+        expect(synchronizer.getPhysicsLinks().find((link) => link.id.startsWith("aggregate:"))?.graphLink.data).toMatchObject({ aggregateCount: 3, aggregateWeight: 2.25 });
+    });
+
     it("keeps renderer visibility, persistent labels, and mini-map data in sync", () => {
         const visible = {
             nodes: [

@@ -15,12 +15,27 @@
             graph metrics into a visual explanation.
         </p>
 
-        <div class="controls">
-            <button id="load-next" type="button">Load next relationships</button>
-            <button id="reset-exploration" type="button">Reset exploration</button>
-            <button id="show-all" type="button">Show loaded graph</button>
-            <button id="export-png" type="button">Export PNG</button>
-        </div>
+        <details class="analytics-panel" open>
+            <summary><span>Explore</span><span class="analytics-hint">Remote pages and scale</span></summary>
+            <div class="controls analytics-controls">
+                <button id="load-next" type="button">Load next relationship page</button>
+                <button id="show-all" type="button">Show all loaded data</button>
+                <button id="reset-exploration" type="button">Reset exploration and camera</button>
+                <button id="load-scale-demo" type="button">Load 750-node scale demo</button>
+            </div>
+        </details>
+
+        <details class="analytics-panel" open>
+            <summary><span>Renderer & scale</span><span class="analytics-hint">WebGL / Canvas 2D</span></summary>
+            <div class="renderer-controls">
+                <label>Presentation mode
+                    <select id="render-mode"><option value="webgl">WebGL 3D</option><option value="canvas">Canvas 2D</option></select>
+                </label>
+                <label>Theme
+                    <select id="theme"><option value="midnight">Midnight</option><option value="dark">Dark</option><option value="light">Light</option></select>
+                </label>
+            </div>
+        </details>
 
         <details class="analytics-panel">
             <summary>
@@ -35,6 +50,28 @@
                 <button id="detect-communities" type="button">Detect communities</button>
                 <button id="clear-visualization" type="button">Clear visualization</button>
             </div>
+        </details>
+
+        <details class="analytics-panel">
+            <summary><span>Share & export</span><span class="analytics-hint">Portable reports</span></summary>
+            <div class="controls analytics-controls">
+                <button id="export-png" type="button">Export PNG</button>
+                <button id="export-svg" type="button">Export vector SVG</button>
+                <button id="export-pdf" type="button">Export PDF report</button>
+            </div>
+        </details>
+
+        <details class="analytics-panel">
+            <summary><span>Graph studio</span><span class="analytics-hint">v1.5 controls</span></summary>
+            <div class="controls analytics-controls">
+                <button id="cluster-communities" type="button">Create community clusters</button>
+                <button id="collapse-first-cluster" type="button">Collapse first cluster</button>
+                <button id="find-route" type="button">Find weighted route</button>
+                <button id="add-draft-node" type="button">Add editable draft node</button>
+                <button id="undo-change" type="button">Undo graph edit</button>
+                <button id="redo-change" type="button">Redo graph edit</button>
+            </div>
+            <label class="speed-control">WASD speed <input id="camera-speed" type="range" min="10" max="200" value="72" /></label>
         </details>
 
         <section class="summary-grid" aria-label="Graph status">

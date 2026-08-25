@@ -67,4 +67,18 @@ describe("GraphLayoutEngine", () => {
         expect(engine.getPositions(metadataNodes, [], "bipartite", { bipartiteTypes: ["left", "right"] }).get("early")!.x).toBeLessThan(0);
         expect(engine.getPositions(metadataNodes, [], "geographic").get("late")).toMatchObject({ x: -45, y: 15, z: 0 });
     });
+
+    it("uses distinct professional DAG and Sankey layout engines", () => {
+        const dag = engine.getPositions(nodes, links, "dag", { rankDirection: "LR" });
+        const flow = engine.getPositions(nodes, links, "sankey");
+        expect(dag.get("root")!.x).toBeLessThan(dag.get("c")!.x);
+        expect(flow.get("root")!.x).toBeLessThan(flow.get("c")!.x);
+        expect([...flow.values()].every((position) => Number.isFinite(position.x) && Number.isFinite(position.y))).toBe(true);
+    });
+
+    it("offers concentric, sphere, and arc arrangements", () => {
+        expect(engine.getPositions(nodes, links, "concentric").size).toBe(nodes.length);
+        expect(engine.getPositions(nodes, links, "sphere").get("root")!.z).not.toBe(0);
+        expect(engine.getPositions(nodes, links, "arc").get("root")!.y).not.toBe(engine.getPositions(nodes, links, "arc").get("b")!.y);
+    });
 });

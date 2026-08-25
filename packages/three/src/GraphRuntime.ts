@@ -13,12 +13,13 @@ export class GraphRuntime {
     private visibleLinks = 0;
 
     constructor(
-        private readonly renderer: THREE.WebGLRenderer,
+        private readonly renderer: THREE.WebGLRenderer | null,
         private readonly scene: THREE.Scene,
         private readonly camera: THREE.PerspectiveCamera,
         private readonly graphCamera: GraphCamera,
         private readonly particles: LinkParticleRenderer,
         private readonly performanceOptions?: { telemetry?: boolean; onPerformanceSample?: (sample: { fps: number; visibleNodes: number; visibleLinks: number }) => void },
+        private readonly renderFallback?: () => void,
     ) {}
 
     setVisibleCounts(nodes: number, links: number): void { this.visibleNodes = nodes; this.visibleLinks = links; }
@@ -49,7 +50,7 @@ export class GraphRuntime {
 
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(width, height);
+        this.renderer?.setSize(width, height);
     }
 
     private animate = (now: number): void => {
@@ -61,7 +62,8 @@ export class GraphRuntime {
 
         this.graphCamera.update(deltaSeconds);
         this.particles.update(now / 1000);
-        this.renderer.render(this.scene, this.camera);
+        if (this.renderer) this.renderer.render(this.scene, this.camera);
+        else this.renderFallback?.();
         this.frames += 1;
         const elapsed = now - this.sampleStartedAt;
         if (this.performanceOptions?.telemetry && elapsed >= 1000) {

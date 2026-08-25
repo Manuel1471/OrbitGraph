@@ -1,6 +1,7 @@
 import type {
     GraphLayout,
     GraphLayoutOptions,
+    GraphLink,
     VisibleGraphData,
 } from "@orbitgraph/core";
 
@@ -51,9 +52,9 @@ export class GraphViewSynchronizer {
         this.layoutOptions = options.layoutOptions;
     }
 
-    refresh(): VisibleGraphData {
+    refresh(overrideData?: VisibleGraphData): VisibleGraphData {
         const explored = this.explorer.getVisibleData();
-        const visible = this.filter.getVisibleData(explored);
+        const visible = overrideData ?? this.filter.getVisibleData(explored);
 
         this.clear();
 
@@ -70,11 +71,13 @@ export class GraphViewSynchronizer {
             this.filter.getMinimumLinkWeight(),
         );
 
-        for (const link of visible.links) {
+        const activeLinks = this.consolidateParallelLinks(visible.links);
+
+        for (const link of activeLinks) {
             this.renderer.addLink(link);
         }
 
-        this.physicsLinks = visible.links.map((link) => ({
+        this.physicsLinks = activeLinks.map((link) => ({
             id: link.id!,
             source: link.source,
             target: link.target,
@@ -82,7 +85,7 @@ export class GraphViewSynchronizer {
         }));
 
         this.labels.setVisibleNodes(visible.nodes);
-        this.particles.setLinks(visible.links);
+        this.particles.setLinks(activeLinks);
 
         if (this.physicsNodes.length > 0) {
             this.physics.start(
@@ -105,6 +108,41 @@ export class GraphViewSynchronizer {
         this.options.onVisibleDataChange?.(visible);
 
         return visible;
+    }
+
+    /**
+     * Keeps every distinct connection. Only parallel links with equal
+     * endpoints and type become one visual/physics edge, carrying its count
+     * and combined weight in data. Source data and visible callbacks remain
+     * untouched, so callers never lose their original relationships.
+     */
+    private consolidateParallelLinks(links: VisibleGraphData["links"]): GraphLink[] {
+        const groups = new Map<string, GraphLink[]>();
+        for (const link of links) {
+            const key = `${link.source}\u0000${link.type ?? "related"}\u0000${link.target}`;
+            const group = groups.get(key);
+            if (group) group.push(link); else groups.set(key, [link]);
+        }
+
+        return [...groups.values()].map((group) => {
+            if (group.length === 1) return group[0];
+            const first = group[0];
+            const totalWeight = group.reduce((sum, link) => sum + (link.weight ?? 1), 0);
+            return {
+                ...first,
+                id: `aggregate:${first.source}:${first.type ?? "related"}:${first.target}`,
+                // Physics expects the semantic link strength range, so keep an average.
+                weight: totalWeight / group.length,
+                data: {
+                    ...first.data,
+                    aggregateCount: group.length,
+                    aggregateWeight: totalWeight,
+                    aggregatedLinkIds: group
+                        .map((link) => link.id)
+                        .filter((id): id is string => typeof id === "string"),
+                },
+            };
+        });
     }
 
     setLayout(layout: GraphLayout, options: GraphLayoutOptions): void {

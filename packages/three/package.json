@@ -1,6 +1,6 @@
 {
   "name": "@orbitgraph/three",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Three.js renderer for OrbitGraph.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -20,8 +20,10 @@
     "build": "tsup src/index.ts --format esm,cjs --dts --clean"
   },
   "dependencies": {
-    "@orbitgraph/core": "^1.4.0",
+    "@orbitgraph/core": "^1.5.0",
     "d3-force-3d": "^3.0.6",
+    "d3-sankey": "^0.12.3",
+    "dagre": "^0.8.5",
     "jspdf": "^4.2.1",
     "maplibre-gl": "^6.3.0"
   },
@@ -43,5 +45,9 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "@types/d3-sankey": "^0.12.5",
+    "@types/dagre": "^0.7.54"
   }
 }

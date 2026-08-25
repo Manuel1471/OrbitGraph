@@ -4,6 +4,46 @@ All notable changes to OrbitGraph are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - Unreleased
+
+### Added
+
+- Fully independent Canvas runtime: `renderMode: "canvas"` no longer creates a WebGL renderer or GPU context.
+- Instanced node rendering with compact frustum virtualization; off-camera nodes are removed from the active instance draw count while source data remains intact.
+- `GraphComputePipeline` packs graphs into transferable `Float32Array` / `Uint32Array` buffers for cancellable Worker layouts, clustering and transformation.
+- `GraphYjsCollaboration` provides CRDT operation merging, provider synchronization, awareness, cursors and multi-user presence through Yjs.
+- Official `@orbitgraph/vue` component and `@orbitgraph/svelte` action packages.
+- `@orbitgraph/headless` for DOM-free analytics, deterministic layouts, SVG and PDF generation in Node.js and SSR environments.
+- Vue and Svelte bindings now match React's callback surface, reactive lifecycle, cleanup guarantees, and full imperative runtime access; each package has dedicated wrapper tests.
+- `HeadlessOrbitGraph` adds stateful editing, validation, undo/redo, selection, routes, snapshot diff, analytics, JSON and vector report APIs without browser globals.
+- Expanded Vue, Svelte and Headless package guides to React-level coverage with executable quick starts, typed API tables, lifecycle semantics, advanced workflows, SSR guidance, testing, troubleshooting and cross-package migration guidance.
+- Playwright visual E2E matrix covering Chromium, Firefox and WebKit, including layout transitions and 50K cancellation.
+- Runtime WASD/QE camera speed controls through `setCameraMovementSpeed()`.
+- Integrated Canvas presentation mode for `createOrbitGraph({ renderMode: "canvas" })`.
+- Aggregate nodes and consolidated links rendered for collapsed communities.
+- Professional Dagre DAG and weighted d3-sankey layouts, plus concentric, sphere, and arc layouts.
+- Large-graph relationship consolidation: every distinct relationship stays active; parallel links with equal endpoints and type are represented by one aggregated edge while source data and analytics retain every original relationship.
+- Vector SVG export, report-style PDF headers, theme presets, dynamic plugin lifecycle, and advanced graph algorithms.
+- Graph Scale Lab now supports 100–50,000-node repeatable scenarios, WebGL/Canvas selection, force and deterministic layouts, telemetry, JSON export, themes, style rules, relationship flow, and semantic-zoom controls.
+- Benchmark scenario generation runs in a Worker in 500-node batches, reports progress, supports cancellation, and preserves the currently mounted graph while a new scenario is prepared.
+- Added deterministic Worker-payload tests to the main Vitest run, covering metadata, stable data, valid relationship endpoints, final progress, and cancellation.
+- Automatic large-graph LOD begins before full-detail objects are created at 5,000+ nodes. It groups by type when possible and uses deterministic 1,000-node segments for untyped graphs.
+- Semantic zoom expands only the cluster nearest the camera target and keeps the remaining graph aggregated, preventing one zoom gesture from mounting the complete massive graph.
+- Frustum culling hides off-viewport objects and batched links while retaining a relationship when either endpoint remains near the viewport; temporary math objects are reused to reduce garbage collection.
+- Cluster aggregation now computes metrics and consolidated links in one linear pass instead of rescanning every relationship per cluster.
+- Benchmark stages distinguish generation, renderer construction, framing and ready state; stale jobs are cancelled and Worker cancellation/errors are handled explicitly.
+- PDF support is loaded on demand, keeping jsPDF out of applications that do not export reports.
+- Force charge strength scales with node count to prevent large simulations from expanding into unusable camera bounds.
+- Camera framing supports large clipping distances and smooth fit transitions instead of abrupt layout-change teleports.
+- React refs now expose layouts and semantic LOD controls; tests cover asynchronous PDF export, clustering, layouts, and runtime camera-speed controls.
+
+### Fixed
+
+- Fixed invalid optional IDs in `aggregatedLinkIds`, restoring clean repository-wide typechecking.
+- Fixed benchmark layout changes regenerating a different dataset and restored clustering, styling, and JSON-export actions.
+- Fixed camera fit animations continuing after pointer, wheel, or keyboard input.
+- Fixed the benchmark appearing stuck at 95% by reporting the main-thread build and framing phases separately.
+
 ## [1.4.0]
 
 ### Added
